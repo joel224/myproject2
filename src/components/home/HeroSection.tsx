@@ -21,14 +21,6 @@ export function HeroSection() {
                   Book an Appointment in 30 Seconds
                 </Button>
               </Link>
-              <Image
-                src="https://placehold.co/600x400.png"
-                alt="Man smiling, representing Dr. Loji"
-                width={600}
-                height={400}
-                className="rounded-xl shadow-lg object-cover mt-4"
-                data-ai-hint="appointment booking"
-              />
             </div>
           </div>
           <div className="flex justify-center items-center">
