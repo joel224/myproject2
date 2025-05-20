@@ -15,11 +15,21 @@ export function HeroSection() {
             <p className="max-w-[600px] text-muted-foreground md:text-xl lg:mx-0 mx-auto">
               Experience exceptional dental care at Dr. Loji's Dental Hub. We're dedicated to creating healthy, beautiful smiles for life.
             </p>
-            <Link href="/#appointment">
-              <Button size="lg" className="px-8 py-6 text-lg shadow-lg hover:shadow-primary/30 transition-shadow">
-                Book an Appointment in 30 Seconds
-              </Button>
-            </Link>
+            <div className="flex flex-col items-center lg:items-start space-y-4">
+              <Link href="/#appointment">
+                <Button size="lg" className="px-8 py-6 text-lg shadow-lg hover:shadow-primary/30 transition-shadow">
+                  Book an Appointment in 30 Seconds
+                </Button>
+              </Link>
+              <Image
+                src="https://placehold.co/600x400.png"
+                alt="Man smiling, representing Dr. Loji"
+                width={600}
+                height={400}
+                className="rounded-xl shadow-lg object-cover mt-4"
+                data-ai-hint="appointment booking"
+              />
+            </div>
           </div>
           <div className="flex justify-center items-center">
             {/* Optional: subtle animation could be applied here */}
