@@ -4,17 +4,29 @@ import Link from 'next/link';
 import { Logo } from '@/components/icons/Logo';
 import { Button } from '@/components/ui/button';
 import { UserCircle, LogIn } from 'lucide-react';
-import { useState } from 'react';
-import { cn } from '@/lib/utils';
 
 export function MainNavbar() {
-  const [highlightedLink, setHighlightedLink] = useState<string | null>(null);
+  const handleNavClickAndAnimate = (event: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (href.startsWith('/#')) {
+      const targetId = href.substring(2); // Extract 'services' from '/#services'
+      
+      // Allow native scroll to happen, then animate
+      setTimeout(() => {
+        const sectionElement = document.getElementById(targetId);
+        if (sectionElement) {
+          const headingElement = sectionElement.querySelector('h2');
 
-  const handleNavLinkClick = (path: string) => {
-    setHighlightedLink(path);
-    setTimeout(() => {
-      setHighlightedLink(null);
-    }, 1500); // Highlight for 1.5 seconds
+          if (headingElement) {
+            headingElement.classList.add('animate-marquee-bg');
+            
+            // Animation duration is 1s. Remove class after animation finishes.
+            setTimeout(() => {
+              headingElement.classList.remove('animate-marquee-bg');
+            }, 1000); 
+          }
+        }
+      }, 100); // Delay to allow for scrolling
+    }
   };
 
   return (
@@ -24,35 +36,14 @@ export function MainNavbar() {
           <Logo className="h-8 w-auto" />
         </Link>
         <nav className="flex items-center space-x-4">
-          <Link href="/#services" onClick={() => handleNavLinkClick('/#services')}>
-            <Button
-              variant="ghost"
-              className={cn(
-                highlightedLink === '/#services' && 'bg-accent/20'
-              )}
-            >
-              Services
-            </Button>
+          <Link href="/#services" onClick={(e) => handleNavClickAndAnimate(e, '/#services')}>
+            <Button variant="ghost">Services</Button>
           </Link>
-          <Link href="/#team" onClick={() => handleNavLinkClick('/#team')}>
-            <Button
-              variant="ghost"
-              className={cn(
-                highlightedLink === '/#team' && 'bg-accent/20'
-              )}
-            >
-              Our Team
-            </Button>
+          <Link href="/#team" onClick={(e) => handleNavClickAndAnimate(e, '/#team')}>
+            <Button variant="ghost">Our Team</Button>
           </Link>
-          <Link href="/#contact" onClick={() => handleNavLinkClick('/#contact')}>
-            <Button
-              variant="ghost"
-              className={cn(
-                highlightedLink === '/#contact' && 'bg-accent/20'
-              )}
-            >
-              Contact
-            </Button>
+          <Link href="/#appointment" onClick={(e) => handleNavClickAndAnimate(e, '/#appointment')}>
+            <Button variant="ghost">Contact</Button>
           </Link>
           <Link href="/login">
             <Button>

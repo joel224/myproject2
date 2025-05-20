@@ -109,3 +109,35 @@
     /* font-family removed, will be handled by Next/Font and Tailwind config */
   }
 }
+
+/* Marquee highlight animation for headings */
+.animate-marquee-bg {
+  position: relative; /* Necessary for ::after positioning */
+  overflow: hidden;   /* To clip the ::after element */
+}
+
+.animate-marquee-bg::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%; 
+  height: 100%;
+  background-color: hsl(var(--accent) / 0.3); /* Slight green, translucent */
+  transform: translateX(-100%); /* Start off-screen to the left */
+  animation: marquee-bg-animation 1s ease-out; 
+  z-index: -1; /* Behind the text */
+  pointer-events: none; 
+}
+
+@keyframes marquee-bg-animation {
+  0% {
+    transform: translateX(-100%);
+  }
+  40%, 60% { /* Dwell in the middle for a bit to be visible */
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(100%); /* Sweep out to the right */
+  }
+}
