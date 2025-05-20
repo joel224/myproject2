@@ -1,12 +1,12 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { AlertTriangle, CalendarPlus, Video, LogIn } from 'lucide-react';
+import { PhoneCall, CalendarPlus, Video, LogIn } from 'lucide-react';
 import Link from 'next/link';
 
 const actions = [
   {
-    icon: <AlertTriangle className="h-8 w-8 text-destructive" />,
-    title: 'Emergency SOS',
+    icon: <PhoneCall className="h-8 w-8 text-destructive" />,
+    title: 'Emergency',
     description: 'Toothache? Tap Here!',
     href: 'tel:+1234567890', // Example phone number
     buttonText: 'Call Now',
