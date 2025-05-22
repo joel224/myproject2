@@ -1,6 +1,7 @@
+
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { Home, Users, CalendarDays, Stethoscope, DollarSign, Settings, UserCircle, LayoutDashboard, Files, ClipboardList, MessageCircle } from 'lucide-react';
+import { Home, Users, CalendarDays, Stethoscope, DollarSign, Settings, UserCircle, LayoutDashboard, Files, ClipboardList, MessageCircle, LogOut } from 'lucide-react';
 import {
   SidebarProvider,
   Sidebar,
@@ -36,6 +37,9 @@ interface AppShellProps {
 }
 
 export function AppShell({ children, navItems, userRole, userName, userEmail }: AppShellProps) {
+  const profileLink = userRole === 'Doctor' ? '/doctor/profile' : '/staff/profile';
+  // Add '/patient/profile' if/when Patient portal uses AppShell
+
   return (
     <SidebarProvider defaultOpen>
       <Sidebar>
@@ -90,19 +94,25 @@ export function AppShell({ children, navItems, userRole, userName, userEmail }: 
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <UserCircle className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span>
-              </DropdownMenuItem>
+              <Link href={profileLink} passHref>
+                <DropdownMenuItem>
+                  <UserCircle className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </DropdownMenuItem>
+              </Link>
+              <Link href={profileLink} passHref> {/* Settings can also go to profile for simplicity */}
+                <DropdownMenuItem>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </DropdownMenuItem>
+              </Link>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                {/* <LogOut className="mr-2 h-4 w-4" /> */}
-                <span>Log out</span>
-              </DropdownMenuItem>
+              <Link href="/login" passHref>
+                <DropdownMenuItem>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </Link>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
