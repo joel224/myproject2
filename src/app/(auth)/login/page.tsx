@@ -30,8 +30,20 @@ export default function LoginPage() {
             Sign In
           </Button>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-4 pt-4">
-          <p className="text-sm text-muted-foreground">
+        <CardFooter className="flex flex-col items-center space-y-4 pt-4">
+          <p className="text-sm text-muted-foreground">Or select your portal to sign in:</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
+            <Link href="/login?for=patient" legacyBehavior passHref>
+              <Button variant="outline" className="w-full">Patient Portal</Button>
+            </Link>
+            <Link href="/login?for=doctor" legacyBehavior passHref>
+              <Button variant="outline" className="w-full">Doctor Portal</Button>
+            </Link>
+            <Link href="/login?for=staff" legacyBehavior passHref>
+              <Button variant="outline" className="w-full">Staff Portal</Button>
+            </Link>
+          </div>
+          <p className="text-sm text-muted-foreground pt-2">
             Forgot your password?{" "}
             <Link href="/forgot-password" className="font-medium text-primary hover:underline">
               Reset it here
