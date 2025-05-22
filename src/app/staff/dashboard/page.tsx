@@ -1,4 +1,6 @@
 
+'use client';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -71,7 +73,7 @@ export default function StaffDashboardPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
-        <Card>
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Today's Schedule</CardTitle>
             <CardDescription>Appointments for {new Date(today).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.</CardDescription>
@@ -106,44 +108,46 @@ export default function StaffDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Access common tasks quickly.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
-            {quickActions.map(action => (
-              <Link href={action.href} key={action.label} passHref>
-                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center text-center">
-                  {action.icon}
-                  <span className="mt-1 text-xs">{action.label}</span>
-                </Button>
-              </Link>
-            ))}
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+              <CardDescription>Access common tasks quickly.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4">
+              {quickActions.map(action => (
+                <Link href={action.href} key={action.label} passHref>
+                  <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center text-center">
+                    {action.icon}
+                    <span className="mt-1 text-xs">{action.label}</span>
+                  </Button>
+                </Link>
+              ))}
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Update Live Wait Time</CardTitle>
-            <CardDescription>Set the current estimated wait time displayed on the homepage.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div>
-              <Label htmlFor="liveWaitTime" className="mb-1 block">Current Wait Time Text</Label>
-              <Input id="liveWaitTime" placeholder="e.g., <15 mins, Approx. 30 mins" />
-            </div>
-            <Button 
-              className="w-full" 
-              onClick={() => console.log('Update wait time clicked. Backend integration needed.')}
-            >
-              <Edit className="mr-2 h-4 w-4" /> Set Wait Time
-            </Button>
-            <p className="text-xs text-muted-foreground pt-1">
-              This will update the time shown on the homepage once the backend is connected.
-            </p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Update Live Wait Time</CardTitle>
+              <CardDescription>Set the current estimated wait time displayed on the homepage.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <Label htmlFor="liveWaitTime" className="mb-1 block">Current Wait Time Text</Label>
+                <Input id="liveWaitTime" placeholder="e.g., <15 mins, Approx. 30 mins" />
+              </div>
+              <Button 
+                className="w-full" 
+                onClick={() => console.log('Update wait time clicked. Backend integration needed.')}
+              >
+                <Edit className="mr-2 h-4 w-4" /> Set Wait Time
+              </Button>
+              <p className="text-xs text-muted-foreground pt-1">
+                This will update the time shown on the homepage once the backend is connected.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
       
       <Card>
