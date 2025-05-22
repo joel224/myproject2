@@ -26,41 +26,17 @@ export default function LoginPage() {
             <Label htmlFor="password">Password</Label>
             <Input id="password" type="password" placeholder="••••••••" />
           </div>
-          <Button className="w-full" type="submit">
+          <div className="flex items-center justify-between text-sm pt-2">
+            <Link href="/forgot-password" className="font-medium text-primary hover:underline">
+              Forgot your password?
+            </Link>
+          </div>
+          <Button className="w-full mt-4" type="submit">
             Sign In
           </Button>
         </CardContent>
-        <CardFooter className="flex flex-col items-center space-y-4 px-6 pb-6 pt-4">
-          
+        <CardFooter className="flex flex-col items-center space-y-2 px-6 pb-6 pt-4">
           <p className="text-sm text-muted-foreground">
-            Forgot your password?{" "}
-            <Link href="/forgot-password" className="font-medium text-primary hover:underline">
-              Reset it here
-            </Link>
-          </p>
-
-          <div className="relative w-full flex items-center justify-center py-3">
-            <div className="absolute inset-x-0 flex items-center" aria-hidden="true">
-              <div className="w-full border-t border-border" />
-            </div>
-            <span className="relative bg-card px-3 text-xs uppercase text-muted-foreground">
-              Or Continue As
-            </span>
-          </div>
-          
-          <div className="grid grid-cols-1 gap-3 w-full">
-            <Link href="/login?for=patient" legacyBehavior passHref>
-              <Button variant="outline" className="w-full">Patient Portal</Button>
-            </Link>
-            <Link href="/login?for=doctor" legacyBehavior passHref>
-              <Button variant="outline" className="w-full">Doctor Portal</Button>
-            </Link>
-            <Link href="/login?for=staff" legacyBehavior passHref>
-              <Button variant="outline" className="w-full">Staff Portal</Button>
-            </Link>
-          </div>
-
-          <p className="text-sm text-muted-foreground pt-2">
             Don&apos;t have an account?{" "}
             <Link href="/signup" className="font-medium text-primary hover:underline">
               Sign Up as a Patient
