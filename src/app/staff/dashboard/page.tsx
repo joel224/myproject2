@@ -1,10 +1,13 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { mockAppointments, mockInvoices, mockPatients } from "@/lib/mockData";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { CalendarPlus, Users, DollarSign, MessageSquare, AlertCircle, CheckCircle, Clock } from "lucide-react";
+import { CalendarPlus, Users, DollarSign, MessageSquare, AlertCircle, CheckCircle, Clock, Edit } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function StaffDashboardPage() {
   const today = new Date().toISOString().split('T')[0];
@@ -67,7 +70,7 @@ export default function StaffDashboardPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle>Today's Schedule</CardTitle>
@@ -117,6 +120,28 @@ export default function StaffDashboardPage() {
                 </Button>
               </Link>
             ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Update Live Wait Time</CardTitle>
+            <CardDescription>Set the current estimated wait time displayed on the homepage.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div>
+              <Label htmlFor="liveWaitTime" className="mb-1 block">Current Wait Time Text</Label>
+              <Input id="liveWaitTime" placeholder="e.g., <15 mins, Approx. 30 mins" />
+            </div>
+            <Button 
+              className="w-full" 
+              onClick={() => console.log('Update wait time clicked. Backend integration needed.')}
+            >
+              <Edit className="mr-2 h-4 w-4" /> Set Wait Time
+            </Button>
+            <p className="text-xs text-muted-foreground pt-1">
+              This will update the time shown on the homepage once the backend is connected.
+            </p>
           </CardContent>
         </Card>
       </div>
