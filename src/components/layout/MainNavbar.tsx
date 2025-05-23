@@ -5,16 +5,20 @@ import Link from 'next/link';
 import { Logo } from '@/components/icons/Logo';
 import { Button } from '@/components/ui/button';
 import { UserCircle, LogIn, LayoutDashboard } from 'lucide-react'; // Added LayoutDashboard
+import type { MouseEvent } from 'react';
 
 export function MainNavbar() {
-  const handleNavClickAndAnimate = (event: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+  const handleNavClickAndAnimate = (event: MouseEvent<HTMLAnchorElement>, href: string) => {
     if (href.startsWith('/#')) {
+      event.preventDefault(); // Prevent default anchor behavior only for hash links
       const targetId = href.substring(2); // Extract 'services' from '/#services'
       
-      // Allow native scroll to happen, then animate
-      setTimeout(() => {
-        const sectionElement = document.getElementById(targetId);
-        if (sectionElement) {
+      const sectionElement = document.getElementById(targetId);
+      if (sectionElement) {
+        sectionElement.scrollIntoView({ behavior: 'smooth' });
+
+        // Allow native scroll to happen, then animate
+        setTimeout(() => {
           const headingElement = sectionElement.querySelector('h2');
 
           if (headingElement) {
@@ -25,8 +29,8 @@ export function MainNavbar() {
               headingElement.classList.remove('animate-marquee-bg');
             }, 1000); 
           }
-        }
-      }, 100); // Delay to allow for scrolling
+        }, 300); // Delay to allow for scrolling, increased slightly
+      }
     }
   };
 
@@ -36,7 +40,7 @@ export function MainNavbar() {
         <Link href="/" className="flex items-center space-x-2">
           <Logo className="h-8 w-auto" />
         </Link>
-        <nav className="flex items-center space-x-2 sm:space-x-4"> {/* Adjusted spacing */}
+        <nav className="flex items-center space-x-1 sm:space-x-2"> {/* Adjusted spacing */}
           <Link href="/#services" onClick={(e) => handleNavClickAndAnimate(e, '/#services')}>
             <Button variant="ghost">Services</Button>
           </Link>
@@ -51,10 +55,15 @@ export function MainNavbar() {
               <LogIn className="mr-2 h-4 w-4" /> Login
             </Button>
           </Link>
-          {/* Temporary link for development */}
+          {/* Temporary links for development */}
           <Link href="/staff/dashboard">
-            <Button variant="outline">
-              <LayoutDashboard className="mr-2 h-4 w-4" /> Staff
+            <Button variant="outline" size="sm">
+              <LayoutDashboard className="mr-1 h-4 w-4 sm:mr-2" /> <span className="hidden sm:inline">Staff</span>
+            </Button>
+          </Link>
+          <Link href="/doctor/dashboard">
+            <Button variant="outline" size="sm">
+              <LayoutDashboard className="mr-1 h-4 w-4 sm:mr-2" /> <span className="hidden sm:inline">Doctor</span>
             </Button>
           </Link>
         </nav>
