@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -20,36 +21,6 @@ export default function DoctorDashboardPage() {
         </Link>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>Total Patients</CardTitle>
-            <CardDescription>Currently managed patients</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold">{mockPatients.length}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Upcoming Appointments</CardTitle>
-            <CardDescription>Today &amp; tomorrow</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold">{upcomingAppointments.length}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Pending Tasks</CardTitle>
-            <CardDescription>Notes or follow-ups</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold">3</p> {/* Placeholder */}
-          </CardContent>
-        </Card>
-      </div>
-      
       <Card>
         <CardHeader>
           <CardTitle>Upcoming Appointments</CardTitle>
@@ -111,6 +82,37 @@ export default function DoctorDashboardPage() {
           </div>
         </CardContent>
       </Card>
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Patients</CardTitle>
+            <CardDescription>Currently managed patients</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-4xl font-bold">{mockPatients.length}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Upcoming Appointments</CardTitle>
+            <CardDescription>Today &amp; tomorrow</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-4xl font-bold">{upcomingAppointments.length}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Pending Tasks</CardTitle>
+            <CardDescription>Notes or follow-ups</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-4xl font-bold">3</p> {/* Placeholder */}
+          </CardContent>
+        </Card>
+      </div>
+      
     </div>
   );
 }
