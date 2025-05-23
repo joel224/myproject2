@@ -83,16 +83,7 @@ export default function DoctorDashboardPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>Total Patients</CardTitle>
-            <CardDescription>Currently managed patients</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold">{mockPatients.length}</p>
-          </CardContent>
-        </Card>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2"> {/* Adjusted grid columns */}
         <Card>
           <CardHeader>
             <CardTitle>Upcoming Appointments</CardTitle>
