@@ -1,6 +1,8 @@
+
 'use client'
 
-import { mockPatients, mockAppointments, mockTreatmentPlans, mockProgressNotes } from '@/lib/mockData';
+import { mockPatients, mockAppointments, mockTreatmentPlans, mockProgressNotes, mockStaff } from '@/lib/mockData';
+import type { TreatmentPlan, ProgressNote } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -20,11 +22,11 @@ interface PatientPageProps {
   params: { patientId: string };
 }
 
-export default function PatientDetailPage({ params }: PatientPageProps) {
-  const patient = mockPatients.find(p => p.id === params.patientId);
-  const appointments = mockAppointments.filter(a => a.patientId === params.patientId);
-  const treatmentPlans = mockTreatmentPlans.filter(tp => tp.patientId === params.patientId);
-  const progressNotes = mockProgressNotes.filter(pn => pn.patientId === params.patientId);
+export default function PatientDetailPage({ params: { patientId } }: PatientPageProps) {
+  const patient = mockPatients.find(p => p.id === patientId);
+  const appointments = mockAppointments.filter(a => a.patientId === patientId);
+  const treatmentPlans = mockTreatmentPlans.filter(tp => tp.patientId === patientId);
+  const progressNotes = mockProgressNotes.filter(pn => pn.patientId === patientId);
 
   if (!patient) {
     return <div className="container mx-auto p-4">Patient not found.</div>;
@@ -307,3 +309,4 @@ function DialogAddEditProgressNote({ note }: { note?: ProgressNote }) {
     </Dialog>
   )
 }
+
