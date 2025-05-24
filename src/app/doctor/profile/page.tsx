@@ -18,7 +18,7 @@ export default function DoctorProfilePage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">My Profile</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold">My Profile</h1>
       
       <Card>
         <CardHeader className="flex flex-col md:flex-row items-start md:items-center gap-4">

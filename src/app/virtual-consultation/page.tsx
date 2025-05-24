@@ -13,7 +13,7 @@ export default function VirtualConsultationPage() {
       <main className="flex-grow container mx-auto px-4 py-12 md:py-20">
         <div className="flex flex-col items-center text-center">
           <Video className="h-24 w-24 text-primary mb-6" />
-          <h1 className="text-4xl font-bold tracking-tight mb-4">Virtual Consultation</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">Virtual Consultation</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mb-8">
             Connect with our experienced dentists from the comfort of your home. Get professional advice, discuss treatment options, or get a second opinion.
           </p>

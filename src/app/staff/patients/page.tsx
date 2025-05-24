@@ -10,7 +10,7 @@ export default function StaffPatientsPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Patient Directory</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Patient Directory</h1>
         <Link href="/staff/patients/new"> {/* Placeholder for new patient form */}
             <Button><PlusCircle className="mr-2 h-4 w-4"/>Add New Patient</Button>
         </Link>

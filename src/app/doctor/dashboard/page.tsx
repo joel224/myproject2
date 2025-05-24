@@ -17,7 +17,7 @@ export default function DoctorDashboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Doctor Dashboard</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Doctor Dashboard</h1>
         <Link href="/doctor/patients/new">
           <Button><PlusCircle className="mr-2 h-4 w-4" /> Add New Patient</Button>
         </Link>

@@ -13,7 +13,7 @@ export default function DoctorAppointmentsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">My Appointments</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold">My Appointments</h1>
       
       <div className="grid md:grid-cols-3 gap-6">
         <div className="md:col-span-1">
