@@ -1,9 +1,11 @@
+
 // src/app/api/auth/login/route.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
-import bcrypt from 'bcryptjs'; // For password hashing simulation
-import { db, UserAuth } from '@/lib/mockServerDb';
+import bcrypt from 'bcryptjs';
+import { dbClient } from '@/lib/db'; // Using our new DB client
+import { generateId } from '@/lib/mockServerDb'; // For mock session token
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -21,32 +23,35 @@ export async function POST(request: NextRequest) {
 
     const { email, password } = validation.data;
 
-    const user = db.users.find(u => u.email === email);
+    // Find user by email in the database
+    const userResult = await dbClient.query(
+      'SELECT id, name, email, password_hash, role FROM users WHERE email = $1',
+      [email]
+    );
 
-    if (!user) {
+    if (userResult.rows.length === 0) {
       return NextResponse.json({ message: "Invalid email or password" }, { status: 401 });
     }
 
-    // Simulate password comparison
-    // In a real app: const isValid = await bcrypt.compare(password, user.passwordHash);
-    // For this mock, we'll do a very simple check (highly insecure)
-    const simulatedHashCheck = user.passwordHash.includes(password.substring(0,3)); 
-    // This is NOT how bcrypt.compare works; it's just a mock.
-    // Real bcrypt.compare would be something like:
-    // const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+    const user = userResult.rows[0];
 
+    // Compare password with stored hash
+    const isValidPassword = await bcrypt.compare(password, user.password_hash);
 
-    if (!simulatedHashCheck) { // Replace with !isValidPassword in real app
+    if (!isValidPassword) {
       return NextResponse.json({ message: "Invalid email or password" }, { status: 401 });
     }
 
     // Simulate session creation (e.g., JWT)
     // In a real app, you'd generate a JWT, store it in an HTTP-only cookie
-    const mockSessionToken = `${user.id}:${user.role}:mockToken${Date.now()}`; // Example token
+    const mockSessionToken = `${user.id}:${user.role}:${generateId('mockToken')}${Date.now()}`;
+
+    // Prepare user data to return (excluding password_hash)
+    const { password_hash, ...userToReturn } = user;
     
     const response = NextResponse.json({
       message: "Login successful",
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      user: userToReturn,
       token: mockSessionToken // For client-side storage if not using cookies primarily
     });
 
@@ -63,6 +68,9 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Login error:', error);
+     if (error instanceof Error && error.message.includes("Database client not initialized")) {
+        return NextResponse.json({ message: "Server configuration error: Database not connected." }, { status: 503 });
+    }
     return NextResponse.json({ message: "An unexpected error occurred" }, { status: 500 });
   }
 }

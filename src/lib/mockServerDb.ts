@@ -1,3 +1,4 @@
+
 // src/lib/mockServerDb.ts
 import type { Patient, Appointment, TreatmentPlan, ProgressNote, Invoice, StaffMember } from './types';
 import { 
@@ -26,34 +27,35 @@ export interface UserAuth {
 }
 
 // Simulating a "database" in memory
-// Deep copy initial mock data to allow mutation without affecting original mockData.ts
+// User data for signup/login will now be handled by the database,
+// so we remove the mock users array or significantly reduce its role here.
+// We can keep some initial users for other functionalities that are still mocked.
 const users: UserAuth[] = [
-  { id: 'doc1', name: 'Dr. Loji', email: 'dr.loji@dentalhub.com', passwordHash: '$2a$10$fakedoclojiHash.abc123', role: 'doctor' }, // Simulated bcrypt hash
-  { id: 'staff1', name: 'Sarah ClinicStaff', email: 'sarah.staff@dentalhub.com', passwordHash: '$2a$10$fakestaffsarahHash.def456', role: 'staff' },
-  { id: 'pat1', name: 'Alice Wonderland', email: 'alice@example.com', passwordHash: '$2a$10$fakepatientaliceHash.ghi789', role: 'patient', dateOfBirth: '1990-05-15', phone: '555-0101' },
-  { id: 'pat2', name: 'Bob The Builder', email: 'bob@example.com', passwordHash: '$2a$10$fakepatientbobHash.jkl012', role: 'patient', dateOfBirth: '1985-11-20', phone: '555-0102' },
+  // { id: 'doc1', name: 'Dr. Loji', email: 'dr.loji@dentalhub.com', passwordHash: '$2a$10$fakedoclojiHash.abc123', role: 'doctor' },
+  // { id: 'staff1', name: 'Sarah ClinicStaff', email: 'sarah.staff@dentalhub.com', passwordHash: '$2a$10$fakestaffsarahHash.def456', role: 'staff' },
+  // The above users would now come from your actual database after they sign up/are created.
+  // For routes NOT YET migrated to the real DB, we might need some way to look up names.
+  // This 'users' array will become less important as more features move to the real DB.
 ];
 
 // Make copies of imported arrays so we can mutate them for other entities
-// We use the UserAuth[] for patient data if it's simple enough, or link via ID for more complex Patient profiles
 let patients: Patient[] = JSON.parse(JSON.stringify(initialPatients.map(p => ({...p, userId: users.find(u => u.email === p.email)?.id || p.id }))));
 let appointments: Appointment[] = JSON.parse(JSON.stringify(initialAppointments));
 let treatmentPlans: TreatmentPlan[] = JSON.parse(JSON.stringify(initialTreatmentPlans));
 let progressNotes: ProgressNote[] = JSON.parse(JSON.stringify(initialProgressNotes));
 let invoices: Invoice[] = JSON.parse(JSON.stringify(initialInvoices));
-// StaffMember data can also be primarily drawn from UserAuth with role 'staff' or 'doctor'
-// let staff: StaffMember[] = JSON.parse(JSON.stringify(initialStaff)); 
 
 let clinicWaitTime = { text: "<10 mins", updatedAt: new Date().toISOString() };
 
 export const db = {
-  users,
-  patients, // This might be redundant if UserAuth contains all patient info
+  // users array is now less central for auth, but might be used for other mocks
+  // until those features are also migrated to a real DB.
+  users, 
+  patients,
   appointments,
   treatmentPlans,
   progressNotes,
   invoices,
-  // staff, // This might be redundant
   clinicWaitTime,
 };
 
@@ -71,16 +73,21 @@ export async function authorize(req: NextRequest, requiredRole?: 'patient' | 'do
   }
 
   // Simulate token verification
-  const [userId, userRole] = mockSessionToken.split(':'); // e.g., "pat1:patient"
-  const user = db.users.find(u => u.id === userId && u.role === userRole);
+  const [userId, userRoleFromToken, ..._] = mockSessionToken.split(':'); // e.g., "uuid_or_id:patient:mockToken..."
+  
+  // Fetch user details from the database (or mock for now if DB is not fully integrated for this part)
+  // This part will eventually need to query your actual 'users' table based on userId
+  // For now, let's assume the token itself is somewhat trustworthy for its role part FOR MOCKING.
+  // In a real system, you'd validate the token against a session store or re-fetch user from DB.
+  const user = { id: userId, role: userRoleFromToken as UserAuth['role'], email: 'user@example.com', name: 'Mock User' }; // Simplified mock
 
-  if (!user) {
-    return { authorized: false, user: null, error: NextResponse.json({ message: 'Unauthorized: Invalid session' }, { status: 401 }) };
+  if (!user || !user.id || !user.role) {
+    return { authorized: false, user: null, error: NextResponse.json({ message: 'Unauthorized: Invalid session structure' }, { status: 401 }) };
   }
 
+
   if (requiredRole && user.role !== requiredRole) {
-    // If a specific role is required and user doesn't have it
-     const doctorSpecificRoles: UserAuth['role'][] = ['doctor']; // Example: doctor role can access staff things
+    const doctorSpecificRoles: UserAuth['role'][] = ['doctor'];
     if (requiredRole === 'staff' && doctorSpecificRoles.includes(user.role as UserAuth['role'])) {
       // Allow doctors to access staff routes
     } else {
