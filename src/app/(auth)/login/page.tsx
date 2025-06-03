@@ -11,7 +11,6 @@ import { auth, db } from '@/lib/firebase'; // Ensure this path is correct
 import { 
   signInWithEmailAndPassword, 
   GoogleAuthProvider, 
-  OAuthProvider, // For Apple
   signInWithPopup,
   type User
 } from 'firebase/auth';
@@ -26,7 +25,6 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { Logo } from "@/components/icons/Logo";
 import { useToast } from "@/hooks/use-toast";
-import { Separator } from '@/components/ui/separator';
 
 // SVG Icons for social buttons
 const GoogleIcon = () => (
@@ -39,12 +37,6 @@ const GoogleIcon = () => (
   </svg>
 );
 
-const AppleIcon = () => (
-  <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M19.57 15.98c-.13.04-.28.07-.46.07-.62 0-1.11-.23-1.47-.69-.39-.5-.59-1.17-.59-2.02 0-1.69.89-2.91 2.17-3.45-.21-.32-.48-.62-.79-.88-.93-.75-1.78-1.12-2.8-1.12-1.28 0-2.31.51-3.08 1.53-.8.98-1.21 2.34-1.21 4.08 0 1.2.23 2.22.68 3.08.47.88 1.12 1.32 1.94 1.32.55 0 1.1-.18 1.64-.53.54-.35.93-.53 1.17-.53s.4.15.65.45c.24.3.36.68.36 1.13 0 .63-.21 1.22-.62 1.78-.41.56-.88.83-1.43.83-.46 0-.89-.15-1.29-.44-.39-.28-.8-.42-1.23-.42-.95 0-1.7.39-2.25 1.15-.57.79-.85 1.8-.85 3.05 0 .31.03.6.08.88.43.12.89.18 1.38.18 1.01 0 1.93-.37 2.75-1.12.82-.75 1.24-1.71 1.24-2.88 0-.12-.01-.24-.04-.37-.06-.22-.1-.39-.1-.51s.07-.22.22-.31c.15-.09.33-.14.55-.14.87 0 1.54.33 2.01.98.47.65.71 1.41.71 2.3 0 .2-.01.4-.04.59-.03.19-.04.34-.04.46 0 .55.14.99.42 1.32.28.33.63.5 1.04.5.43 0 .82-.14 1.15-.41.33-.27.5-.63.5-1.08 0-.63-.26-1.28-.78-1.96-.3-.4-.44-.75-.44-1.07zM15.5 2.84c.8-.94 1.2-2.08 1.2-3.43 0-.24-.03-.47-.08-.68-.7.03-1.41.27-2.12.72-.75.48-1.28 1.03-1.59 1.65-.04.06-.07.13-.09.22-.06.22-.09.43-.09.61 0 1.32.49 2.35 1.48 3.08.1.07.2.11.3.11.19 0 .36-.07.5-.21z" transform="translate(0 -0.59)"/>
-  </svg>
-);
-
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -53,7 +45,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isSocialLoading, setIsSocialLoading] = useState<false | 'google' | 'apple'>(false);
+  const [isSocialLoading, setIsSocialLoading] = useState<false | 'google'>(false);
 
   // Helper to save/update user data in Firestore after social sign-in
   const saveUserToFirestore = async (user: User) => {
@@ -72,29 +64,17 @@ export default function LoginPage() {
       await setDoc(userRef, userData);
       console.log("New user profile for social sign-in saved to Firestore:", user.uid);
     } else {
-      // Optionally update existing fields, e.g., last login, if needed.
-      // For now, just log that the user exists.
       console.log("User already exists in Firestore:", user.uid);
-       // Potentially update provider or last login if desired
-      // await setDoc(userRef, { 
-      //   lastLoginAt: serverTimestamp(),
-      //   provider: user.providerData?.[0]?.providerId // To update if they switch methods
-      // }, { merge: true });
     }
   };
 
-  const handleSocialLogin = async (providerName: 'google' | 'apple') => {
+  const handleSocialLogin = async (providerName: 'google') => {
     setIsSocialLoading(providerName);
     setError(null);
     let provider;
 
     if (providerName === 'google') {
       provider = new GoogleAuthProvider();
-    } else if (providerName === 'apple') {
-      provider = new OAuthProvider('apple.com');
-      // Optional: Add scopes for Apple sign-in if needed
-      // provider.addScope('email');
-      // provider.addScope('name');
     } else {
       setError("Invalid social provider.");
       setIsSocialLoading(false);
@@ -115,7 +95,6 @@ export default function LoginPage() {
       router.push('/'); // Redirect to homepage or dashboard
     } catch (socialError: any) {
       console.error(`Error signing in with ${providerName}:`, socialError);
-      // Handle common errors
       if (socialError.code === 'auth/account-exists-with-different-credential') {
         setError('An account already exists with the same email address using a different sign-in method.');
       } else if (socialError.code === 'auth/popup-closed-by-user') {
@@ -204,7 +183,7 @@ export default function LoginPage() {
               </Link>
             </div>
             <Button className="w-full mt-2" type="submit" disabled={isLoading || !!isSocialLoading}>
-               {isLoading ? 'Signing In...' : 'Sign In'}
+               {isLoading ? 'Signing In...' : 'Sign In with Email'}
             </Button>
           </CardContent>
         </form>
@@ -229,14 +208,6 @@ export default function LoginPage() {
                 disabled={!!isSocialLoading || isLoading}
               >
                 {isSocialLoading === 'google' ? 'Signing in with Google...' : <><GoogleIcon /> Sign in with Google</>}
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full" 
-                onClick={() => handleSocialLogin('apple')}
-                disabled={!!isSocialLoading || isLoading}
-              >
-                 {isSocialLoading === 'apple' ? 'Signing in with Apple...' : <><AppleIcon /> Sign in with Apple</>}
               </Button>
             </div>
         </div>
