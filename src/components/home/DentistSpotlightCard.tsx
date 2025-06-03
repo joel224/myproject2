@@ -1,36 +1,82 @@
+'use client';
 
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
+import React, { useEffect, useRef } from 'react';
 
 export function DentistSpotlightCard() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const descriptionRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!sectionRef.current || !titleRef.current || !descriptionRef.current) {
+        return;
+      }
+
+      const { top, height } = sectionRef.current.getBoundingClientRect();
+      const windowHeight = window.innerHeight;
+
+      // Only apply effect if the section is somewhat in the viewport
+      if (top < windowHeight && top + height > 0) {
+        // Calculate a value representing the section's center relative to the viewport center.
+        // This value is 0 when the section's center aligns with the viewport's center.
+        // Negative if the section's center is above viewport center, positive if below.
+        const centerOffset = top + height / 2 - windowHeight / 2;
+
+        // Apply a subtle parallax shift. The further from center, the more the shift.
+        // We use a negative factor to make the text elements move slightly against the scroll direction.
+        const titleShift = centerOffset * -0.05; 
+        const descriptionShift = centerOffset * -0.03;
+
+        titleRef.current.style.transform = `translateY(${titleShift}px)`;
+        descriptionRef.current.style.transform = `translateY(${descriptionShift}px)`;
+      } else {
+        // Reset transform when section is out of view to prevent large translate values
+        titleRef.current.style.transform = 'translateY(0px)';
+        descriptionRef.current.style.transform = 'translateY(0px)';
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Call once on mount to set initial position if in view
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      // Ensure styles are reset if component unmounts while transformed
+      if (titleRef.current) titleRef.current.style.transform = 'translateY(0px)';
+      if (descriptionRef.current) descriptionRef.current.style.transform = 'translateY(0px)';
+    };
+  }, []); // Empty dependency array ensures this runs once on mount
+
   return (
     <section 
       id="team" 
-      className="w-full py-12 md:py-16 lg:py-20"
-      style={{
-        backgroundImage: "url('https://placehold.co/1920x1080.png?text=Cozy+Clinic+Background')",
-        backgroundAttachment: 'fixed',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        backgroundSize: 'cover',
-        position: 'relative' // Needed for the overlay
-      }}
+      ref={sectionRef}
+      className="w-full py-12 md:py-16 lg:py-20" 
+      // Removed previous background parallax styles
     >
-      {/* Overlay to maintain warmth and readability */}
-      <div 
-        className="absolute inset-0 bg-secondary/30 z-0"
-        style={{ backgroundColor: 'hsl(var(--secondary) / 0.4)' }} // Using HSL for consistent warm overlay
-      ></div>
+      {/* Overlay div removed */}
       
-      {/* Content container needs to be on top of the overlay */}
       <div className="container px-4 md:px-6 flex flex-col items-center relative z-10">
-        <h2 className="text-3xl font-bold tracking-tight text-center mb-2 text-primary-foreground drop-shadow-sm">Meet Our Lead Dentist</h2>
-        <p className="text-primary-foreground/90 text-center mb-10 max-w-xl drop-shadow-sm">
+        <h2 
+          ref={titleRef}
+          className="text-3xl font-bold tracking-tight text-center mb-2 text-primary" // Reverted text color
+          style={{ transition: 'transform 75ms linear' }} // Smooth transition for transform
+        >
+          Meet Our Lead Dentist
+        </h2>
+        <p 
+          ref={descriptionRef}
+          className="text-muted-foreground text-center mb-10 max-w-xl" // Reverted text color
+          style={{ transition: 'transform 75ms linear' }} // Smooth transition
+        >
             Dedicated to providing the highest quality care with a gentle touch.
         </p>
-        <Card className="w-full max-w-md shadow-xl overflow-hidden bg-card/90 backdrop-blur-sm">
+        <Card className="w-full max-w-md shadow-xl overflow-hidden bg-card"> {/* Reverted card background */}
           <CardHeader className="p-0">
             <Image
               src="https://placehold.co/600x400.png"
@@ -49,7 +95,7 @@ export function DentistSpotlightCard() {
           </CardContent>
           <CardFooter className="p-6 pt-0 flex justify-center">
             <Link href="/team">
-              <Button variant="outline" className="bg-card/80 hover:bg-card">Meet the Full Team</Button>
+              <Button variant="outline" className="bg-card hover:bg-card/90">Meet the Full Team</Button> {/* Reverted button style */}
             </Link>
           </CardFooter>
         </Card>
