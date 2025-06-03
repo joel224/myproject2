@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Open_Sans } from 'next/font/google';
+import { Open_Sans, Manrope } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from '@/lib/utils';
@@ -7,6 +7,12 @@ import { cn } from '@/lib/utils';
 const openSans = Open_Sans({
   subsets: ['latin'],
   variable: '--font-open-sans',
+});
+
+const manrope = Manrope({
+  subsets: ['latin'],
+  weight: ['400', '700'], // Added '700' for bold
+  variable: '--font-manrope',
 });
 
 export const metadata: Metadata = {
@@ -23,7 +29,8 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={cn(
           "min-h-screen bg-background font-sans antialiased",
-          openSans.variable
+          openSans.variable,
+          manrope.variable // Add Manrope font variable
         )}>
         {children}
         <Toaster />
