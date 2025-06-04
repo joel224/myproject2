@@ -54,8 +54,6 @@ export default function StaffAppointmentsPage() {
     const fetchDoctors = async () => {
       setIsLoadingDoctors(true);
       try {
-        // Fetching all staff and then filtering client-side for simplicity.
-        // Ideally, API could filter by role: /api/staff?role=Dentist&role=Hygienist
         const response = await fetch('/api/staff');
         if (!response.ok) throw new Error('Failed to fetch staff');
         let staffData: StaffMember[] = await response.json();
@@ -82,18 +80,12 @@ export default function StaffAppointmentsPage() {
       return;
     }
 
-    // Convert 12-hour time to 24-hour for consistency or ensure API handles various formats
-    // For now, assuming API can handle the time format as entered (e.g. "HH:MM AM/PM")
-    // It's better if the API expects a consistent format like HH:MM (24h) or ISO string.
-    // For simplicity, we'll send it as is; the API has a regex for HH:MM AM/PM.
-
     const appointmentData = {
       patientId: selectedPatientId,
       doctorId: selectedDoctorId,
       date: appointmentDate,
-      time: appointmentTime, // Ensure this matches API expectation (e.g. needs AM/PM if API uses it)
+      time: appointmentTime, 
       type: appointmentType,
-      // status: 'Scheduled', // API defaults to 'Scheduled'
     };
 
     try {
@@ -124,9 +116,6 @@ export default function StaffAppointmentsPage() {
     }
   };
 
-
-  // This is a simplified version. A real app would use a more interactive calendar component.
-  // For now, it shows a form to add appointments and lists existing ones.
   const futureAppointments = mockAppointments.filter(apt => new Date(apt.date) >= new Date()).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   return (
@@ -150,8 +139,13 @@ export default function StaffAppointmentsPage() {
                     <SelectValue placeholder={isLoadingPatients ? "Loading patients..." : "Select patient"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {!isLoadingPatients && patients.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                    {isLoadingPatients && <SelectItem value="" disabled>Loading...</SelectItem>}
+                    {isLoadingPatients ? (
+                      <div className="p-4 text-center text-sm text-muted-foreground">Loading patients...</div>
+                    ) : patients.length > 0 ? (
+                      patients.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)
+                    ) : (
+                      <div className="p-4 text-center text-sm text-muted-foreground">No patients found.</div>
+                    )}
                   </SelectContent>
                 </Select>
                 <Link href="/staff/patients/new" className="text-xs text-primary hover:underline mt-1 inline-block">
@@ -165,8 +159,13 @@ export default function StaffAppointmentsPage() {
                     <SelectValue placeholder={isLoadingDoctors ? "Loading doctors..." : "Select doctor/hygienist"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {!isLoadingDoctors && doctors.map(d => <SelectItem key={d.id} value={d.id}>{d.name} ({d.role})</SelectItem>)}
-                     {isLoadingDoctors && <SelectItem value="" disabled>Loading...</SelectItem>}
+                    {isLoadingDoctors ? (
+                       <div className="p-4 text-center text-sm text-muted-foreground">Loading doctors...</div>
+                    ) : doctors.length > 0 ? (
+                       doctors.map(d => <SelectItem key={d.id} value={d.id}>{d.name} ({d.role})</SelectItem>)
+                    ) : (
+                      <div className="p-4 text-center text-sm text-muted-foreground">No doctors/hygienists found.</div>
+                    )}
                   </SelectContent>
                 </Select>
                 <Link href="/staff/manage-staff/new?role=doctor" className="text-xs text-primary hover:underline mt-1 inline-block">
@@ -222,8 +221,6 @@ export default function StaffAppointmentsPage() {
                 <CardContent className="flex justify-center">
                     <Calendar
                         mode="single"
-                        // selected={appointmentDate ? new Date(appointmentDate) : undefined} // Example: highlight selected date
-                        // onSelect={(date) => setAppointmentDate(date ? date.toISOString().split('T')[0] : '')}
                         className="rounded-md border"
                     />
                 </CardContent>
@@ -257,4 +254,3 @@ export default function StaffAppointmentsPage() {
     </div>
   );
 }
-
