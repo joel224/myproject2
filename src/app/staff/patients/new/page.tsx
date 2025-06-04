@@ -76,7 +76,7 @@ export default function AddNewPatientPage() {
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
-      setSelectedFiles(prevFiles => [...prevFiles, ...newFiles]);
+      setSelectedFiles(prevFiles => [...prevFiles, ...newFiles]); // Append new files
        if (xrayInputRef.current) {
         xrayInputRef.current.value = ''; // Clear the input field to allow re-selecting same file
       }
@@ -284,7 +284,7 @@ export default function AddNewPatientPage() {
                 accept="image/jpeg,image/png,image/webp,image/gif,application/pdf" 
               />
               <Button type="button" variant="outline" onClick={() => xrayInputRef.current?.click()}>
-                <Plus className="mr-2 h-4 w-4" /> Add Files
+                <Plus className="h-4 w-4" /> Add Files
               </Button>
 
               {selectedFiles.length > 0 && (

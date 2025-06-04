@@ -94,7 +94,7 @@ export default function EditPatientPage() {
  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
-      setSelectedFiles(prevFiles => [...prevFiles, ...newFiles]);
+      setSelectedFiles(prevFiles => [...prevFiles, ...newFiles]); // Append new files
        if (xrayInputRef.current) {
         xrayInputRef.current.value = ''; 
       }
@@ -294,7 +294,7 @@ export default function EditPatientPage() {
                 accept="image/jpeg,image/png,image/webp,image/gif,application/pdf" 
               />
               <Button type="button" variant="outline" onClick={() => xrayInputRef.current?.click()}>
-                <Plus className="mr-2 h-4 w-4" /> Add Files
+                <Plus className="h-4 w-4" /> Add Files
               </Button>
 
               {selectedFiles.length > 0 && (
@@ -304,7 +304,7 @@ export default function EditPatientPage() {
                     {selectedFiles.map((file, index) => (
                        <div key={index} className="relative group w-20 h-20 rounded border p-1 flex items-center justify-center">
                         {file.type.startsWith('image/') ? (
-                            <Image src={URL.createObjectURL(file)} alt={file.name} layout="fill" objectFit="contain" className="rounded" data-ai-hint="medical scan document" />
+                            <Image src={URL.createObjectURL(file)} alt={file.name} layout="fill" objectFit="contain" className="rounded" data-ai-hint="medical scan document"/>
                         ) : (
                             <FileText className="h-10 w-10 text-muted-foreground" />
                         )}
@@ -333,7 +333,7 @@ export default function EditPatientPage() {
                         {url.toLowerCase().endsWith('.pdf') ? (
                             <FileText className="h-10 w-10 text-destructive" />
                         ) : (
-                            <Image src={url} alt={`Uploaded file ${index + 1}`} layout="fill" objectFit="contain" className="rounded" data-ai-hint="medical scan document" />
+                            <Image src={url} alt={`Uploaded file ${index + 1}`} layout="fill" objectFit="contain" className="rounded" data-ai-hint="medical scan document"/>
                         )}
                         <Button
                             type="button"
