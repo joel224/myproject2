@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -10,13 +11,82 @@ import { Badge } from "@/components/ui/badge";
 import { CalendarPlus, Users, DollarSign, MessageSquare, AlertCircle, CheckCircle, Clock, Edit } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+
+interface ClinicWaitTime {
+  text: string;
+  updatedAt: string;
+}
 
 export default function StaffDashboardPage() {
+  const { toast } = useToast();
+  const [waitTimeText, setWaitTimeText] = useState('');
+  const [isUpdatingWaitTime, setIsUpdatingWaitTime] = useState(false);
+
   const today = new Date().toISOString().split('T')[0];
   const todaysAppointments = mockAppointments.filter(apt => apt.date === today && apt.status !== 'Completed' && apt.status !== 'Cancelled');
   const pendingRequests = 2; // Placeholder
   const unreadMessages = 3; // Placeholder
   const outstandingPayments = mockInvoices.filter(inv => inv.status === 'Pending' || inv.status === 'Overdue' || inv.status === 'Partial').length;
+
+  useEffect(() => {
+    const fetchWaitTime = async () => {
+      try {
+        const response = await fetch('/api/clinic/wait-time');
+        if (!response.ok) {
+          throw new Error('Failed to fetch wait time');
+        }
+        const data: ClinicWaitTime = await response.json();
+        setWaitTimeText(data.text);
+      } catch (error) {
+        console.error("Error fetching wait time:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Could not load current wait time.",
+        });
+      }
+    };
+    fetchWaitTime();
+  }, [toast]);
+
+  const handleUpdateWaitTime = async () => {
+    if (!waitTimeText.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: "Wait time text cannot be empty.",
+      });
+      return;
+    }
+    setIsUpdatingWaitTime(true);
+    try {
+      const response = await fetch('/api/clinic/wait-time', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: waitTimeText }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update wait time');
+      }
+      const updatedData: ClinicWaitTime = await response.json();
+      setWaitTimeText(updatedData.text); // Update state with confirmed new time
+      toast({
+        title: "Success!",
+        description: `Wait time updated to: ${updatedData.text}`,
+      });
+    } catch (error: any) {
+      console.error("Error updating wait time:", error);
+      toast({
+        variant: "destructive",
+        title: "Update Failed",
+        description: error.message || "Could not update wait time.",
+      });
+    } finally {
+      setIsUpdatingWaitTime(false);
+    }
+  };
 
   const quickActions = [
     { label: "New Appointment", href: "/staff/appointments", icon: <CalendarPlus className="h-5 w-5" /> },
@@ -134,17 +204,22 @@ export default function StaffDashboardPage() {
             <CardContent className="space-y-3">
               <div>
                 <Label htmlFor="liveWaitTime" className="mb-1 block">Current Wait Time Text</Label>
-                <Input id="liveWaitTime" placeholder="e.g., <15 mins, Approx. 30 mins" />
+                <Input 
+                  id="liveWaitTime" 
+                  placeholder="e.g., <15 mins" 
+                  value={waitTimeText}
+                  onChange={(e) => setWaitTimeText(e.target.value)}
+                  disabled={isUpdatingWaitTime}
+                />
               </div>
               <Button 
                 className="w-full" 
-                onClick={() => console.log('Update wait time clicked. Backend integration needed.')}
+                onClick={handleUpdateWaitTime}
+                disabled={isUpdatingWaitTime}
               >
-                <Edit className="mr-2 h-4 w-4" /> Set Wait Time
+                <Edit className="mr-2 h-4 w-4" /> 
+                {isUpdatingWaitTime ? 'Updating...' : 'Set Wait Time'}
               </Button>
-              <p className="text-xs text-muted-foreground pt-1">
-                This will update the time shown on the homepage once the backend is connected.
-              </p>
             </CardContent>
           </Card>
         </div>
@@ -156,7 +231,6 @@ export default function StaffDashboardPage() {
             <CardDescription>Important updates and information for staff.</CardDescription>
         </CardHeader>
         <CardContent>
-            {/* Placeholder for announcements */}
             <div className="p-4 bg-accent/30 rounded-md">
                 <div className="flex items-start space-x-3">
                     <CheckCircle className="h-5 w-5 text-accent mt-1" />

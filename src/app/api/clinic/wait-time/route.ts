@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
  * PUT /api/clinic/wait-time - Update the wait time
  */
 export async function PUT(request: NextRequest) {
+  // For a real deployment, uncomment and ensure authorize function works with your auth system.
   // const authResult = await authorize(request, 'staff');
   // if (!authResult.authorized || !authResult.user) {
   //   return authResult.error;
@@ -37,6 +38,7 @@ export async function PUT(request: NextRequest) {
     db.clinicWaitTime.text = validation.data.text;
     db.clinicWaitTime.updatedAt = new Date().toISOString();
 
+    console.log('Wait time updated in mock DB:', db.clinicWaitTime);
     return NextResponse.json(db.clinicWaitTime, { status: 200 });
 
   } catch (error) {
