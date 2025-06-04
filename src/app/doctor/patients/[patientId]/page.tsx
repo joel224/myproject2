@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CalendarIcon, FileTextIcon, ClipboardListIcon, Edit3, PlusCircle, Image as ImageIcon, Trash2 } from 'lucide-react'; // Renamed Image to ImageIcon to avoid conflict
 import Image from 'next/image'; // Next.js Image component
+import Link from 'next/link'; // Import Link
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -46,7 +47,9 @@ export default function PatientDetailPage({ params: { patientId } }: PatientPage
               DOB: {patient.dateOfBirth ? new Date(patient.dateOfBirth).toLocaleDateString() : 'N/A'} | Phone: {patient.phone || 'N/A'} | Email: {patient.email}
             </CardDescription>
           </div>
-          <Button variant="outline" className="ml-auto"><Edit3 className="mr-2 h-4 w-4" /> Edit Patient Info</Button>
+          <Link href={`/doctor/patients/${patientId}/edit`} passHref>
+            <Button variant="outline" className="ml-auto"><Edit3 className="mr-2 h-4 w-4" /> Edit Patient Info</Button>
+          </Link>
         </CardHeader>
       </Card>
 
@@ -64,7 +67,7 @@ export default function PatientDetailPage({ params: { patientId } }: PatientPage
                 <CardTitle>Treatment Plans</CardTitle>
                 <CardDescription>Manage and view patient's treatment plans.</CardDescription>
               </div>
-              <DialogAddEditTreatmentPlan />
+              <DialogAddEditTreatmentPlan patientId={patientId} />
             </CardHeader>
             <CardContent>
               {treatmentPlans.length > 0 ? (
@@ -78,7 +81,7 @@ export default function PatientDetailPage({ params: { patientId } }: PatientPage
                           <Badge variant={plan.status === 'Active' ? 'default' : 'secondary'} className="mt-1">{plan.status}</Badge>
                         </div>
                         <div className="flex space-x-2">
-                          <DialogAddEditTreatmentPlan plan={plan} />
+                          <DialogAddEditTreatmentPlan plan={plan} patientId={patientId} />
                           <Button variant="ghost" size="icon" className="text-destructive"><Trash2 className="h-4 w-4"/></Button>
                         </div>
                       </div>
@@ -106,7 +109,7 @@ export default function PatientDetailPage({ params: { patientId } }: PatientPage
                 <CardTitle>Progress Notes</CardTitle>
                 <CardDescription>Record and review patient progress.</CardDescription>
               </div>
-              <DialogAddEditProgressNote />
+              <DialogAddEditProgressNote patientId={patientId} />
             </CardHeader>
             <CardContent>
             {progressNotes.length > 0 ? (
@@ -120,7 +123,7 @@ export default function PatientDetailPage({ params: { patientId } }: PatientPage
                           {note.progressStage && <Badge variant="outline" className="mt-1">{note.progressStage}</Badge>}
                         </div>
                         <div className="flex space-x-2">
-                          <DialogAddEditProgressNote note={note} />
+                          <DialogAddEditProgressNote note={note} patientId={patientId} />
                            <Button variant="ghost" size="icon" className="text-destructive"><Trash2 className="h-4 w-4"/></Button>
                         </div>
                       </div>
@@ -195,8 +198,9 @@ export default function PatientDetailPage({ params: { patientId } }: PatientPage
 }
 
 
-function DialogAddEditTreatmentPlan({ plan }: { plan?: TreatmentPlan }) {
+function DialogAddEditTreatmentPlan({ plan, patientId }: { plan?: TreatmentPlan, patientId: string }) {
   const isEditMode = !!plan;
+  // TODO: Implement form state and submission logic
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -251,8 +255,9 @@ function DialogAddEditTreatmentPlan({ plan }: { plan?: TreatmentPlan }) {
   )
 }
 
-function DialogAddEditProgressNote({ note }: { note?: ProgressNote }) {
+function DialogAddEditProgressNote({ note, patientId }: { note?: ProgressNote, patientId: string }) {
   const isEditMode = !!note;
+  // TODO: Implement form state and submission logic for progress notes
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -309,4 +314,3 @@ function DialogAddEditProgressNote({ note }: { note?: ProgressNote }) {
     </Dialog>
   )
 }
-
