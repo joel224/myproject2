@@ -24,6 +24,16 @@ export interface UserAuth {
   // Patient specific details can be linked via ID or stored directly if simple
   dateOfBirth?: string;
   phone?: string;
+  age?: number;
+  medicalRecords?: string;
+  xrayImageUrls?: string[];
+  hasDiabetes?: boolean;
+  hasHighBloodPressure?: boolean;
+  hasStrokeOrHeartAttackHistory?: boolean;
+  hasBleedingDisorders?: boolean;
+  hasAllergy?: boolean;
+  allergySpecifics?: string;
+  hasAsthma?: boolean;
 }
 
 // Simulating a "database" in memory
@@ -33,7 +43,22 @@ const users: UserAuth[] = [
 ];
 
 // Make copies of imported arrays so we can mutate them
-let patients: Patient[] = JSON.parse(JSON.stringify(initialPatients.map(p => ({...p, userId: users.find(u => u.email === p.email)?.id || p.id }))));
+// Update patients to include new fields, ensuring they can be undefined initially
+let patients: Patient[] = JSON.parse(JSON.stringify(initialPatients.map(p => ({
+  ...p, 
+  userId: users.find(u => u.email === p.email)?.id || p.id,
+  age: p.dateOfBirth ? new Date().getFullYear() - new Date(p.dateOfBirth).getFullYear() : undefined, // Example age calculation
+  medicalRecords: undefined,
+  xrayImageUrls: [],
+  hasDiabetes: false,
+  hasHighBloodPressure: false,
+  hasStrokeOrHeartAttackHistory: false,
+  hasBleedingDisorders: false,
+  hasAllergy: false,
+  allergySpecifics: undefined,
+  hasAsthma: false,
+}))));
+
 let appointments: Appointment[] = JSON.parse(JSON.stringify(initialAppointments));
 let treatmentPlans: TreatmentPlan[] = JSON.parse(JSON.stringify(initialTreatmentPlans));
 let progressNotes: ProgressNote[] = JSON.parse(JSON.stringify(initialProgressNotes));

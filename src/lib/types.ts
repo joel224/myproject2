@@ -1,9 +1,20 @@
+
 export interface Patient {
   id: string;
   name: string;
   email: string;
   phone?: string;
-  dateOfBirth?: string;
+  dateOfBirth?: string; // Consider changing to 'age' if DOB is not primary, or calculate age from DOB
+  age?: number;
+  medicalRecords?: string;
+  xrayImageUrls?: string[];
+  hasDiabetes?: boolean;
+  hasHighBloodPressure?: boolean;
+  hasStrokeOrHeartAttackHistory?: boolean;
+  hasBleedingDisorders?: boolean;
+  hasAllergy?: boolean;
+  allergySpecifics?: string;
+  hasAsthma?: boolean;
   // Add other patient-specific fields
 }
 

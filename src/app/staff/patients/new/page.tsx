@@ -1,0 +1,294 @@
+
+// src/app/staff/patients/new/page.tsx
+'use client';
+
+import { useState, type FormEvent, ChangeEvent } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, UploadCloud, FileText, ShieldAlert, HeartPulse, Droplets, Info, Wind } from 'lucide-react';
+import Image from 'next/image';
+
+interface FormData {
+  name: string;
+  email: string;
+  phone: string;
+  age: string; // Keep as string for input, convert to number on submit
+  medicalRecords: string;
+  xrayImageUrls: string[];
+  hasDiabetes: boolean;
+  hasHighBloodPressure: boolean;
+  hasStrokeOrHeartAttackHistory: boolean;
+  hasBleedingDisorders: boolean;
+  hasAllergy: boolean;
+  allergySpecifics: string;
+  hasAsthma: boolean;
+  password?: string; // Optional: for creating a login for the patient
+}
+
+export default function AddNewPatientPage() {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [formData, setFormData] = useState<FormData>({
+    name: '',
+    email: '',
+    phone: '',
+    age: '',
+    medicalRecords: '',
+    xrayImageUrls: [],
+    hasDiabetes: false,
+    hasHighBloodPressure: false,
+    hasStrokeOrHeartAttackHistory: false,
+    hasBleedingDisorders: false,
+    hasAllergy: false,
+    allergySpecifics: '',
+    hasAsthma: false,
+    password: '',
+  });
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    if (type === 'checkbox') {
+      const { checked } = e.target as HTMLInputElement;
+      setFormData(prev => ({ ...prev, [name]: checked }));
+       if (name === 'hasAllergy' && !checked) {
+        setFormData(prev => ({ ...prev, allergySpecifics: '' }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+    if (errors[name as keyof FormData]) {
+      setErrors(prev => ({ ...prev, [name]: undefined }));
+    }
+  };
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setSelectedFiles(Array.from(e.target.files));
+    }
+  };
+
+  const handleFileUpload = async () => {
+    if (selectedFiles.length === 0) {
+      toast({ variant: "destructive", title: "No files selected", description: "Please select X-ray images to upload." });
+      return false;
+    }
+    setIsUploading(true);
+    const uploadedUrls: string[] = [];
+    try {
+      for (const file of selectedFiles) {
+        const fileData = new FormData();
+        fileData.append('imageFile', file);
+        const response = await fetch('/api/upload/image', { method: 'POST', body: fileData });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'File upload failed');
+        uploadedUrls.push(result.imageUrl);
+      }
+      setFormData(prev => ({ ...prev, xrayImageUrls: [...prev.xrayImageUrls, ...uploadedUrls] }));
+      setSelectedFiles([]); // Clear selected files after successful upload
+      toast({ title: "Images Uploaded", description: `${uploadedUrls.length} X-ray image(s) uploaded successfully.` });
+      return true;
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Upload Error", description: error.message });
+      return false;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Partial<Record<keyof FormData, string>> = {};
+    if (!formData.name.trim()) newErrors.name = "Name is required.";
+    if (!formData.email.trim()) newErrors.email = "Email is required.";
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Email is invalid.";
+    if (formData.age && isNaN(parseInt(formData.age))) newErrors.age = "Age must be a number.";
+    else if (formData.age && parseInt(formData.age) < 0) newErrors.age = "Age cannot be negative.";
+    
+    // Basic password validation if provided
+    if (formData.password && formData.password.length < 6) {
+        newErrors.password = "Password must be at least 6 characters long.";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!validateForm()) {
+      toast({ variant: "destructive", title: "Validation Error", description: "Please correct the errors in the form."});
+      return;
+    }
+    
+    // If there are selected files that haven't been uploaded yet, prompt to upload them first or handle them.
+    if (selectedFiles.length > 0) {
+        const confirmed = await handleFileUpload();
+        if (!confirmed) { // If upload fails or user cancels, stop submission
+            toast({ variant: "destructive", title: "Image Upload Required", description: "Please upload selected X-ray images before submitting." });
+            return;
+        }
+    }
+
+    setIsSubmitting(true);
+    const patientDataToSubmit = {
+      ...formData,
+      age: formData.age ? parseInt(formData.age, 10) : undefined,
+      allergySpecifics: formData.hasAllergy ? formData.allergySpecifics : undefined,
+    };
+
+    try {
+      const response = await fetch('/api/patients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patientDataToSubmit),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || data.errors?.email?.[0] || "Failed to add patient");
+
+      toast({ title: "Patient Added!", description: `${data.name} has been successfully added.` });
+      // Reset form or redirect
+      setFormData({ 
+        name: '', email: '', phone: '', age: '', medicalRecords: '', xrayImageUrls: [],
+        hasDiabetes: false, hasHighBloodPressure: false, hasStrokeOrHeartAttackHistory: false,
+        hasBleedingDisorders: false, hasAllergy: false, allergySpecifics: '', hasAsthma: false, password: ''
+      });
+      setErrors({});
+      // router.push('/staff/patients'); // Optional redirect
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Error Adding Patient", description: err.message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 mb-12">
+      <Card className="w-full max-w-2xl mx-auto shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-2xl">Add New Patient</CardTitle>
+          <CardDescription>Fill in the patient's details and medical information.</CardDescription>
+        </CardHeader>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-6">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name</Label>
+                <Input id="name" name="name" value={formData.name} onChange={handleChange} placeholder="Patient's full name" />
+                {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" name="email" type="email" value={formData.email} onChange={handleChange} placeholder="patient@example.com" />
+                {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+              </div>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} placeholder="Optional" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="age">Age</Label>
+                <Input id="age" name="age" type="number" value={formData.age} onChange={handleChange} placeholder="Optional" />
+                 {errors.age && <p className="text-sm text-destructive">{errors.age}</p>}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+                <Label htmlFor="password">Set Password (Optional)</Label>
+                <Input 
+                    id="password" 
+                    name="password" 
+                    type="password" 
+                    value={formData.password} 
+                    onChange={handleChange} 
+                    placeholder="Create a login password for patient portal" 
+                />
+                {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+                <p className="text-xs text-muted-foreground">If provided, the patient can use this to log into their portal.</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="medicalRecords">Simple Medical Records / Notes</Label>
+              <Textarea id="medicalRecords" name="medicalRecords" value={formData.medicalRecords} onChange={handleChange} placeholder="Brief medical history, current medications, etc." rows={3} />
+            </div>
+
+            <div className="space-y-4">
+              <Label className="font-semibold">Medical Conditions:</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+                {[
+                  { id: 'hasDiabetes', label: 'Diabetes', icon: <HeartPulse className="h-4 w-4 mr-2" /> },
+                  { id: 'hasHighBloodPressure', label: 'High Blood Pressure', icon: <ShieldAlert className="h-4 w-4 mr-2" /> },
+                  { id: 'hasStrokeOrHeartAttackHistory', label: 'History of Stroke/Heart Attack', icon: <HeartPulse className="h-4 w-4 mr-2" /> },
+                  { id: 'hasBleedingDisorders', label: 'Bleeding Disorders', icon: <Droplets className="h-4 w-4 mr-2" /> },
+                  { id: 'hasAllergy', label: 'Allergy', icon: <Info className="h-4 w-4 mr-2" /> },
+                  { id: 'hasAsthma', label: 'Asthma/Respiratory Issues', icon: <Wind className="h-4 w-4 mr-2" /> },
+                ].map(condition => (
+                  <div key={condition.id} className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={condition.id} 
+                      name={condition.id}
+                      checked={formData[condition.id as keyof FormData] as boolean} 
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, [condition.id]: checked }))}
+                    />
+                    <Label htmlFor={condition.id} className="flex items-center cursor-pointer text-sm">
+                        {condition.icon} {condition.label}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+              {formData.hasAllergy && (
+                <div className="space-y-1 pl-6">
+                  <Label htmlFor="allergySpecifics">Allergy Specifics</Label>
+                  <Input id="allergySpecifics" name="allergySpecifics" value={formData.allergySpecifics} onChange={handleChange} placeholder="e.g., Penicillin, Latex" />
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="xrayImages">Upload X-ray Images (Optional)</Label>
+              <div className="flex items-center space-x-2">
+                <Input id="xrayImages" type="file" multiple onChange={handleFileChange} className="flex-grow" accept="image/*" />
+                <Button type="button" onClick={handleFileUpload} disabled={isUploading || selectedFiles.length === 0} size="sm">
+                  {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
+                  Upload {selectedFiles.length > 0 ? `(${selectedFiles.length})` : ''}
+                </Button>
+              </div>
+              {formData.xrayImageUrls.length > 0 && (
+                <div className="mt-2 space-y-1">
+                  <p className="text-xs text-muted-foreground">Uploaded X-rays:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.xrayImageUrls.map((url, index) => (
+                      <div key={index} className="relative h-16 w-16 rounded border">
+                        <Image src={url} alt={`X-ray ${index + 1}`} layout="fill" objectFit="cover" className="rounded" data-ai-hint="medical scan" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-4">
+            <Button variant="outline" type="button" onClick={() => router.back()} disabled={isSubmitting || isUploading}>
+              Cancel
+            </Button>
+            <Button className="w-full sm:w-auto" type="submit" disabled={isSubmitting || isUploading}>
+              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+              Add Patient
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
+    </div>
+  );
+}
