@@ -140,7 +140,7 @@ export default function StaffAppointmentsPage() {
                     ) : patients.length > 0 ? (
                       patients.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)
                     ) : (
-                      <div className="p-4 text-center text-sm text-muted-foreground">No patients found. Create one first.</div>
+                      <div className="p-4 text-center text-sm text-muted-foreground">No patients found. <Link href="/staff/patients/new" className="text-primary hover:underline">Create one?</Link></div>
                     )}
                   </SelectContent>
                 </Select>
@@ -160,7 +160,7 @@ export default function StaffAppointmentsPage() {
                     ) : doctors.length > 0 ? (
                        doctors.map(d => <SelectItem key={d.id} value={d.id}>{d.name} ({d.role})</SelectItem>)
                     ) : (
-                      <div className="p-4 text-center text-sm text-muted-foreground">No doctors/hygienists found.</div>
+                      <div className="p-4 text-center text-sm text-muted-foreground">No doctors/hygienists found. <Link href="/staff/manage-staff/new?role=doctor" className="text-primary hover:underline">Add one?</Link></div>
                     )}
                   </SelectContent>
                 </Select>
@@ -195,9 +195,13 @@ export default function StaffAppointmentsPage() {
               </div>
               <div>
                 <Label htmlFor="time">Time (e.g., 02:30 PM)</Label>
-                <Input type="text" id="time" value={appointmentTime} onChange={e => setAppointmentTime(e.target.value)} placeholder="HH:MM AM/PM" required 
-                       pattern="^(0?[1-9]|1[0-2]):[0-5][0-9] (AM|PM)$"
-                       title="Please enter time in HH:MM AM/PM format (e.g., 02:30 PM or 9:00 AM)"
+                <Input 
+                  type="text" 
+                  id="time" 
+                  value={appointmentTime} 
+                  onChange={e => setAppointmentTime(e.target.value)} 
+                  placeholder="HH:MM AM/PM" 
+                  required 
                 />
               </div>
               <Button type="submit" className="w-full" disabled={isLoading || isLoadingPatients || isLoadingDoctors}>
