@@ -2,7 +2,7 @@
 // src/app/doctor/patients/[patientId]/edit/page.tsx
 'use client';
 
-import { useState, type FormEvent, ChangeEvent, useEffect } from 'react';
+import { useState, type FormEvent, ChangeEvent, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,12 +11,12 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UploadCloud, FileText, ShieldAlert, HeartPulse, Droplets, Info, Wind, Save, Trash2 } from 'lucide-react';
+import { Loader2, FileText, ShieldAlert, HeartPulse, Droplets, Info, Wind, Save, Plus, X, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import type { Patient } from '@/lib/types';
 
-interface FormData extends Omit<Patient, 'id' | 'age'> { // id is from param, age can be string for form
-  age: string; // Keep as string for input, convert to number on submit/fetch
+interface FormData extends Omit<Patient, 'id' | 'age'> { 
+  age: string; 
 }
 
 export default function EditPatientPage() {
@@ -24,6 +24,7 @@ export default function EditPatientPage() {
   const params = useParams();
   const patientId = params.patientId as string;
   const { toast } = useToast();
+  const xrayInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState<Partial<FormData>>({
     name: '',
@@ -59,13 +60,13 @@ export default function EditPatientPage() {
           const data: Patient = await response.json();
           setFormData({
             ...data,
-            dateOfBirth: data.dateOfBirth ? data.dateOfBirth.split('T')[0] : '', // Format for date input
+            dateOfBirth: data.dateOfBirth ? data.dateOfBirth.split('T')[0] : '', 
             age: data.age?.toString() || '',
             xrayImageUrls: data.xrayImageUrls || [],
           });
         } catch (error: any) {
           toast({ variant: "destructive", title: "Error", description: error.message });
-          router.push('/doctor/patients'); // Redirect if patient not found or error
+          router.push('/doctor/patients'); 
         } finally {
           setIsLoadingData(false);
         }
@@ -95,34 +96,6 @@ export default function EditPatientPage() {
       setSelectedFiles(Array.from(e.target.files));
     }
   };
-
-  const handleFileUpload = async () => {
-    if (selectedFiles.length === 0) {
-      toast({ variant: "destructive", title: "No files selected", description: "Please select X-ray images or PDFs to upload." });
-      return false;
-    }
-    setIsUploading(true);
-    const uploadedUrls: string[] = [];
-    try {
-      for (const file of selectedFiles) {
-        const fileData = new FormData();
-        fileData.append('imageFile', file);
-        const response = await fetch('/api/upload/image', { method: 'POST', body: fileData });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.message || 'File upload failed');
-        uploadedUrls.push(result.imageUrl);
-      }
-      setFormData(prev => ({ ...prev, xrayImageUrls: [...(prev.xrayImageUrls || []), ...uploadedUrls] }));
-      setSelectedFiles([]);
-      toast({ title: "Files Uploaded", description: `${uploadedUrls.length} file(s) uploaded successfully.` });
-      return true;
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Upload Error", description: error.message });
-      return false;
-    } finally {
-      setIsUploading(false);
-    }
-  };
   
   const removeUploadedImage = (urlToRemove: string) => {
     setFormData(prev => ({
@@ -149,15 +122,43 @@ export default function EditPatientPage() {
       toast({ variant: "destructive", title: "Validation Error", description: "Please correct the errors in the form."});
       return;
     }
-    // Removed the automatic call to handleFileUpload.
-    // If selectedFiles.length > 0 here, it means the user selected files but didn't click the specific "Upload" button.
-    // These files will not be included in the submission, aligning with "optional" and explicit upload button.
-
+    
     setIsSubmitting(true);
+    let finalXrayImageUrls = [...(formData.xrayImageUrls || [])];
+
+    if (selectedFiles.length > 0) {
+      setIsUploading(true);
+      const uploadedUrls: string[] = [];
+      let uploadOk = true;
+      try {
+        for (const file of selectedFiles) {
+          const fileData = new FormData();
+          fileData.append('imageFile', file);
+          const response = await fetch('/api/upload/image', { method: 'POST', body: fileData });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.message || `File upload failed for ${file.name}`);
+          uploadedUrls.push(result.imageUrl);
+        }
+        finalXrayImageUrls = [...finalXrayImageUrls, ...uploadedUrls];
+        setSelectedFiles([]);
+        toast({ title: "Files Processed", description: `${uploadedUrls.length} new file(s) will be attached.` });
+      } catch (error: any) {
+        toast({ variant: "destructive", title: "Upload Error", description: error.message });
+        uploadOk = false;
+      } finally {
+        setIsUploading(false);
+      }
+      if (!uploadOk) {
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
     const patientDataToSubmit = {
       ...formData,
       age: formData.age ? parseInt(formData.age, 10) : undefined,
       allergySpecifics: formData.hasAllergy ? formData.allergySpecifics : undefined,
+      xrayImageUrls: finalXrayImageUrls,
     };
     if (patientDataToSubmit.dateOfBirth === '') delete patientDataToSubmit.dateOfBirth;
 
@@ -211,7 +212,7 @@ export default function EditPatientPage() {
                 {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
               </div>
             </div>
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-3 gap-4"> {/* Changed to 3 cols for better DOB layout */}
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
                 <Input id="phone" name="phone" type="tel" value={formData.phone || ''} onChange={handleChange} />
@@ -274,24 +275,50 @@ export default function EditPatientPage() {
 
             {/* X-ray Images */}
             <div className="space-y-2">
-              <Label htmlFor="xrayImages">Upload New X-ray Images or PDFs (Optional)</Label>
-              <div className="flex items-center space-x-2">
-                <Input 
-                  id="xrayImages" 
-                  type="file" 
-                  multiple 
-                  onChange={handleFileChange} 
-                  className="flex-grow" 
-                  accept="image/jpeg,image/png,image/webp,image/gif,application/pdf" 
-                />
-                <Button type="button" onClick={handleFileUpload} disabled={isUploading || selectedFiles.length === 0} size="sm">
-                  {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
-                  Upload {selectedFiles.length > 0 ? `(${selectedFiles.length})` : ''}
-                </Button>
-              </div>
+              <Label htmlFor="xrayImagesInputEdit">X-ray Images or PDFs (Optional)</Label>
+               <Input 
+                id="xrayImagesInputEdit"
+                type="file" 
+                multiple 
+                onChange={handleFileChange} 
+                className="hidden"
+                ref={xrayInputRef}
+                accept="image/jpeg,image/png,image/webp,image/gif,application/pdf" 
+              />
+              <Button type="button" variant="outline" onClick={() => xrayInputRef.current?.click()} disabled={isUploading || isSubmitting}>
+                <Plus className="mr-2 h-4 w-4" /> Add Files
+              </Button>
+
+              {selectedFiles.length > 0 && (
+                <div className="mt-2 space-y-1">
+                  <p className="text-xs text-muted-foreground">Selected for upload ({selectedFiles.length} file(s)):</p>
+                  <ul className="list-disc list-inside pl-4 text-sm">
+                    {selectedFiles.map((file, index) => (
+                      <li key={index} className="text-muted-foreground flex items-center justify-between">
+                        <span>{file.name} ({(file.size / 1024).toFixed(1)} KB)</span>
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="sm" 
+                          className="ml-2 h-auto p-1 text-destructive hover:text-destructive/80"
+                          onClick={() => {
+                            const newSelectedFiles = [...selectedFiles];
+                            newSelectedFiles.splice(index, 1);
+                            setSelectedFiles(newSelectedFiles);
+                          }}
+                          aria-label="Remove selected file"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
               {(formData.xrayImageUrls?.length || 0) > 0 && (
                 <div className="mt-2 space-y-1">
-                  <p className="text-xs text-muted-foreground">Uploaded files:</p>
+                  <p className="text-xs text-muted-foreground">Current attachments:</p>
                   <div className="flex flex-wrap gap-2">
                     {formData.xrayImageUrls?.map((url, index) => (
                       <div key={index} className="relative h-20 w-20 rounded border group p-1 flex items-center justify-center">
@@ -326,16 +353,11 @@ export default function EditPatientPage() {
             >
               Cancel
             </Button>
-            <Button className="w-full sm:w-auto" type="submit" disabled={isSubmitting || isUploading || selectedFiles.length > 0}>
-              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            <Button className="w-full sm:w-auto" type="submit" disabled={isSubmitting || isUploading}>
+              {isSubmitting || isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               Save Changes
             </Button>
           </CardFooter>
-           {selectedFiles.length > 0 && (
-            <p className="text-xs text-destructive text-center px-6 pt-2">
-                You have unuploaded files selected. Please click the "Upload" button next to the file input or clear your selection.
-            </p>
-            )}
         </form>
       </Card>
     </div>
