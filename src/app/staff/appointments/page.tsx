@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,6 +51,10 @@ export default function StaffAppointmentsPage() {
                   {mockStaff.filter(s => s.role === 'Dentist' || s.role === 'Hygienist').map(d => <SelectItem key={d.id} value={d.id}>{d.name} ({d.role})</SelectItem>)}
                 </SelectContent>
               </Select>
+              {/* Placeholder link for adding a new doctor. This would eventually lead to a doctor/staff management form. */}
+              <Link href="/staff/manage-staff/new?role=doctor" className="text-xs text-primary hover:underline mt-1 inline-block">
+                <PlusCircle className="inline h-3 w-3 mr-1"/> Add New Doctor/Hygienist
+              </Link>
             </div>
             <div>
               <Label htmlFor="appointment-type">Appointment Type</Label>
