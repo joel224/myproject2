@@ -79,7 +79,7 @@ export default function AddNewPatientPage() {
 
   const handleFileUpload = async () => {
     if (selectedFiles.length === 0) {
-      toast({ variant: "destructive", title: "No files selected", description: "Please select X-ray images to upload." });
+      toast({ variant: "destructive", title: "No files selected", description: "Please select X-ray images or PDFs to upload." });
       return false;
     }
     setIsUploading(true);
@@ -95,7 +95,7 @@ export default function AddNewPatientPage() {
       }
       setFormData(prev => ({ ...prev, xrayImageUrls: [...prev.xrayImageUrls, ...uploadedUrls] }));
       setSelectedFiles([]); // Clear selected files after successful upload
-      toast({ title: "Images Uploaded", description: `${uploadedUrls.length} X-ray image(s) uploaded successfully.` });
+      toast({ title: "Files Uploaded", description: `${uploadedUrls.length} file(s) uploaded successfully.` });
       return true;
     } catch (error: any) {
       toast({ variant: "destructive", title: "Upload Error", description: error.message });
@@ -134,7 +134,7 @@ export default function AddNewPatientPage() {
     if (selectedFiles.length > 0) {
         const confirmed = await handleFileUpload();
         if (!confirmed) { // If upload fails or user cancels, stop submission
-            toast({ variant: "destructive", title: "Image Upload Required", description: "Please upload selected X-ray images before submitting." });
+            toast({ variant: "destructive", title: "File Upload Required", description: "Please upload selected files before submitting." });
             return;
         }
     }
@@ -256,9 +256,16 @@ export default function AddNewPatientPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="xrayImages">Upload X-ray Images (Optional)</Label>
+              <Label htmlFor="xrayImages">Upload X-ray Images or PDFs (Optional)</Label>
               <div className="flex items-center space-x-2">
-                <Input id="xrayImages" type="file" multiple onChange={handleFileChange} className="flex-grow" accept="image/*" />
+                <Input 
+                  id="xrayImages" 
+                  type="file" 
+                  multiple 
+                  onChange={handleFileChange} 
+                  className="flex-grow" 
+                  accept="image/jpeg,image/png,image/webp,image/gif,application/pdf" 
+                />
                 <Button type="button" onClick={handleFileUpload} disabled={isUploading || selectedFiles.length === 0} size="sm">
                   {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
                   Upload {selectedFiles.length > 0 ? `(${selectedFiles.length})` : ''}
@@ -266,11 +273,15 @@ export default function AddNewPatientPage() {
               </div>
               {formData.xrayImageUrls.length > 0 && (
                 <div className="mt-2 space-y-1">
-                  <p className="text-xs text-muted-foreground">Uploaded X-rays:</p>
+                  <p className="text-xs text-muted-foreground">Uploaded files:</p>
                   <div className="flex flex-wrap gap-2">
                     {formData.xrayImageUrls.map((url, index) => (
-                      <div key={index} className="relative h-16 w-16 rounded border">
-                        <Image src={url} alt={`X-ray ${index + 1}`} layout="fill" objectFit="cover" className="rounded" data-ai-hint="medical scan" />
+                      <div key={index} className="relative h-16 w-16 rounded border p-1 flex items-center justify-center">
+                        {url.toLowerCase().endsWith('.pdf') ? (
+                          <FileText className="h-8 w-8 text-destructive" />
+                        ) : (
+                          <Image src={url} alt={`Uploaded file ${index + 1}`} layout="fill" objectFit="contain" className="rounded" data-ai-hint="medical scan document" />
+                        )}
                       </div>
                     ))}
                   </div>
@@ -292,3 +303,5 @@ export default function AddNewPatientPage() {
     </div>
   );
 }
+
+    

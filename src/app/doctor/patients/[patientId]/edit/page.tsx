@@ -14,8 +14,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, UploadCloud, FileText, ShieldAlert, HeartPulse, Droplets, Info, Wind, Save, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import type { Patient } from '@/lib/types';
-// Link component is no longer needed for the Cancel button on this page specifically
-// import Link from 'next/link'; 
 
 interface FormData extends Omit<Patient, 'id' | 'age'> { // id is from param, age can be string for form
   age: string; // Keep as string for input, convert to number on submit/fetch
@@ -100,7 +98,7 @@ export default function EditPatientPage() {
 
   const handleFileUpload = async () => {
     if (selectedFiles.length === 0) {
-      toast({ variant: "destructive", title: "No files selected", description: "Please select X-ray images to upload." });
+      toast({ variant: "destructive", title: "No files selected", description: "Please select X-ray images or PDFs to upload." });
       return false;
     }
     setIsUploading(true);
@@ -116,7 +114,7 @@ export default function EditPatientPage() {
       }
       setFormData(prev => ({ ...prev, xrayImageUrls: [...(prev.xrayImageUrls || []), ...uploadedUrls] }));
       setSelectedFiles([]);
-      toast({ title: "Images Uploaded", description: `${uploadedUrls.length} X-ray image(s) uploaded successfully.` });
+      toast({ title: "Files Uploaded", description: `${uploadedUrls.length} file(s) uploaded successfully.` });
       return true;
     } catch (error: any) {
       toast({ variant: "destructive", title: "Upload Error", description: error.message });
@@ -154,7 +152,7 @@ export default function EditPatientPage() {
     if (selectedFiles.length > 0) {
         const uploaded = await handleFileUpload();
         if (!uploaded) {
-             toast({ variant: "destructive", title: "Image Upload Pending", description: "Please upload selected X-ray images or clear selection before saving." });
+             toast({ variant: "destructive", title: "File Upload Pending", description: "Please upload selected files or clear selection before saving." });
             return;
         }
     }
@@ -280,9 +278,16 @@ export default function EditPatientPage() {
 
             {/* X-ray Images */}
             <div className="space-y-2">
-              <Label htmlFor="xrayImages">Upload New X-ray Images</Label>
+              <Label htmlFor="xrayImages">Upload New X-ray Images or PDFs</Label>
               <div className="flex items-center space-x-2">
-                <Input id="xrayImages" type="file" multiple onChange={handleFileChange} className="flex-grow" accept="image/*" />
+                <Input 
+                  id="xrayImages" 
+                  type="file" 
+                  multiple 
+                  onChange={handleFileChange} 
+                  className="flex-grow" 
+                  accept="image/jpeg,image/png,image/webp,image/gif,application/pdf" 
+                />
                 <Button type="button" onClick={handleFileUpload} disabled={isUploading || selectedFiles.length === 0} size="sm">
                   {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
                   Upload {selectedFiles.length > 0 ? `(${selectedFiles.length})` : ''}
@@ -290,18 +295,22 @@ export default function EditPatientPage() {
               </div>
               {(formData.xrayImageUrls?.length || 0) > 0 && (
                 <div className="mt-2 space-y-1">
-                  <p className="text-xs text-muted-foreground">Uploaded X-rays:</p>
+                  <p className="text-xs text-muted-foreground">Uploaded files:</p>
                   <div className="flex flex-wrap gap-2">
                     {formData.xrayImageUrls?.map((url, index) => (
-                      <div key={index} className="relative h-20 w-20 rounded border group">
-                        <Image src={url} alt={`X-ray ${index + 1}`} layout="fill" objectFit="cover" className="rounded" data-ai-hint="medical scan" />
+                      <div key={index} className="relative h-20 w-20 rounded border group p-1 flex items-center justify-center">
+                        {url.toLowerCase().endsWith('.pdf') ? (
+                            <FileText className="h-10 w-10 text-destructive" />
+                        ) : (
+                            <Image src={url} alt={`Uploaded file ${index + 1}`} layout="fill" objectFit="contain" className="rounded" data-ai-hint="medical scan document" />
+                        )}
                         <Button
                             type="button"
                             variant="destructive"
                             size="icon"
-                            className="absolute top-0 right-0 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="absolute top-0 right-0 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                             onClick={() => removeUploadedImage(url)}
-                            aria-label="Remove image"
+                            aria-label="Remove file"
                         >
                             <Trash2 className="h-3 w-3" />
                         </Button>
@@ -332,3 +341,4 @@ export default function EditPatientPage() {
   );
 }
 
+    

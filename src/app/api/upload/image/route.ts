@@ -1,3 +1,4 @@
+
 // src/app/api/upload/image/route.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
@@ -33,13 +34,19 @@ export async function POST(request: NextRequest) {
     const file = formData.get('imageFile') as File | null;
 
     if (!file) {
-      return NextResponse.json({ message: "No image file provided" }, { status: 400 });
+      return NextResponse.json({ message: "No file provided" }, { status: 400 });
     }
 
-    // Basic file type validation (example)
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    // Updated file type validation
+    const allowedTypes = [
+        'image/jpeg', 
+        'image/png', 
+        'image/webp', 
+        'image/gif',
+        'application/pdf'
+    ];
     if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json({ message: `Invalid file type: ${file.type}. Allowed types: ${allowedTypes.join(', ')}` }, { status: 400 });
+      return NextResponse.json({ message: `Invalid file type: ${file.type}. Allowed types: JPG, PNG, WEBP, GIF, PDF.` }, { status: 400 });
     }
     
     // Basic file size validation (e.g., 5MB limit)
@@ -52,7 +59,7 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(bytes);
 
     // Generate a unique filename to prevent overwrites
-    const uniqueFilename = `${generateId('gcsimg_')}-${file.name.replace(/\s+/g, '_')}`;
+    const uniqueFilename = `${generateId('gcsfile_')}-${file.name.replace(/\s+/g, '_')}`;
     
     const bucket = storage.bucket(GCS_BUCKET_NAME);
     const gcsFile = bucket.file(uniqueFilename);
@@ -75,17 +82,19 @@ export async function POST(request: NextRequest) {
     console.log(`File ${file.name} uploaded to ${GCS_BUCKET_NAME}/${uniqueFilename}. Public URL: ${publicUrl}`);
 
     return NextResponse.json({ 
-        message: "Image uploaded successfully to GCS", 
-        imageUrl: publicUrl,
+        message: "File uploaded successfully to GCS", 
+        imageUrl: publicUrl, // Keep parameter name as imageUrl for client consistency
         fileName: uniqueFilename // Return the GCS filename
     }, { status: 201 });
 
   } catch (error) {
-    console.error('GCS Image upload error:', error);
+    console.error('GCS File upload error:', error);
     // Check if error is from GCS and provide more specific feedback if possible
     if (error instanceof Error && 'code' in error && error.code === 403) {
          return NextResponse.json({ message: "Permission denied. Check GCS bucket/service account permissions." }, { status: 403 });
     }
-    return NextResponse.json({ message: "An unexpected error occurred during image upload to GCS" }, { status: 500 });
+    return NextResponse.json({ message: "An unexpected error occurred during file upload to GCS" }, { status: 500 });
   }
 }
+
+    
