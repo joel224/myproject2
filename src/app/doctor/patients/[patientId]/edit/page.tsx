@@ -149,13 +149,9 @@ export default function EditPatientPage() {
       toast({ variant: "destructive", title: "Validation Error", description: "Please correct the errors in the form."});
       return;
     }
-    if (selectedFiles.length > 0) {
-        const uploaded = await handleFileUpload();
-        if (!uploaded) {
-             toast({ variant: "destructive", title: "File Upload Pending", description: "Please upload selected files or clear selection before saving." });
-            return;
-        }
-    }
+    // Removed the automatic call to handleFileUpload.
+    // If selectedFiles.length > 0 here, it means the user selected files but didn't click the specific "Upload" button.
+    // These files will not be included in the submission, aligning with "optional" and explicit upload button.
 
     setIsSubmitting(true);
     const patientDataToSubmit = {
@@ -278,7 +274,7 @@ export default function EditPatientPage() {
 
             {/* X-ray Images */}
             <div className="space-y-2">
-              <Label htmlFor="xrayImages">Upload New X-ray Images or PDFs</Label>
+              <Label htmlFor="xrayImages">Upload New X-ray Images or PDFs (Optional)</Label>
               <div className="flex items-center space-x-2">
                 <Input 
                   id="xrayImages" 
@@ -330,15 +326,19 @@ export default function EditPatientPage() {
             >
               Cancel
             </Button>
-            <Button className="w-full sm:w-auto" type="submit" disabled={isSubmitting || isUploading}>
+            <Button className="w-full sm:w-auto" type="submit" disabled={isSubmitting || isUploading || selectedFiles.length > 0}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               Save Changes
             </Button>
           </CardFooter>
+           {selectedFiles.length > 0 && (
+            <p className="text-xs text-destructive text-center px-6 pt-2">
+                You have unuploaded files selected. Please click the "Upload" button next to the file input or clear your selection.
+            </p>
+            )}
         </form>
       </Card>
     </div>
   );
 }
-
     

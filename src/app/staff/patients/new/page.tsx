@@ -113,7 +113,6 @@ export default function AddNewPatientPage() {
     if (formData.age && isNaN(parseInt(formData.age))) newErrors.age = "Age must be a number.";
     else if (formData.age && parseInt(formData.age) < 0) newErrors.age = "Age cannot be negative.";
     
-    // Basic password validation if provided
     if (formData.password && formData.password.length < 6) {
         newErrors.password = "Password must be at least 6 characters long.";
     }
@@ -130,14 +129,9 @@ export default function AddNewPatientPage() {
       return;
     }
     
-    // If there are selected files that haven't been uploaded yet, prompt to upload them first or handle them.
-    if (selectedFiles.length > 0) {
-        const confirmed = await handleFileUpload();
-        if (!confirmed) { // If upload fails or user cancels, stop submission
-            toast({ variant: "destructive", title: "File Upload Required", description: "Please upload selected files before submitting." });
-            return;
-        }
-    }
+    // Files must be uploaded via the dedicated "Upload" button before submitting the form.
+    // If selectedFiles.length > 0 here, it means the user selected files but didn't click the specific "Upload" button.
+    // The main "Add Patient" button is disabled in this case by `selectedFiles.length > 0` in its disabled prop.
 
     setIsSubmitting(true);
     const patientDataToSubmit = {
@@ -156,16 +150,15 @@ export default function AddNewPatientPage() {
       if (!response.ok) throw new Error(data.message || data.errors?.email?.[0] || "Failed to add patient");
 
       toast({ title: "Patient Added!", description: `${data.name} has been successfully added.` });
-      // Reset form or redirect
       setFormData({ 
         name: '', email: '', phone: '', age: '', medicalRecords: '', xrayImageUrls: [],
         hasDiabetes: false, hasHighBloodPressure: false, hasStrokeOrHeartAttackHistory: false,
         hasBleedingDisorders: false, hasAllergy: false, allergySpecifics: '', hasAsthma: false, password: ''
       });
+      setSelectedFiles([]); // Also clear any lingering selected files that weren't uploaded
       setErrors({});
       // router.push('/staff/patients'); // Optional redirect
-    } catch (err: any) {
-      toast({ variant: "destructive", title: "Error Adding Patient", description: err.message });
+    } catch (err: any) {      toast({ variant: "destructive", title: "Error Adding Patient", description: err.message });
     } finally {
       setIsSubmitting(false);
     }
@@ -210,7 +203,7 @@ export default function AddNewPatientPage() {
                     id="password" 
                     name="password" 
                     type="password" 
-                    value={formData.password} 
+                    value={formData.password || ''} 
                     onChange={handleChange} 
                     placeholder="Create a login password for patient portal" 
                 />
@@ -239,7 +232,13 @@ export default function AddNewPatientPage() {
                       id={condition.id} 
                       name={condition.id}
                       checked={formData[condition.id as keyof FormData] as boolean} 
-                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, [condition.id]: checked }))}
+                      onCheckedChange={(checked) => {
+                        const isChecked = typeof checked === 'boolean' ? checked : false;
+                        setFormData(prev => ({ ...prev, [condition.id]: isChecked }));
+                        if (condition.id === 'hasAllergy' && !isChecked) {
+                            setFormData(prev => ({ ...prev, allergySpecifics: '' }));
+                        }
+                      }}
                     />
                     <Label htmlFor={condition.id} className="flex items-center cursor-pointer text-sm">
                         {condition.icon} {condition.label}
@@ -293,15 +292,19 @@ export default function AddNewPatientPage() {
             <Button variant="outline" type="button" onClick={() => router.back()} disabled={isSubmitting || isUploading}>
               Cancel
             </Button>
-            <Button className="w-full sm:w-auto" type="submit" disabled={isSubmitting || isUploading}>
+            <Button className="w-full sm:w-auto" type="submit" disabled={isSubmitting || isUploading || selectedFiles.length > 0}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
               Add Patient
             </Button>
           </CardFooter>
+           {selectedFiles.length > 0 && (
+            <p className="text-xs text-destructive text-center px-6 pt-2">
+                You have unuploaded files selected. Please click the "Upload" button next to the file input or clear your selection.
+            </p>
+            )}
         </form>
       </Card>
     </div>
   );
 }
-
     
