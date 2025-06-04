@@ -38,11 +38,11 @@ export async function GET(request: NextRequest) {
   if (searchParams.has('status')) {
     filteredAppointments = filteredAppointments.filter(apt => apt.status === searchParams.get('status'));
   }
-  
+
   // Add patientName and doctorName for convenience if not already present
   const populatedAppointments = filteredAppointments.map(apt => {
     const patient = db.users.find(u => u.id === apt.patientId && u.role === 'patient'); // Check role for patient
-    const doctor = db.users.find(u => u.id === apt.doctorId && (u.role === 'doctor' || u.role === 'staff')); // doctor can be staff too
+    const doctor = db.users.find(u => u.id === apt.doctorId && (u.role === 'doctor' || u.role === 'staff' || u.role === 'hygienist')); // doctor can be staff or hygienist too
     return {
       ...apt,
       patientName: patient?.name || apt.patientName || 'Unknown Patient',
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
 
     // Validate patient and doctor exist
     const patientExists = db.users.some(u => u.id === patientId && u.role === 'patient');
-    const doctorExists = db.users.some(u => u.id === doctorId && (u.role === 'doctor' || u.role === 'staff')); // Allow staff (hygienist) too
+    const doctorExists = db.users.some(u => u.id === doctorId && (u.role === 'doctor' || u.role === 'staff' || u.role === 'hygienist')); // Allow staff & hygienist too
 
     if (!patientExists) {
       return NextResponse.json({ message: `Patient with ID ${patientId} not found.` }, { status: 404 });
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     if (!doctorExists) {
       return NextResponse.json({ message: `Doctor/Staff with ID ${doctorId} not found.` }, { status: 404 });
     }
-    
+
     const patientName = db.users.find(u => u.id === patientId)?.name;
     const doctorName = db.users.find(u => u.id === doctorId)?.name;
 

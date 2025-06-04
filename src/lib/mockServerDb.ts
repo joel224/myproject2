@@ -1,13 +1,13 @@
 
 // src/lib/mockServerDb.ts
 import type { Patient, Appointment, TreatmentPlan, ProgressNote, Invoice, StaffMember } from './types';
-import { 
-  mockPatients as initialPatients, 
-  mockAppointments as initialAppointments, 
-  mockTreatmentPlans as initialTreatmentPlans, 
-  mockProgressNotes as initialProgressNotes, 
-  mockInvoices as initialInvoices, 
-  mockStaff as initialStaff 
+import {
+  mockPatients as initialPatients,
+  mockAppointments as initialAppointments,
+  mockTreatmentPlans as initialTreatmentPlans,
+  mockProgressNotes as initialProgressNotes,
+  mockInvoices as initialInvoices,
+  mockStaff as initialStaff
 } from './mockData';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -37,15 +37,49 @@ export interface UserAuth {
 }
 
 // Simulating a "database" in memory
-const users: UserAuth[] = [
-  // Pre-populate some users if needed for consistent IDs with mockStaff
-  // Example: { id: 'doc1', name: 'Dr. Loji', email: 'dr.loji@dentalhub.com', passwordHash: '...', role: 'doctor' },
-];
+const users: UserAuth[] = [];
+
+// Populate users from initialStaff
+initialStaff.forEach(staffMember => {
+  let userAuthRole: UserAuth['role'] = 'staff'; // Default
+  if (staffMember.role === 'Dentist') userAuthRole = 'doctor';
+  else if (staffMember.role === 'Hygienist') userAuthRole = 'hygienist';
+  else if (staffMember.role === 'Assistant') userAuthRole = 'assistant';
+  else if (staffMember.role === 'Receptionist') userAuthRole = 'staff';
+  else if (staffMember.role === 'Admin') userAuthRole = 'admin';
+
+  if (!users.some(u => u.id === staffMember.id)) { // Avoid duplicates if manually added
+    users.push({
+      id: staffMember.id,
+      name: staffMember.name,
+      email: staffMember.email,
+      passwordHash: `$2a$10$mockPasswordFor${staffMember.id.replace(/[^a-zA-Z0-9]/g, '')}`, // Basic mock hash
+      role: userAuthRole,
+    });
+  }
+});
+
+// Also ensure patients from mockData are in users if they have login info
+initialPatients.forEach(p => {
+    if (!users.some(u => u.id === p.id || u.email === p.email)) { // Check by ID or email
+        users.push({
+            id: p.id, // Assuming patient ID can be used as user ID for simplicity
+            name: p.name,
+            email: p.email,
+            passwordHash: `$2a$10$mockPasswordFor${p.id.replace(/[^a-zA-Z0-9]/g, '')}`,
+            role: 'patient',
+            phone: p.phone,
+            dateOfBirth: p.dateOfBirth,
+            // Add other relevant patient fields if UserAuth needs them directly
+        });
+    }
+});
+
 
 // Make copies of imported arrays so we can mutate them
 // Update patients to include new fields, ensuring they can be undefined initially
 let patients: Patient[] = JSON.parse(JSON.stringify(initialPatients.map(p => ({
-  ...p, 
+  ...p,
   userId: users.find(u => u.email === p.email)?.id || p.id,
   age: p.dateOfBirth ? new Date().getFullYear() - new Date(p.dateOfBirth).getFullYear() : undefined, // Example age calculation
   medicalRecords: undefined,
@@ -68,7 +102,7 @@ let staff: StaffMember[] = JSON.parse(JSON.stringify(initialStaff)); // Initiali
 let clinicWaitTime = { text: "<10 mins", updatedAt: new Date().toISOString() };
 
 export const db = {
-  users, 
+  users,
   patients,
   appointments,
   treatmentPlans,
@@ -91,7 +125,7 @@ export async function authorize(req: NextRequest, requiredRole?: UserAuth['role'
   }
 
   const [userId, userRoleFromToken] = mockSessionToken.split(':');
-  
+
   const user = db.users.find(u => u.id === userId && u.role === (userRoleFromToken as UserAuth['role']));
   // In a real scenario, you'd fetch user from actual DB by session.
 
@@ -109,6 +143,6 @@ export async function authorize(req: NextRequest, requiredRole?: UserAuth['role'
        return { authorized: false, user: null, error: NextResponse.json({ message: 'Forbidden: Insufficient permissions' }, { status: 403 }) };
     }
   }
-  
+
   return { authorized: true, user: user, error: null };
 }
