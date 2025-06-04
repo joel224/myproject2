@@ -75,8 +75,16 @@ export default function AddNewPatientPage() {
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setSelectedFiles(Array.from(e.target.files));
+      const newFiles = Array.from(e.target.files);
+      setSelectedFiles(prevFiles => [...prevFiles, ...newFiles]);
+       if (xrayInputRef.current) {
+        xrayInputRef.current.value = ''; // Clear the input field to allow re-selecting same file
+      }
     }
+  };
+
+  const removeSelectedFile = (indexToRemove: number) => {
+    setSelectedFiles(prevFiles => prevFiles.filter((_, index) => index !== indexToRemove));
   };
 
   const removeUploadedImage = (urlToRemove: string) => {
@@ -128,7 +136,7 @@ export default function AddNewPatientPage() {
         }
         finalXrayImageUrls = [...finalXrayImageUrls, ...uploadedUrls];
         setSelectedFiles([]); 
-        toast({ title: "Files Processed", description: `${uploadedUrls.length} new file(s) will be attached.` });
+        toast({ title: "Files Uploaded", description: `${uploadedUrls.length} file(s) have been successfully uploaded and attached.` });
       } catch (error: any) {
         toast({ variant: "destructive", title: "Upload Error", description: error.message });
         uploadOk = false;
@@ -275,34 +283,34 @@ export default function AddNewPatientPage() {
                 ref={xrayInputRef}
                 accept="image/jpeg,image/png,image/webp,image/gif,application/pdf" 
               />
-              <Button type="button" variant="outline" onClick={() => xrayInputRef.current?.click()} disabled={isUploading || isSubmitting}>
+              <Button type="button" variant="outline" onClick={() => xrayInputRef.current?.click()}>
                 <Plus className="mr-2 h-4 w-4" /> Add Files
               </Button>
 
               {selectedFiles.length > 0 && (
                 <div className="mt-2 space-y-1">
-                  <p className="text-xs text-muted-foreground">Selected for upload ({selectedFiles.length} file(s)):</p>
-                  <ul className="list-disc list-inside pl-4 text-sm">
+                  <p className="text-xs text-muted-foreground">Selected files to upload ({selectedFiles.length}):</p>
+                  <div className="flex flex-wrap gap-2 mt-1">
                     {selectedFiles.map((file, index) => (
-                      <li key={index} className="text-muted-foreground flex items-center justify-between">
-                        <span>{file.name} ({(file.size / 1024).toFixed(1)} KB)</span>
-                        <Button 
-                          type="button" 
-                          variant="ghost" 
-                          size="sm" 
-                          className="ml-2 h-auto p-1 text-destructive hover:text-destructive/80"
-                          onClick={() => {
-                            const newSelectedFiles = [...selectedFiles];
-                            newSelectedFiles.splice(index, 1);
-                            setSelectedFiles(newSelectedFiles);
-                          }}
+                      <div key={index} className="relative group w-20 h-20 rounded border p-1 flex items-center justify-center">
+                        {file.type.startsWith('image/') ? (
+                            <Image src={URL.createObjectURL(file)} alt={file.name} layout="fill" objectFit="contain" className="rounded" data-ai-hint="medical scan document" />
+                        ) : (
+                            <FileText className="h-10 w-10 text-muted-foreground" />
+                        )}
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute -top-2 -right-2 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                          onClick={() => removeSelectedFile(index)}
                           aria-label="Remove selected file"
                         >
-                          <X className="h-3 w-3" />
+                          <Trash2 className="h-3 w-3" />
                         </Button>
-                      </li>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               )}
 
