@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, Search, Edit3, Mail, Phone, Loader2, AlertTriangle } from "lucide-react";
+import { PlusCircle, Search, Edit3, Phone, Eye, Loader2, AlertTriangle } from "lucide-react"; // Changed Mail to Phone, Added Eye
 import Link from "next/link";
 import type { Patient } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +16,7 @@ export default function StaffPatientsPage() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -44,6 +45,12 @@ export default function StaffPatientsPage() {
     fetchPatients();
   }, [toast]);
 
+  const filteredPatients = patients.filter(patient =>
+    patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    patient.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (patient.phone && patient.phone.includes(searchTerm))
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -56,10 +63,16 @@ export default function StaffPatientsPage() {
       <Card>
         <CardHeader>
           <CardTitle>All Patients</CardTitle>
-          <CardDescription>Browse and manage patient records.</CardDescription>
+          <CardDescription>Browse, view, and manage patient records.</CardDescription>
           <div className="flex w-full max-w-md items-center space-x-2 mt-2">
-            <Input type="text" placeholder="Search by name, email, or phone..." className="flex-1" />
-            <Button type="submit"><Search className="mr-2 h-4 w-4" /> Search</Button>
+            <Input
+              type="text"
+              placeholder="Search by name, email, or phone..."
+              className="flex-1"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <Button type="button"><Search className="mr-2 h-4 w-4" /> Search</Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -85,28 +98,34 @@ export default function StaffPatientsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {patients.length > 0 ? patients.map(patient => (
+                {filteredPatients.length > 0 ? filteredPatients.map(patient => (
                   <TableRow key={patient.id}>
-                    <TableCell className="font-medium">{patient.name}</TableCell>
+                    <TableCell className="font-medium">
+                      <Link href={`/staff/patients/${patient.id}`} className="hover:underline text-primary">
+                        {patient.name}
+                      </Link>
+                    </TableCell>
                     <TableCell>{patient.email}</TableCell>
                     <TableCell>{patient.phone || 'N/A'}</TableCell>
                     <TableCell>{patient.dateOfBirth ? new Date(patient.dateOfBirth).toLocaleDateString() : 'N/A'}</TableCell>
                     <TableCell className="text-right space-x-1">
-                      <Link href={`/staff/appointments?patientId=${patient.id}`}>
-                          <Button variant="outline" size="sm">Schedule</Button>
+                      <Link href={`/staff/patients/${patient.id}`}>
+                          <Button variant="outline" size="sm" aria-label="View Patient Details"><Eye className="h-4 w-4"/></Button>
                       </Link>
                       <Link href={`/staff/patients/${patient.id}/edit`}>
                           <Button variant="ghost" size="icon" aria-label="Edit Patient"><Edit3 className="h-4 w-4"/></Button>
                       </Link>
-                       <Link href={`mailto:${patient.email}`}>
-                          <Button variant="ghost" size="icon" aria-label="Email Patient"><Mail className="h-4 w-4"/></Button>
-                      </Link>
+                      {patient.phone && (
+                        <Link href={`tel:${patient.phone}`}>
+                            <Button variant="ghost" size="icon" aria-label="Call Patient"><Phone className="h-4 w-4"/></Button>
+                        </Link>
+                      )}
                     </TableCell>
                   </TableRow>
                 )) : (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center text-muted-foreground py-4">
-                      No patients found.
+                      No patients found{searchTerm ? ' matching your search' : ''}.
                     </TableCell>
                   </TableRow>
                 )}
