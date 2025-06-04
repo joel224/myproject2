@@ -1,12 +1,11 @@
+
+// Import Firebase Authentication and Firestore
 // Import the functions you need from the SDKs you need
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 import { initializeApp } from "firebase/app";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
-
-// Import Firebase Authentication and Firestore
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -15,7 +14,7 @@ const firebaseConfig = {
   projectId: "dr-lojis-dental-hub",
   storageBucket: "dr-lojis-dental-hub.firebasestorage.app",
   messagingSenderId: "808558558636",
-  appId: "1:808558558636:web:8fd874a29a5c3463c3ce09"
+  appId: "1:808558558636:web:4b89f3a129a46a0fc3ce09"
 };
 
 // Initialize Firebase

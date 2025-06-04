@@ -47,24 +47,33 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSocialLoading, setIsSocialLoading] = useState<false | 'google'>(false);
 
-  // Helper to save/update user data in Firestore after social sign-in
+  // Helper to save/update user data in Firestore
   const saveUserToFirestore = async (user: User) => {
     const userRef = doc(db, "users", user.uid);
     const userSnap = await getDoc(userRef);
 
-    if (!userSnap.exists()) { // Only create if user doesn't exist
+    const finalName = user.displayName || 'New User'; // Use display name from social provider or fallback
+
+    if (!userSnap.exists()) { 
       const userData = {
         uid: user.uid,
         email: user.email,
-        fullName: user.displayName || 'New User', // Fallback if displayName is null
-        role: 'patient', // Default role for social sign-ins
+        fullName: finalName,
+        role: 'patient', // Default role for new social sign-ins
         createdAt: serverTimestamp(),
-        provider: user.providerData?.[0]?.providerId || 'unknown',
+        provider: user.providerData?.[0]?.providerId || 'social', // Get actual provider ID
       };
       await setDoc(userRef, userData);
       console.log("New user profile for social sign-in saved to Firestore:", user.uid);
     } else {
-      console.log("User already exists in Firestore:", user.uid);
+      // User exists, update their profile with latest info from social provider if needed
+      // For example, update provider or name if it changed.
+      console.log("User already exists in Firestore, merging data for social sign-in:", user.uid);
+      await setDoc(userRef, {
+        fullName: finalName, // Update name in case it changed in social profile
+        email: user.email, // Ensure email is up-to-date
+        provider: user.providerData?.[0]?.providerId || userSnap.data()?.provider, // Update provider
+      }, { merge: true }); // Merge to avoid overwriting existing fields like 'role' or 'createdAt'
     }
   };
 
@@ -92,7 +101,7 @@ export default function LoginPage() {
         title: "Login Successful!",
         description: `Welcome back via ${providerName}!`,
       });
-      router.push('/'); // Redirect to homepage or dashboard
+      router.push('/'); 
     } catch (socialError: any) {
       console.error(`Error signing in with ${providerName}:`, socialError);
       if (socialError.code === 'auth/account-exists-with-different-credential') {
