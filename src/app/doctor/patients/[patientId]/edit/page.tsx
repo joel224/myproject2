@@ -14,7 +14,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, UploadCloud, FileText, ShieldAlert, HeartPulse, Droplets, Info, Wind, Save, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import type { Patient } from '@/lib/types';
-import Link from 'next/link';
+// Link component is no longer needed for the Cancel button on this page specifically
+// import Link from 'next/link'; 
 
 interface FormData extends Omit<Patient, 'id' | 'age'> { // id is from param, age can be string for form
   age: string; // Keep as string for input, convert to number on submit/fetch
@@ -164,7 +165,6 @@ export default function EditPatientPage() {
       age: formData.age ? parseInt(formData.age, 10) : undefined,
       allergySpecifics: formData.hasAllergy ? formData.allergySpecifics : undefined,
     };
-    // Remove fields not expected by API or that shouldn't be sent if empty string (like dateOfBirth)
     if (patientDataToSubmit.dateOfBirth === '') delete patientDataToSubmit.dateOfBirth;
 
 
@@ -178,7 +178,7 @@ export default function EditPatientPage() {
       if (!response.ok) throw new Error(data.message || data.errors?.email?.[0] || "Failed to update patient");
 
       toast({ title: "Patient Updated!", description: `${data.name}'s details have been successfully updated.` });
-      router.push(`/doctor/patients/${patientId}`); // Redirect back to patient detail page
+      router.push(`/doctor/patients/${patientId}`); 
     } catch (err: any) {
       toast({ variant: "destructive", title: "Error Updating Patient", description: err.message });
     } finally {
@@ -313,11 +313,14 @@ export default function EditPatientPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-4">
-            <Link href={`/doctor/patients/${patientId}`}>
-              <Button variant="outline" type="button" disabled={isSubmitting || isUploading}>
-                Cancel
-              </Button>
-            </Link>
+            <Button 
+              variant="outline" 
+              type="button" 
+              onClick={() => router.push(`/doctor/patients/${patientId}`)}
+              disabled={isSubmitting || isUploading}
+            >
+              Cancel
+            </Button>
             <Button className="w-full sm:w-auto" type="submit" disabled={isSubmitting || isUploading}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               Save Changes
@@ -328,3 +331,4 @@ export default function EditPatientPage() {
     </div>
   );
 }
+
