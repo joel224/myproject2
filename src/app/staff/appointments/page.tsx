@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { mockAppointments } from "@/lib/mockData"; // Still using for list display for now
+import { mockAppointments } from "@/lib/mockData"; 
 import type { Patient, StaffMember, Appointment } from '@/lib/types';
 import { PlusCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -30,7 +30,6 @@ export default function StaffAppointmentsPage() {
   const [isLoadingPatients, setIsLoadingPatients] = useState(true);
   const [isLoadingDoctors, setIsLoadingDoctors] = useState(true);
 
-  // Fetch patients for dropdown
   useEffect(() => {
     const fetchPatients = async () => {
       setIsLoadingPatients(true);
@@ -49,7 +48,6 @@ export default function StaffAppointmentsPage() {
     fetchPatients();
   }, [toast]);
 
-  // Fetch doctors/hygienists for dropdown
   useEffect(() => {
     const fetchDoctors = async () => {
       setIsLoadingDoctors(true);
@@ -102,13 +100,11 @@ export default function StaffAppointmentsPage() {
       }
 
       toast({ title: "Appointment Booked!", description: `Appointment for ${appointmentType} on ${appointmentDate} at ${appointmentTime} has been scheduled.` });
-      // Reset form
       setSelectedPatientId('');
       setSelectedDoctorId('');
       setAppointmentType('');
       setAppointmentDate('');
       setAppointmentTime('');
-      // TODO: Refresh the upcoming appointments list
     } catch (err: any) {
       toast({ variant: "destructive", title: "Booking Error", description: err.message });
     } finally {
@@ -124,8 +120,8 @@ export default function StaffAppointmentsPage() {
         <h1 className="text-2xl sm:text-3xl font-bold">Appointment Scheduling</h1>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
-        <Card className="md:col-span-1">
+      <div className="grid lg:grid-cols-3 md:grid-cols-1 gap-6">
+        <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle>Schedule New Appointment</CardTitle>
             <CardDescription>Fill in the details to book a new appointment.</CardDescription>
@@ -144,7 +140,7 @@ export default function StaffAppointmentsPage() {
                     ) : patients.length > 0 ? (
                       patients.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)
                     ) : (
-                      <div className="p-4 text-center text-sm text-muted-foreground">No patients found.</div>
+                      <div className="p-4 text-center text-sm text-muted-foreground">No patients found. Create one first.</div>
                     )}
                   </SelectContent>
                 </Select>
@@ -212,7 +208,7 @@ export default function StaffAppointmentsPage() {
           </form>
         </Card>
 
-        <div className="md:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6">
             <Card>
                 <CardHeader>
                     <CardTitle>Clinic Calendar Overview</CardTitle>

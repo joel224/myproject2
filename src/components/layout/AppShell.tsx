@@ -14,7 +14,7 @@ import {
   SidebarMenuButton,
   SidebarMenuBadge,
   SidebarInset,
-} from '@/components/ui/sidebar'; // Assuming sidebar.tsx is in ui
+} from '@/components/ui/sidebar'; 
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/icons/Logo';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -28,7 +28,7 @@ type NavItem = {
   children?: NavItem[];
 };
 
-interface AppShellProps {
+export interface AppShellProps {
   children: ReactNode;
   navItems: NavItem[];
   userRole: 'Doctor' | 'Staff' | 'Patient';
@@ -38,10 +38,9 @@ interface AppShellProps {
 
 export function AppShell({ children, navItems, userRole, userName, userEmail }: AppShellProps) {
   const profileLink = userRole === 'Doctor' ? '/doctor/profile' : '/staff/profile';
-  // Add '/patient/profile' if/when Patient portal uses AppShell
 
   return (
-    <SidebarProvider defaultOpen>
+    <SidebarProvider defaultOpen userRole={userRole}> {/* Pass userRole to SidebarProvider */}
       <Sidebar>
         <SidebarHeader className="p-4">
           <Link href="/" className="mb-2">
@@ -59,20 +58,17 @@ export function AppShell({ children, navItems, userRole, userName, userEmail }: 
                     {item.badge && <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>}
                   </SidebarMenuButton>
                 </Link>
-                {/* Add sub-menu rendering if needed based on item.children */}
               </SidebarMenuItem>
             ))}
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="p-4">
-          {/* Placeholder for theme toggle or user settings */}
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>
+      <SidebarInset> {/* SidebarInset will now use userRole from context */}
         <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
-          <SidebarTrigger className="md:hidden" /> {/* Only show trigger on mobile if sidebar is collapsible */}
+          <SidebarTrigger className="md:hidden" />
           <div className="flex-1">
-            {/* Breadcrumbs or page title can go here */}
             <h1 className="text-xl font-semibold">{userRole} Portal</h1>
           </div>
           <DropdownMenu>
@@ -100,7 +96,7 @@ export function AppShell({ children, navItems, userRole, userName, userEmail }: 
                   <span>Profile</span>
                 </DropdownMenuItem>
               </Link>
-              <Link href={profileLink} passHref> {/* Settings can also go to profile for simplicity */}
+              <Link href={profileLink} passHref> 
                 <DropdownMenuItem>
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Settings</span>
@@ -116,15 +112,14 @@ export function AppShell({ children, navItems, userRole, userName, userEmail }: 
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
-        <main className="flex-1 p-4 md:p-6 lg:p-8">
+        <div className="flex-1 p-4 md:p-6 lg:p-8"> {/* Changed from main to div */}
           {children}
-        </main>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );
 }
 
-// Define navigation items for different roles
 export const doctorNavItems: NavItem[] = [
   { href: '/doctor/dashboard', label: 'Dashboard', icon: <LayoutDashboard /> },
   { href: '/doctor/patients', label: 'Patients', icon: <Users /> },

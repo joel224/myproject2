@@ -50,6 +50,9 @@
     --sidebar-accent-foreground: 30 80% 50%; /* Primary-like color for text on hover */
     --sidebar-border: 35 50% 80%; /* Soft warm beige border */
     --sidebar-ring: 30 85% 60%; /* Main ring color */
+
+    /* Staff page specific background */
+    --staff-content-background: 50 80% 96%; /* Light, soft cream */
   }
 
   .dark {
@@ -97,6 +100,9 @@
     --sidebar-accent-foreground: 30 75% 70%; /* Lighter warm color for text on hover */
     --sidebar-border: 30 15% 20%;
     --sidebar-ring: 30 80% 65%;
+
+    /* Staff page specific background for dark mode */
+    --staff-content-background: 45 15% 16%; /* Dark, slightly warm off-black/grey */
   }
 }
 
