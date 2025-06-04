@@ -1,3 +1,4 @@
+
 // src/app/api/appointments/route.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
@@ -40,8 +41,8 @@ export async function GET(request: NextRequest) {
   
   // Add patientName and doctorName for convenience if not already present
   const populatedAppointments = filteredAppointments.map(apt => {
-    const patient = db.users.find(u => u.id === apt.patientId);
-    const doctor = db.users.find(u => u.id === apt.doctorId);
+    const patient = db.users.find(u => u.id === apt.patientId && u.role === 'patient'); // Check role for patient
+    const doctor = db.users.find(u => u.id === apt.doctorId && (u.role === 'doctor' || u.role === 'staff')); // doctor can be staff too
     return {
       ...apt,
       patientName: patient?.name || apt.patientName || 'Unknown Patient',

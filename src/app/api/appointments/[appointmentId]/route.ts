@@ -1,3 +1,4 @@
+
 // src/app/api/appointments/[appointmentId]/route.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
@@ -34,8 +35,8 @@ export async function GET(request: NextRequest, { params }: AppointmentRoutePara
     return NextResponse.json({ message: "Appointment not found" }, { status: 404 });
   }
   
-  const patient = db.users.find(u => u.id === appointment.patientId);
-  const doctor = db.users.find(u => u.id === appointment.doctorId);
+  const patient = db.users.find(u => u.id === appointment.patientId && u.role === 'patient');
+  const doctor = db.users.find(u => u.id === appointment.doctorId && (u.role === 'doctor' || u.role === 'staff'));
 
   const populatedAppointment = {
       ...appointment,
