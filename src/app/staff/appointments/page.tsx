@@ -1,15 +1,130 @@
 
+// src/app/staff/appointments/page.tsx
+'use client';
+
+import { useState, useEffect, type FormEvent } from 'react';
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { mockAppointments, mockPatients, mockStaff } from "@/lib/mockData";
-import { PlusCircle } from "lucide-react";
+import { mockAppointments } from "@/lib/mockData"; // Still using for list display for now
+import type { Patient, StaffMember, Appointment } from '@/lib/types';
+import { PlusCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useToast } from "@/hooks/use-toast";
 
 export default function StaffAppointmentsPage() {
+  const { toast } = useToast();
+
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [doctors, setDoctors] = useState<StaffMember[]>([]);
+  const [selectedPatientId, setSelectedPatientId] = useState<string>('');
+  const [selectedDoctorId, setSelectedDoctorId] = useState<string>('');
+  const [appointmentType, setAppointmentType] = useState<string>('');
+  const [appointmentDate, setAppointmentDate] = useState<string>('');
+  const [appointmentTime, setAppointmentTime] = useState<string>('');
+  
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingPatients, setIsLoadingPatients] = useState(true);
+  const [isLoadingDoctors, setIsLoadingDoctors] = useState(true);
+
+  // Fetch patients for dropdown
+  useEffect(() => {
+    const fetchPatients = async () => {
+      setIsLoadingPatients(true);
+      try {
+        const response = await fetch('/api/patients');
+        if (!response.ok) throw new Error('Failed to fetch patients');
+        const data: Patient[] = await response.json();
+        setPatients(data);
+      } catch (error) {
+        console.error("Error fetching patients:", error);
+        toast({ variant: "destructive", title: "Error", description: "Could not load patients." });
+      } finally {
+        setIsLoadingPatients(false);
+      }
+    };
+    fetchPatients();
+  }, [toast]);
+
+  // Fetch doctors/hygienists for dropdown
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      setIsLoadingDoctors(true);
+      try {
+        // Fetching all staff and then filtering client-side for simplicity.
+        // Ideally, API could filter by role: /api/staff?role=Dentist&role=Hygienist
+        const response = await fetch('/api/staff');
+        if (!response.ok) throw new Error('Failed to fetch staff');
+        let staffData: StaffMember[] = await response.json();
+        staffData = staffData.filter(s => s.role === 'Dentist' || s.role === 'Hygienist');
+        setDoctors(staffData);
+      } catch (error) {
+        console.error("Error fetching doctors:", error);
+        toast({ variant: "destructive", title: "Error", description: "Could not load doctors list." });
+      } finally {
+        setIsLoadingDoctors(false);
+      }
+    };
+    fetchDoctors();
+  }, [toast]);
+
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsLoading(true);
+
+    if (!selectedPatientId || !selectedDoctorId || !appointmentType || !appointmentDate || !appointmentTime) {
+      toast({ variant: "destructive", title: "Missing Fields", description: "Please fill in all required fields." });
+      setIsLoading(false);
+      return;
+    }
+
+    // Convert 12-hour time to 24-hour for consistency or ensure API handles various formats
+    // For now, assuming API can handle the time format as entered (e.g. "HH:MM AM/PM")
+    // It's better if the API expects a consistent format like HH:MM (24h) or ISO string.
+    // For simplicity, we'll send it as is; the API has a regex for HH:MM AM/PM.
+
+    const appointmentData = {
+      patientId: selectedPatientId,
+      doctorId: selectedDoctorId,
+      date: appointmentDate,
+      time: appointmentTime, // Ensure this matches API expectation (e.g. needs AM/PM if API uses it)
+      type: appointmentType,
+      // status: 'Scheduled', // API defaults to 'Scheduled'
+    };
+
+    try {
+      const response = await fetch('/api/appointments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(appointmentData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || (result.errors ? JSON.stringify(result.errors) : "Failed to book appointment"));
+      }
+
+      toast({ title: "Appointment Booked!", description: `Appointment for ${appointmentType} on ${appointmentDate} at ${appointmentTime} has been scheduled.` });
+      // Reset form
+      setSelectedPatientId('');
+      setSelectedDoctorId('');
+      setAppointmentType('');
+      setAppointmentDate('');
+      setAppointmentTime('');
+      // TODO: Refresh the upcoming appointments list
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Booking Error", description: err.message });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
   // This is a simplified version. A real app would use a more interactive calendar component.
   // For now, it shows a form to add appointments and lists existing ones.
   const futureAppointments = mockAppointments.filter(apt => new Date(apt.date) >= new Date()).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -26,61 +141,76 @@ export default function StaffAppointmentsPage() {
             <CardTitle>Schedule New Appointment</CardTitle>
             <CardDescription>Fill in the details to book a new appointment.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="patient">Patient</Label>
-              <Select>
-                <SelectTrigger id="patient">
-                  <SelectValue placeholder="Select patient" />
-                </SelectTrigger>
-                <SelectContent>
-                  {mockPatients.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <Link href="/staff/patients/new" className="text-xs text-primary hover:underline mt-1 inline-block">
-                <PlusCircle className="inline h-3 w-3 mr-1"/> Add New Patient
-              </Link>
-            </div>
-            <div>
-              <Label htmlFor="doctor">Doctor</Label>
-              <Select>
-                <SelectTrigger id="doctor">
-                  <SelectValue placeholder="Select doctor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {mockStaff.filter(s => s.role === 'Dentist' || s.role === 'Hygienist').map(d => <SelectItem key={d.id} value={d.id}>{d.name} ({d.role})</SelectItem>)}
-                </SelectContent>
-              </Select>
-              {/* Placeholder link for adding a new doctor. This would eventually lead to a doctor/staff management form. */}
-              <Link href="/staff/manage-staff/new?role=doctor" className="text-xs text-primary hover:underline mt-1 inline-block">
-                <PlusCircle className="inline h-3 w-3 mr-1"/> Add New Doctor/Hygienist
-              </Link>
-            </div>
-            <div>
-              <Label htmlFor="appointment-type">Appointment Type</Label>
-              <Select>
-                <SelectTrigger id="appointment-type">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Check-up">Check-up</SelectItem>
-                  <SelectItem value="Cleaning">Cleaning</SelectItem>
-                  <SelectItem value="Consultation">Consultation</SelectItem>
-                  <SelectItem value="Emergency">Emergency</SelectItem>
-                  <SelectItem value="Follow-up">Follow-up</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="date">Date</Label>
-              <Input type="date" id="date" />
-            </div>
-            <div>
-              <Label htmlFor="time">Time</Label>
-              <Input type="time" id="time" />
-            </div>
-            <Button className="w-full">Book Appointment</Button>
-          </CardContent>
+          <form onSubmit={handleSubmit}>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="patient">Patient</Label>
+                <Select value={selectedPatientId} onValueChange={setSelectedPatientId} required>
+                  <SelectTrigger id="patient" disabled={isLoadingPatients}>
+                    <SelectValue placeholder={isLoadingPatients ? "Loading patients..." : "Select patient"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {!isLoadingPatients && patients.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                    {isLoadingPatients && <SelectItem value="" disabled>Loading...</SelectItem>}
+                  </SelectContent>
+                </Select>
+                <Link href="/staff/patients/new" className="text-xs text-primary hover:underline mt-1 inline-block">
+                  <PlusCircle className="inline h-3 w-3 mr-1"/> Add New Patient
+                </Link>
+              </div>
+              <div>
+                <Label htmlFor="doctor">Doctor / Hygienist</Label>
+                <Select value={selectedDoctorId} onValueChange={setSelectedDoctorId} required>
+                  <SelectTrigger id="doctor" disabled={isLoadingDoctors}>
+                    <SelectValue placeholder={isLoadingDoctors ? "Loading doctors..." : "Select doctor/hygienist"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {!isLoadingDoctors && doctors.map(d => <SelectItem key={d.id} value={d.id}>{d.name} ({d.role})</SelectItem>)}
+                     {isLoadingDoctors && <SelectItem value="" disabled>Loading...</SelectItem>}
+                  </SelectContent>
+                </Select>
+                <Link href="/staff/manage-staff/new?role=doctor" className="text-xs text-primary hover:underline mt-1 inline-block">
+                  <PlusCircle className="inline h-3 w-3 mr-1"/> Add New Doctor/Hygienist
+                </Link>
+              </div>
+              <div>
+                <Label htmlFor="appointment-type">Appointment Type</Label>
+                <Select value={appointmentType} onValueChange={setAppointmentType} required>
+                  <SelectTrigger id="appointment-type">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Check-up">Check-up</SelectItem>
+                    <SelectItem value="Cleaning">Cleaning</SelectItem>
+                    <SelectItem value="Consultation">Consultation</SelectItem>
+                    <SelectItem value="Emergency">Emergency</SelectItem>
+                    <SelectItem value="Follow-up">Follow-up</SelectItem>
+                    <SelectItem value="Filling">Filling</SelectItem>
+                    <SelectItem value="Extraction">Extraction</SelectItem>
+                    <SelectItem value="Whitening">Whitening</SelectItem>
+                    <SelectItem value="Root Canal">Root Canal</SelectItem>
+                    <SelectItem value="Crown">Crown/Bridge Work</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="date">Date</Label>
+                <Input type="date" id="date" value={appointmentDate} onChange={e => setAppointmentDate(e.target.value)} required />
+              </div>
+              <div>
+                <Label htmlFor="time">Time (e.g., 02:30 PM)</Label>
+                <Input type="text" id="time" value={appointmentTime} onChange={e => setAppointmentTime(e.target.value)} placeholder="HH:MM AM/PM" required 
+                       pattern="^(0?[1-9]|1[0-2]):[0-5][0-9] (AM|PM)$"
+                       title="Please enter time in HH:MM AM/PM format (e.g., 02:30 PM or 9:00 AM)"
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={isLoading || isLoadingPatients || isLoadingDoctors}>
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Book Appointment
+              </Button>
+            </CardContent>
+          </form>
         </Card>
 
         <div className="md:col-span-2 space-y-6">
@@ -92,15 +222,16 @@ export default function StaffAppointmentsPage() {
                 <CardContent className="flex justify-center">
                     <Calendar
                         mode="single"
-                        // selected={date}
-                        // onSelect={setDate}
+                        // selected={appointmentDate ? new Date(appointmentDate) : undefined} // Example: highlight selected date
+                        // onSelect={(date) => setAppointmentDate(date ? date.toISOString().split('T')[0] : '')}
                         className="rounded-md border"
                     />
                 </CardContent>
             </Card>
             <Card>
                 <CardHeader>
-                    <CardTitle>Upcoming Appointments</CardTitle>
+                    <CardTitle>Upcoming Appointments (Mock Data)</CardTitle>
+                     <CardDescription>This list uses mock data. Real data would appear after booking.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {futureAppointments.length > 0 ? (
@@ -117,7 +248,7 @@ export default function StaffAppointmentsPage() {
                         ))}
                         </ul>
                     ) : (
-                        <p className="text-muted-foreground">No upcoming appointments.</p>
+                        <p className="text-muted-foreground">No upcoming appointments (from mock data).</p>
                     )}
                 </CardContent>
             </Card>
@@ -126,3 +257,4 @@ export default function StaffAppointmentsPage() {
     </div>
   );
 }
+
