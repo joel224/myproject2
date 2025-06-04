@@ -36,7 +36,7 @@ export async function GET(request: NextRequest, { params }: AppointmentRoutePara
   }
 
   const patient = db.users.find(u => u.id === appointment.patientId && u.role === 'patient');
-  const doctor = db.users.find(u => u.id === appointment.doctorId && (u.role === 'doctor' || u.role === 'staff' || u.role === 'hygienist'));
+  const doctor = db.users.find(u => u.id === appointment.doctorId && (u.role === 'doctor' || u.role === 'staff' || u.role === 'hygienist' || u.role === 'assistant' || u.role === 'admin'));
 
   const populatedAppointment = {
       ...appointment,
@@ -80,7 +80,7 @@ export async function PUT(request: NextRequest, { params }: AppointmentRoutePara
         updatedAppointment.patientName = db.users.find(u => u.id === updateData.patientId)?.name;
     }
     if (updateData.doctorId) {
-        if (!db.users.some(u => u.id === updateData.doctorId && (u.role === 'doctor' || u.role === 'staff' || u.role === 'hygienist'))) {
+        if (!db.users.some(u => u.id === updateData.doctorId && (u.role === 'doctor' || u.role === 'staff' || u.role === 'hygienist' || u.role === 'assistant' || u.role === 'admin'))) {
             return NextResponse.json({ message: `Doctor/Staff with ID ${updateData.doctorId} not found.` }, { status: 404 });
         }
         updatedAppointment.doctorId = updateData.doctorId;

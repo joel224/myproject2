@@ -39,27 +39,7 @@ export interface UserAuth {
 // Simulating a "database" in memory
 const users: UserAuth[] = [];
 
-// Populate users from initialStaff
-initialStaff.forEach(staffMember => {
-  let userAuthRole: UserAuth['role'] = 'staff'; // Default
-  if (staffMember.role === 'Dentist') userAuthRole = 'doctor';
-  else if (staffMember.role === 'Hygienist') userAuthRole = 'hygienist';
-  else if (staffMember.role === 'Assistant') userAuthRole = 'assistant';
-  else if (staffMember.role === 'Receptionist') userAuthRole = 'staff';
-  else if (staffMember.role === 'Admin') userAuthRole = 'admin';
-
-  if (!users.some(u => u.id === staffMember.id)) { // Avoid duplicates if manually added
-    users.push({
-      id: staffMember.id,
-      name: staffMember.name,
-      email: staffMember.email,
-      passwordHash: `$2a$10$mockPasswordFor${staffMember.id.replace(/[^a-zA-Z0-9]/g, '')}`, // Basic mock hash
-      role: userAuthRole,
-    });
-  }
-});
-
-// Also ensure patients from mockData are in users if they have login info
+// Populate users from initialPatients (simulating registered patients)
 initialPatients.forEach(p => {
     if (!users.some(u => u.id === p.id || u.email === p.email)) { // Check by ID or email
         users.push({
@@ -70,7 +50,17 @@ initialPatients.forEach(p => {
             role: 'patient',
             phone: p.phone,
             dateOfBirth: p.dateOfBirth,
-            // Add other relevant patient fields if UserAuth needs them directly
+            age: p.dateOfBirth ? new Date().getFullYear() - new Date(p.dateOfBirth).getFullYear() : undefined,
+            // Add other relevant patient fields from Patient type if needed directly in UserAuth
+            medicalRecords: p.medicalRecords,
+            xrayImageUrls: p.xrayImageUrls || [],
+            hasDiabetes: p.hasDiabetes,
+            hasHighBloodPressure: p.hasHighBloodPressure,
+            hasStrokeOrHeartAttackHistory: p.hasStrokeOrHeartAttackHistory,
+            hasBleedingDisorders: p.hasBleedingDisorders,
+            hasAllergy: p.hasAllergy,
+            allergySpecifics: p.allergySpecifics,
+            hasAsthma: p.hasAsthma,
         });
     }
 });
@@ -82,15 +72,15 @@ let patients: Patient[] = JSON.parse(JSON.stringify(initialPatients.map(p => ({
   ...p,
   userId: users.find(u => u.email === p.email)?.id || p.id,
   age: p.dateOfBirth ? new Date().getFullYear() - new Date(p.dateOfBirth).getFullYear() : undefined, // Example age calculation
-  medicalRecords: undefined,
-  xrayImageUrls: [],
-  hasDiabetes: false,
-  hasHighBloodPressure: false,
-  hasStrokeOrHeartAttackHistory: false,
-  hasBleedingDisorders: false,
-  hasAllergy: false,
-  allergySpecifics: undefined,
-  hasAsthma: false,
+  medicalRecords: p.medicalRecords || undefined,
+  xrayImageUrls: p.xrayImageUrls || [],
+  hasDiabetes: p.hasDiabetes || false,
+  hasHighBloodPressure: p.hasHighBloodPressure || false,
+  hasStrokeOrHeartAttackHistory: p.hasStrokeOrHeartAttackHistory || false,
+  hasBleedingDisorders: p.hasBleedingDisorders || false,
+  hasAllergy: p.hasAllergy || false,
+  allergySpecifics: p.allergySpecifics || undefined,
+  hasAsthma: p.hasAsthma || false,
 }))));
 
 let appointments: Appointment[] = JSON.parse(JSON.stringify(initialAppointments));

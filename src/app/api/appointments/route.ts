@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
 
     // Validate patient and doctor exist
     const patientExists = db.users.some(u => u.id === patientId && u.role === 'patient');
-    const doctorExists = db.users.some(u => u.id === doctorId && (u.role === 'doctor' || u.role === 'staff' || u.role === 'hygienist')); // Allow staff & hygienist too
+    const doctorExists = db.users.some(u => u.id === doctorId && (u.role === 'doctor' || u.role === 'staff' || u.role === 'hygienist' || u.role === 'assistant' || u.role === 'admin'));
 
     if (!patientExists) {
       return NextResponse.json({ message: `Patient with ID ${patientId} not found.` }, { status: 404 });
