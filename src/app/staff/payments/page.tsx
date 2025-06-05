@@ -90,7 +90,7 @@ export default function StaffPaymentsPage() {
 
   const filteredInvoices = invoices.filter(invoice =>
     (invoice.patientName && invoice.patientName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    invoice.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    invoice.id.toLowerCase().includes(searchTerm.toLowerCase()) || // Keep searching by invoice ID internally
     (invoice.patientPhone && invoice.patientPhone.includes(searchTerm))
   );
 
@@ -477,7 +477,11 @@ function DialogCreateInvoice({ patients, onSuccess }: DialogCreateInvoiceProps) 
                   <SelectValue placeholder="Select patient" />
                 </SelectTrigger>
                 <SelectContent>
-                  {patients.length > 0 ? patients.map(p => <SelectItem key={p.id} value={p.id}>{p.name} ({p.email})</SelectItem>) : <SelectItem value="loading" disabled>Loading patients...</SelectItem>}
+                  {patients.length > 0 ? patients.map(p => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name} ({p.email}) {p.phone ? `- ${p.phone}` : ''}
+                    </SelectItem>
+                  )) : <SelectItem value="loading" disabled>Loading patients...</SelectItem>}
                 </SelectContent>
               </Select>
             </div>
@@ -661,4 +665,3 @@ function DialogViewInvoicePayments({ invoice, isOpen, onOpenChange }: DialogView
     </Dialog>
   );
 }
-
