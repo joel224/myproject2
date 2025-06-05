@@ -49,7 +49,7 @@ export default function StaffPaymentsPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/invoices');
+      const response = await fetch(`/api/invoices?_cb=${new Date().getTime()}`); // Added cache buster
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to fetch invoices');
@@ -213,6 +213,8 @@ function DialogRecordPayment({ invoice, patientName, onSuccess }: DialogRecordPa
   const [paymentNotes, setPaymentNotes] = useState('');
 
   useEffect(() => {
+    // This effect runs when `isOpen` or `invoice` changes.
+    // It ensures the form is reset if the dialog is opened or the target invoice changes.
     if (isOpen && invoice) { 
       setAmountPaidNowStr(''); 
       setPaymentMethod('Card'); 
@@ -651,3 +653,4 @@ function DialogViewInvoicePayments({ invoice, isOpen, onOpenChange }: DialogView
     </Dialog>
   );
 }
+
