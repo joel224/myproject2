@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, Search, Edit3, Phone, Eye, Loader2, AlertTriangle } from "lucide-react"; // Changed Mail to Phone, Added Eye
+import { PlusCircle, Search, Edit3, Phone, Eye, Loader2, AlertTriangle, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import type { Patient } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -50,6 +50,22 @@ export default function StaffPatientsPage() {
     patient.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (patient.phone && patient.phone.includes(searchTerm))
   );
+
+  // Helper function to attempt to normalize phone for WhatsApp link
+  const normalizePhoneNumberForWhatsApp = (phone?: string) => {
+    if (!phone) return '';
+    // Remove common non-digit characters but keep '+' if it's at the very beginning
+    let normalized = phone.replace(/[\s\-()]/g, ""); 
+    if (normalized.startsWith('+')) {
+      // Ensure only one leading '+' and remove others
+      normalized = '+' + normalized.substring(1).replace(/\+/g, '');
+    } else {
+      // Remove all '+' if not at the beginning
+      normalized = normalized.replace(/\+/g, '');
+    }
+    return normalized;
+  };
+
 
   return (
     <div className="space-y-6">
@@ -116,9 +132,20 @@ export default function StaffPatientsPage() {
                           <Button variant="ghost" size="icon" aria-label="Edit Patient"><Edit3 className="h-4 w-4"/></Button>
                       </Link>
                       {patient.phone && (
-                        <Link href={`tel:${patient.phone}`}>
-                            <Button variant="ghost" size="icon" aria-label="Call Patient"><Phone className="h-4 w-4"/></Button>
-                        </Link>
+                        <>
+                          <Link href={`tel:${patient.phone}`}>
+                              <Button variant="ghost" size="icon" aria-label="Call Patient"><Phone className="h-4 w-4"/></Button>
+                          </Link>
+                          <a 
+                            href={`https://wa.me/${normalizePhoneNumberForWhatsApp(patient.phone)}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                          >
+                            <Button variant="ghost" size="icon" aria-label="Message on WhatsApp">
+                              <MessageSquare className="h-4 w-4 text-green-500"/>
+                            </Button>
+                          </a>
+                        </>
                       )}
                     </TableCell>
                   </TableRow>
