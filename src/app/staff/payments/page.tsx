@@ -10,10 +10,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, PlusCircle, Search, Receipt, Loader2, AlertTriangle, Edit, Trash2 } from "lucide-react";
+import { DollarSign, PlusCircle, Search, Receipt, Loader2, AlertTriangle, Edit, Trash2, Eye } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import type { Invoice, Patient } from '@/lib/types'; 
+import type { Invoice, Patient, PaymentTransaction, InvoiceItem as InvoiceItemType } from '@/lib/types'; 
 import { Separator } from "@/components/ui/separator";
 
 const PAYMENT_METHODS = ["Card", "Cash", "Bank Transfer", "Insurance", "Other"];
@@ -25,6 +26,10 @@ export default function StaffPaymentsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+
+  const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
+  const [isViewInvoiceModalOpen, setIsViewInvoiceModalOpen] = useState(false);
+
 
   const fetchPatients = useCallback(async () => {
     try {
@@ -56,7 +61,7 @@ export default function StaffPaymentsPage() {
         ...inv,
         patientName: patientsToUse.find(p => p.id === inv.patientId)?.name || 'Unknown Patient'
       }));
-      setInvoices(dataWithPatientNames);
+      setInvoices(dataWithPatientNames.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     } catch (err: any) {
       setError(err.message);
       toast({ variant: "destructive", title: "Error fetching invoices", description: err.message });
@@ -78,6 +83,11 @@ export default function StaffPaymentsPage() {
     (invoice.patientName && invoice.patientName.toLowerCase().includes(searchTerm.toLowerCase())) ||
     invoice.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleViewInvoiceDetails = (invoice: Invoice) => {
+    setViewingInvoice(invoice);
+    setIsViewInvoiceModalOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -130,7 +140,11 @@ export default function StaffPaymentsPage() {
                 {filteredInvoices.length > 0 ? filteredInvoices.map(invoice => {
                   return (
                     <TableRow key={invoice.id}>
-                      <TableCell className="font-medium">{invoice.id}</TableCell>
+                      <TableCell className="font-medium">
+                        <Button variant="link" className="p-0 h-auto" onClick={() => handleViewInvoiceDetails(invoice)}>
+                            {invoice.id}
+                        </Button>
+                      </TableCell>
                       <TableCell>{invoice.patientName || 'Unknown Patient'}</TableCell>
                       <TableCell>{new Date(invoice.date).toLocaleDateString()}</TableCell>
                       <TableCell>{invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : 'N/A'}</TableCell>
@@ -153,7 +167,8 @@ export default function StaffPaymentsPage() {
                             patientName={invoice.patientName}
                             onSuccess={() => fetchInvoices(patients)}
                           />
-                          <Button variant="ghost" size="icon" aria-label="View Receipt (Placeholder)"><Receipt className="h-4 w-4"/></Button>
+                          {/* Placeholder for receipt, can be linked to ViewInvoiceDetails later or a separate receipt view */}
+                          {/* <Button variant="ghost" size="icon" aria-label="View Receipt (Placeholder)"><Receipt className="h-4 w-4"/></Button> */}
                       </TableCell>
                     </TableRow>
                   );
@@ -169,6 +184,13 @@ export default function StaffPaymentsPage() {
           )}
         </CardContent>
       </Card>
+      {viewingInvoice && (
+        <DialogViewInvoicePayments
+          invoice={viewingInvoice}
+          isOpen={isViewInvoiceModalOpen}
+          onOpenChange={setIsViewInvoiceModalOpen}
+        />
+      )}
     </div>
   );
 }
@@ -191,7 +213,7 @@ function DialogRecordPayment({ invoice, patientName, onSuccess }: DialogRecordPa
   const [paymentNotes, setPaymentNotes] = useState('');
 
   useEffect(() => {
-    if (isOpen && invoice) { // Ensure invoice is defined when resetting
+    if (isOpen && invoice) { 
       setAmountPaidNowStr(''); 
       setPaymentMethod('Card'); 
       setPaymentDate(new Date().toISOString().split('T')[0]); 
@@ -285,7 +307,7 @@ function DialogRecordPayment({ invoice, patientName, onSuccess }: DialogRecordPa
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="payment-notes" className="text-right">Notes</Label>
-                <Input id="payment-notes" placeholder="Optional transaction notes" className="col-span-3" value={paymentNotes} onChange={e => setPaymentNotes(e.target.value)} />
+                <Textarea id="payment-notes" placeholder="Optional transaction notes (e.g., check #, partial payment for X)" className="col-span-3" value={paymentNotes} onChange={e => setPaymentNotes(e.target.value)} rows={2}/>
             </div>
           </div>
           <DialogFooter>
@@ -300,7 +322,6 @@ function DialogRecordPayment({ invoice, patientName, onSuccess }: DialogRecordPa
     </Dialog>
   )
 }
-
 
 // Dialog for Creating a New Invoice
 interface DialogCreateInvoiceProps {
@@ -506,3 +527,127 @@ function DialogCreateInvoice({ patients, onSuccess }: DialogCreateInvoiceProps) 
   )
 }
 
+
+// Dialog for Viewing Invoice Details and Payment History
+interface DialogViewInvoicePaymentsProps {
+  invoice: Invoice;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+function DialogViewInvoicePayments({ invoice, isOpen, onOpenChange }: DialogViewInvoicePaymentsProps) {
+  const { toast } = useToast();
+  const [paymentHistory, setPaymentHistory] = useState<PaymentTransaction[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen && invoice?.id) {
+      const fetchPaymentHistory = async () => {
+        setIsLoadingHistory(true);
+        setHistoryError(null);
+        try {
+          const response = await fetch(`/api/invoices/${invoice.id}/transactions`);
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to fetch payment history');
+          }
+          const data: PaymentTransaction[] = await response.json();
+          setPaymentHistory(data);
+        } catch (err: any) {
+          setHistoryError(err.message);
+          toast({ variant: "destructive", title: "Error", description: "Could not load payment history." });
+        } finally {
+          setIsLoadingHistory(false);
+        }
+      };
+      fetchPaymentHistory();
+    }
+  }, [isOpen, invoice, toast]);
+
+  if (!invoice) return null;
+
+  const amountDue = (invoice.totalAmount - invoice.amountPaid).toFixed(2);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Invoice Details: {invoice.id}</DialogTitle>
+          <DialogDescription>
+            Patient: {invoice.patientName || 'N/A'} | Total: ${invoice.totalAmount.toFixed(2)} | Paid: ${invoice.amountPaid.toFixed(2)} | Due: ${amountDue}
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="py-4 max-h-[60vh] overflow-y-auto pr-2 space-y-4">
+            <section>
+                <h4 className="font-semibold mb-2 text-md">Invoice Items:</h4>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Description</TableHead>
+                            <TableHead className="text-center">Qty</TableHead>
+                            <TableHead className="text-right">Unit Price</TableHead>
+                            <TableHead className="text-right">Total</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {invoice.items.map((item, index) => (
+                            <TableRow key={index}>
+                                <TableCell>{item.description}</TableCell>
+                                <TableCell className="text-center">{item.quantity}</TableCell>
+                                <TableCell className="text-right">${item.unitPrice.toFixed(2)}</TableCell>
+                                <TableCell className="text-right">${item.totalPrice.toFixed(2)}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </section>
+            
+            <Separator />
+
+            <section>
+                <h4 className="font-semibold mb-2 text-md">Payment History:</h4>
+                {isLoadingHistory ? (
+                    <div className="flex items-center justify-center p-4">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        <p className="ml-2 text-muted-foreground">Loading payment history...</p>
+                    </div>
+                ) : historyError ? (
+                    <div className="flex flex-col items-center justify-center p-4 text-destructive">
+                        <AlertTriangle className="h-6 w-6 mb-1" />
+                        <p>{historyError}</p>
+                    </div>
+                ) : paymentHistory.length > 0 ? (
+                    <Table>
+                    <TableHeader>
+                        <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead className="text-right">Amount Paid</TableHead>
+                        <TableHead>Method</TableHead>
+                        <TableHead>Notes</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {paymentHistory.map(pt => (
+                        <TableRow key={pt.id}>
+                            <TableCell>{new Date(pt.paymentDate).toLocaleDateString()}</TableCell>
+                            <TableCell className="text-right">${pt.amountPaid.toFixed(2)}</TableCell>
+                            <TableCell>{pt.paymentMethod}</TableCell>
+                            <TableCell className="text-xs">{pt.notes || '-'}</TableCell>
+                        </TableRow>
+                        ))}
+                    </TableBody>
+                    </Table>
+                ) : (
+                    <p className="text-muted-foreground text-sm">No payment transactions found for this invoice.</p>
+                )}
+            </section>
+        </div>
+        <DialogFooter className="pt-4">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

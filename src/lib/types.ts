@@ -78,13 +78,31 @@ export interface StaffMember {
   // other staff details
 }
 
+export interface InvoiceItem {
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
 export interface Invoice {
   id: string;
   patientId: string;
+  patientName?: string; // Denormalized for easy display
   date: string;
   dueDate?: string;
-  items: Array<{ description: string; quantity: number; unitPrice: number; totalPrice: number }>;
+  items: InvoiceItem[];
   totalAmount: number;
   amountPaid: number;
   status: 'Pending' | 'Paid' | 'Overdue' | 'Partial';
+  // paymentHistory?: PaymentTransaction[]; // Optional: if embedding, otherwise fetch separately
+}
+
+export interface PaymentTransaction {
+  id: string;
+  invoiceId: string;
+  amountPaid: number;
+  paymentDate: string; // YYYY-MM-DD
+  paymentMethod: string;
+  notes?: string;
+  recordedAt: string; // ISO string for timestamp
 }

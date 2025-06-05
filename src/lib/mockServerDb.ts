@@ -1,6 +1,6 @@
 
 // src/lib/mockServerDb.ts
-import type { Patient, Appointment, TreatmentPlan, ProgressNote, Invoice, StaffMember } from './types';
+import type { Patient, Appointment, TreatmentPlan, ProgressNote, Invoice, StaffMember, PaymentTransaction } from './types';
 import {
   mockPatients as initialPatients,
   mockAppointments as initialAppointments,
@@ -40,38 +40,57 @@ export interface UserAuth {
 const users: UserAuth[] = [];
 
 // Populate users from initialPatients (simulating registered patients)
-initialPatients.forEach(p => {
-    if (!users.some(u => u.id === p.id || u.email === p.email)) { // Check by ID or email
-        users.push({
-            id: p.id, // Assuming patient ID can be used as user ID for simplicity
-            name: p.name,
-            email: p.email,
-            passwordHash: `$2a$10$mockPasswordFor${p.id.replace(/[^a-zA-Z0-9]/g, '')}`,
-            role: 'patient',
-            phone: p.phone,
-            dateOfBirth: p.dateOfBirth,
-            age: p.dateOfBirth ? new Date().getFullYear() - new Date(p.dateOfBirth).getFullYear() : undefined,
-            // Add other relevant patient fields from Patient type if needed directly in UserAuth
-            medicalRecords: p.medicalRecords,
-            xrayImageUrls: p.xrayImageUrls || [],
-            hasDiabetes: p.hasDiabetes,
-            hasHighBloodPressure: p.hasHighBloodPressure,
-            hasStrokeOrHeartAttackHistory: p.hasStrokeOrHeartAttackHistory,
-            hasBleedingDisorders: p.hasBleedingDisorders,
-            hasAllergy: p.hasAllergy,
-            allergySpecifics: p.allergySpecifics,
-            hasAsthma: p.hasAsthma,
-        });
-    }
-});
+// This part will be removed based on previous user request to manage users via UI
+// initialPatients.forEach(p => {
+//     if (!users.some(u => u.id === p.id || u.email === p.email)) { 
+//         users.push({
+//             id: p.id, 
+//             name: p.name,
+//             email: p.email,
+//             passwordHash: `$2a$10$mockPasswordFor${p.id.replace(/[^a-zA-Z0-9]/g, '')}`,
+//             role: 'patient',
+//             phone: p.phone,
+//             dateOfBirth: p.dateOfBirth,
+//             age: p.dateOfBirth ? new Date().getFullYear() - new Date(p.dateOfBirth).getFullYear() : undefined,
+//             medicalRecords: p.medicalRecords,
+//             xrayImageUrls: p.xrayImageUrls || [],
+//             hasDiabetes: p.hasDiabetes,
+//             hasHighBloodPressure: p.hasHighBloodPressure,
+//             hasStrokeOrHeartAttackHistory: p.hasStrokeOrHeartAttackHistory,
+//             hasBleedingDisorders: p.hasBleedingDisorders,
+//             hasAllergy: p.hasAllergy,
+//             allergySpecifics: p.allergySpecifics,
+//             hasAsthma: p.hasAsthma,
+//         });
+//     }
+// });
+
+// Populate staff into users array
+// This part will also be removed based on previous user request to manage staff via UI.
+// initialStaff.forEach(s => {
+//   if (!users.some(u => u.id === s.id || u.email === s.email)) {
+//     let userAuthRole: UserAuth['role'] = 'staff';
+//     if (s.role === 'Dentist') userAuthRole = 'doctor';
+//     else if (s.role === 'Hygienist') userAuthRole = 'hygienist';
+//     else if (s.role === 'Assistant') userAuthRole = 'assistant';
+//     else if (s.role === 'Admin') userAuthRole = 'admin';
+
+//     users.push({
+//       id: s.id,
+//       name: s.name,
+//       email: s.email,
+//       passwordHash: `$2a$10$mockPasswordFor${s.id.replace(/[^a-zA-Z0-9]/g, '')}`,
+//       role: userAuthRole,
+//     });
+//   }
+// });
 
 
 // Make copies of imported arrays so we can mutate them
-// Update patients to include new fields, ensuring they can be undefined initially
 let patients: Patient[] = JSON.parse(JSON.stringify(initialPatients.map(p => ({
   ...p,
   userId: users.find(u => u.email === p.email)?.id || p.id,
-  age: p.dateOfBirth ? new Date().getFullYear() - new Date(p.dateOfBirth).getFullYear() : undefined, // Example age calculation
+  age: p.dateOfBirth ? new Date().getFullYear() - new Date(p.dateOfBirth).getFullYear() : undefined,
   medicalRecords: p.medicalRecords || undefined,
   xrayImageUrls: p.xrayImageUrls || [],
   hasDiabetes: p.hasDiabetes || false,
@@ -87,7 +106,9 @@ let appointments: Appointment[] = JSON.parse(JSON.stringify(initialAppointments)
 let treatmentPlans: TreatmentPlan[] = JSON.parse(JSON.stringify(initialTreatmentPlans));
 let progressNotes: ProgressNote[] = JSON.parse(JSON.stringify(initialProgressNotes));
 let invoices: Invoice[] = JSON.parse(JSON.stringify(initialInvoices));
-let staff: StaffMember[] = JSON.parse(JSON.stringify(initialStaff)); // Initialize staff array
+let staff: StaffMember[] = JSON.parse(JSON.stringify(initialStaff));
+let paymentTransactions: PaymentTransaction[] = []; // New array for payment transactions
+
 
 let clinicWaitTime = { text: "<10 mins", updatedAt: new Date().toISOString() };
 
@@ -99,12 +120,13 @@ export const db = {
   progressNotes,
   invoices,
   clinicWaitTime,
-  staff, // Include staff in the mutable db object
+  staff,
+  paymentTransactions, // Include paymentTransactions in the mutable db object
 };
 
 // Helper to generate unique IDs (very basic for mock)
 export function generateId(prefix: string = 'id_') {
-  return prefix + Math.random().toString(36).substr(2, 9);
+  return prefix + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 }
 
 // Mock middleware for authorization (conceptual)
@@ -117,7 +139,6 @@ export async function authorize(req: NextRequest, requiredRole?: UserAuth['role'
   const [userId, userRoleFromToken] = mockSessionToken.split(':');
 
   const user = db.users.find(u => u.id === userId && u.role === (userRoleFromToken as UserAuth['role']));
-  // In a real scenario, you'd fetch user from actual DB by session.
 
   if (!user) {
     return { authorized: false, user: null, error: NextResponse.json({ message: 'Unauthorized: Invalid session' }, { status: 401 }) };
@@ -126,10 +147,12 @@ export async function authorize(req: NextRequest, requiredRole?: UserAuth['role'
   const rolesToCheck = Array.isArray(requiredRole) ? requiredRole : (requiredRole ? [requiredRole] : []);
 
   if (rolesToCheck.length > 0 && !rolesToCheck.includes(user.role)) {
-    // Allow doctors to access staff routes as a special case
-    if (user.role === 'doctor' && rolesToCheck.includes('staff')) {
-      // This is fine
-    } else {
+    // Special case: allow 'doctor' to access 'staff' routes for broader clinic management
+    // and 'admin' to access all routes for full oversight.
+    const isAdmin = user.role === 'admin';
+    const isDoctorAccessingStaffRoute = user.role === 'doctor' && rolesToCheck.includes('staff');
+    
+    if (!isAdmin && !isDoctorAccessingStaffRoute) {
        return { authorized: false, user: null, error: NextResponse.json({ message: 'Forbidden: Insufficient permissions' }, { status: 403 }) };
     }
   }
