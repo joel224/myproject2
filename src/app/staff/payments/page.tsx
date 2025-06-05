@@ -14,7 +14,7 @@ import { DollarSign, PlusCircle, Search, Receipt, Loader2, AlertTriangle, Edit, 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import type { Invoice, Patient } from '@/lib/types'; 
-import { Separator } from "@/components/ui/separator"; // Added missing import
+import { Separator } from "@/components/ui/separator";
 
 const PAYMENT_METHODS = ["Card", "Cash", "Bank Transfer", "Insurance", "Other"];
 
@@ -191,7 +191,7 @@ function DialogRecordPayment({ invoice, patientName, onSuccess }: DialogRecordPa
   const [paymentNotes, setPaymentNotes] = useState('');
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && invoice) { // Ensure invoice is defined when resetting
       setAmountPaidNowStr(''); 
       setPaymentMethod('Card'); 
       setPaymentDate(new Date().toISOString().split('T')[0]); 
@@ -238,6 +238,7 @@ function DialogRecordPayment({ invoice, patientName, onSuccess }: DialogRecordPa
   };
   
   const amountDue = invoice ? (invoice.totalAmount - invoice.amountPaid).toFixed(2) : '0.00';
+  const totalInvoiceAmount = invoice ? invoice.totalAmount.toFixed(2) : '0.00';
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -251,13 +252,21 @@ function DialogRecordPayment({ invoice, patientName, onSuccess }: DialogRecordPa
           <DialogHeader>
             <DialogTitle>Record Payment For Invoice {invoice.id}</DialogTitle>
             <DialogDescription>
-              Patient: {patientName || 'N/A'}. Amount Due: ${amountDue}
+              Patient: {patientName || 'N/A'}. Invoice Total: ${totalInvoiceAmount}. Amount Due: ${amountDue}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
              <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="payment-amount" className="text-right">Amount Paid</Label>
-                <Input id="payment-amount" type="number" placeholder="0.00" className="col-span-3" value={amountPaidNowStr} onChange={e => setAmountPaidNowStr(e.target.value)} step="0.01" />
+                <Input 
+                  id="payment-amount" 
+                  type="number" 
+                  placeholder="0.00" 
+                  className="col-span-3" 
+                  value={amountPaidNowStr} 
+                  onChange={e => setAmountPaidNowStr(e.target.value)} 
+                  step="1" 
+                />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="payment-method" className="text-right">Method</Label>
