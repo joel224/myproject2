@@ -19,15 +19,20 @@ import { Separator } from "@/components/ui/separator";
 
 const PAYMENT_METHODS = ["Card", "Cash", "Bank Transfer", "Insurance", "Other"];
 
+interface EnhancedInvoice extends Invoice {
+  patientName?: string;
+  patientPhone?: string;
+}
+
 export default function StaffPaymentsPage() {
   const { toast } = useToast();
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [invoices, setInvoices] = useState<EnhancedInvoice[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
+  const [viewingInvoice, setViewingInvoice] = useState<EnhancedInvoice | null>(null);
   const [isViewInvoiceModalOpen, setIsViewInvoiceModalOpen] = useState(false);
 
 
@@ -57,11 +62,15 @@ export default function StaffPaymentsPage() {
       const data: Invoice[] = await response.json();
       const patientsToUse = currentPatients.length > 0 ? currentPatients : await fetchPatients();
       
-      const dataWithPatientNames = data.map(inv => ({
-        ...inv,
-        patientName: patientsToUse.find(p => p.id === inv.patientId)?.name || 'Unknown Patient'
-      }));
-      setInvoices(dataWithPatientNames.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      const dataWithPatientDetails = data.map(inv => {
+        const patientDetails = patientsToUse.find(p => p.id === inv.patientId);
+        return {
+          ...inv,
+          patientName: patientDetails?.name || 'Unknown Patient',
+          patientPhone: patientDetails?.phone || undefined
+        };
+      });
+      setInvoices(dataWithPatientDetails.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     } catch (err: any) {
       setError(err.message);
       toast({ variant: "destructive", title: "Error fetching invoices", description: err.message });
@@ -81,10 +90,11 @@ export default function StaffPaymentsPage() {
 
   const filteredInvoices = invoices.filter(invoice =>
     (invoice.patientName && invoice.patientName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    invoice.id.toLowerCase().includes(searchTerm.toLowerCase())
+    invoice.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (invoice.patientPhone && invoice.patientPhone.includes(searchTerm))
   );
 
-  const handleViewInvoiceDetails = (invoice: Invoice) => {
+  const handleViewInvoiceDetails = (invoice: EnhancedInvoice) => {
     setViewingInvoice(invoice);
     setIsViewInvoiceModalOpen(true);
   };
@@ -103,7 +113,7 @@ export default function StaffPaymentsPage() {
            <div className="flex w-full max-w-md items-center space-x-2 mt-2">
             <Input 
               type="text" 
-              placeholder="Search by patient name or invoice ID..." 
+              placeholder="Search by patient name, phone, or invoice ID..." 
               className="flex-1" 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -126,7 +136,7 @@ export default function StaffPaymentsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Invoice ID</TableHead>
+                  <TableHead>Phone</TableHead>
                   <TableHead>Patient</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Due Date</TableHead>
@@ -141,11 +151,13 @@ export default function StaffPaymentsPage() {
                   return (
                     <TableRow key={invoice.id}>
                       <TableCell className="font-medium">
-                        <Button variant="link" className="p-0 h-auto" onClick={() => handleViewInvoiceDetails(invoice)}>
-                            {invoice.id}
+                        {invoice.patientPhone || 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        <Button variant="link" className="p-0 h-auto text-left" onClick={() => handleViewInvoiceDetails(invoice)}>
+                            {invoice.patientName || 'Unknown Patient'}
                         </Button>
                       </TableCell>
-                      <TableCell>{invoice.patientName || 'Unknown Patient'}</TableCell>
                       <TableCell>{new Date(invoice.date).toLocaleDateString()}</TableCell>
                       <TableCell>{invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : 'N/A'}</TableCell>
                       <TableCell>${invoice.totalAmount.toFixed(2)}</TableCell>
@@ -167,8 +179,6 @@ export default function StaffPaymentsPage() {
                             patientName={invoice.patientName}
                             onSuccess={() => fetchInvoices(patients)}
                           />
-                          {/* Placeholder for receipt, can be linked to ViewInvoiceDetails later or a separate receipt view */}
-                          {/* <Button variant="ghost" size="icon" aria-label="View Receipt (Placeholder)"><Receipt className="h-4 w-4"/></Button> */}
                       </TableCell>
                     </TableRow>
                   );
@@ -213,8 +223,6 @@ function DialogRecordPayment({ invoice, patientName, onSuccess }: DialogRecordPa
   const [paymentNotes, setPaymentNotes] = useState('');
 
   useEffect(() => {
-    // This effect runs when `isOpen` or `invoice` changes.
-    // It ensures the form is reset if the dialog is opened or the target invoice changes.
     if (isOpen && invoice) { 
       setAmountPaidNowStr(''); 
       setPaymentMethod('Card'); 
@@ -532,7 +540,7 @@ function DialogCreateInvoice({ patients, onSuccess }: DialogCreateInvoiceProps) 
 
 // Dialog for Viewing Invoice Details and Payment History
 interface DialogViewInvoicePaymentsProps {
-  invoice: Invoice;
+  invoice: EnhancedInvoice; // Use EnhancedInvoice here
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }
