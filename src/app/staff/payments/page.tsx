@@ -13,7 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { DollarSign, PlusCircle, Search, Receipt, Loader2, AlertTriangle, Edit, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import type { Invoice, Patient } from '@/lib/types'; // Ensure Procedure is imported if used, or remove if not
+import type { Invoice, Patient } from '@/lib/types'; 
+import { Separator } from "@/components/ui/separator"; // Added missing import
 
 const PAYMENT_METHODS = ["Card", "Cash", "Bank Transfer", "Insurance", "Other"];
 
@@ -31,11 +32,11 @@ export default function StaffPaymentsPage() {
       if (!response.ok) throw new Error('Failed to fetch patients');
       const data: Patient[] = await response.json();
       setPatients(data);
-      return data; // Return for chaining if needed
+      return data; 
     } catch (err: any) {
       toast({ variant: "destructive", title: "Error", description: "Could not load patients list." });
-      setPatients([]); // Set to empty array on error
-      return []; // Return empty for chaining
+      setPatients([]); 
+      return []; 
     }
   }, [toast]);
 
@@ -62,10 +63,9 @@ export default function StaffPaymentsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [toast, fetchPatients]); // Removed 'patients' from dependency array of fetchInvoices
+  }, [toast, fetchPatients]); 
 
   useEffect(() => {
-    // Fetch patients first, then invoices using the fetched patients
     const loadInitialData = async () => {
         const fetchedPatients = await fetchPatients();
         await fetchInvoices(fetchedPatients);
@@ -192,13 +192,12 @@ function DialogRecordPayment({ invoice, patientName, onSuccess }: DialogRecordPa
 
   useEffect(() => {
     if (isOpen) {
-      // When dialog opens for an invoice, reset payment-specific fields to defaults
       setAmountPaidNowStr(''); 
       setPaymentMethod('Card'); 
       setPaymentDate(new Date().toISOString().split('T')[0]); 
       setPaymentNotes(''); 
     }
-  }, [isOpen, invoice]); // Re-run if dialog opens or the invoice it's for changes
+  }, [isOpen, invoice]);
 
 
   const handlePaymentSubmit = async (e: FormEvent) => {
@@ -229,8 +228,8 @@ function DialogRecordPayment({ invoice, patientName, onSuccess }: DialogRecordPa
         throw new Error(result.message || (result.errors ? JSON.stringify(result.errors) : 'Failed to record payment'));
       }
       toast({ title: "Payment Recorded", description: `Payment of $${parsedAmount.toFixed(2)} for invoice ${invoice.id} recorded.` });
-      setIsOpen(false); // Close dialog
-      if (onSuccess) onSuccess(); // Refresh invoice list
+      setIsOpen(false); 
+      if (onSuccess) onSuccess(); 
     } catch (err: any) {
       toast({ variant: "destructive", title: "Payment Error", description: err.message });
     } finally {
@@ -300,7 +299,7 @@ interface DialogCreateInvoiceProps {
   onSuccess: () => void;
 }
 interface InvoiceLineItem {
-  id: string; // for React key
+  id: string; 
   description: string;
   quantity: number;
   unitPrice: number;
@@ -315,7 +314,7 @@ function DialogCreateInvoice({ patients, onSuccess }: DialogCreateInvoiceProps) 
   const [issueDate, setIssueDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [dueDate, setDueDate] = useState<string>(() => {
     const date = new Date();
-    date.setDate(date.getDate() + 30); // Default due date 30 days from now
+    date.setDate(date.getDate() + 30); 
     return date.toISOString().split('T')[0];
   });
   const [lineItems, setLineItems] = useState<InvoiceLineItem[]>([{ id: `item-${Date.now()}`, description: '', quantity: 1, unitPrice: 0 }]);
@@ -387,15 +386,15 @@ function DialogCreateInvoice({ patients, onSuccess }: DialogCreateInvoiceProps) 
     const invoiceData = {
       patientId: selectedPatientId,
       date: issueDate,
-      dueDate: dueDate || undefined, // Send undefined if empty for optional field
+      dueDate: dueDate || undefined, 
       items: lineItems.map(item => ({ 
         description: item.description, 
         quantity: item.quantity, 
         unitPrice: item.unitPrice,
-        totalPrice: item.quantity * item.unitPrice // Server might recalculate, but good to send
+        totalPrice: item.quantity * item.unitPrice 
       })),
-      totalAmount, // Calculated client-side
-      amountPaid: 0, // New invoices start with 0 paid
+      totalAmount, 
+      amountPaid: 0, 
       status: 'Pending' as Invoice['status'],
     };
 
@@ -424,7 +423,7 @@ function DialogCreateInvoice({ patients, onSuccess }: DialogCreateInvoiceProps) 
       <DialogTrigger asChild>
         <Button><PlusCircle className="mr-2 h-4 w-4" /> Create Invoice</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-2xl"> {/* Wider dialog for more items */}
+      <DialogContent className="sm:max-w-2xl"> 
         <form onSubmit={handleCreateInvoiceSubmit}>
           <DialogHeader>
             <DialogTitle>Create New Invoice</DialogTitle>
@@ -497,3 +496,4 @@ function DialogCreateInvoice({ patients, onSuccess }: DialogCreateInvoiceProps) 
     </Dialog>
   )
 }
+
