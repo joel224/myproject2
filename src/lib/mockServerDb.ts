@@ -107,7 +107,10 @@ let treatmentPlans: TreatmentPlan[] = JSON.parse(JSON.stringify(initialTreatment
 let progressNotes: ProgressNote[] = JSON.parse(JSON.stringify(initialProgressNotes));
 let invoices: Invoice[] = JSON.parse(JSON.stringify(initialInvoices));
 let staff: StaffMember[] = JSON.parse(JSON.stringify(initialStaff));
-let paymentTransactions: PaymentTransaction[] = []; // New array for payment transactions
+let paymentTransactions: PaymentTransaction[] = [
+  // Example initial transaction if needed, usually starts empty
+  // { id: 'pt_example1', invoiceId: 'inv1', amountPaid: 100, paymentDate: '2024-05-01', paymentMethod: 'Card', recordedAt: new Date().toISOString(), notes: 'Initial part payment' }
+];
 
 
 let clinicWaitTime = { text: "<10 mins", updatedAt: new Date().toISOString() };
@@ -159,3 +162,4 @@ export async function authorize(req: NextRequest, requiredRole?: UserAuth['role'
 
   return { authorized: true, user: user, error: null };
 }
+

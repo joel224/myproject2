@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { DollarSign, PlusCircle, Search, Receipt, Loader2, AlertTriangle, Edit, Trash2, Eye } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import type { Invoice, Patient, PaymentTransaction, InvoiceItem as InvoiceItemType } from '@/lib/types'; 
@@ -90,14 +91,22 @@ export default function StaffPaymentsPage() {
 
   const filteredInvoices = invoices.filter(invoice =>
     (invoice.patientName && invoice.patientName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    invoice.id.toLowerCase().includes(searchTerm.toLowerCase()) || // Keep searching by invoice ID internally
-    (invoice.patientPhone && invoice.patientPhone.includes(searchTerm))
+    (invoice.patientPhone && invoice.patientPhone.includes(searchTerm)) ||
+    invoice.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleViewInvoiceDetails = (invoice: EnhancedInvoice) => {
     setViewingInvoice(invoice);
     setIsViewInvoiceModalOpen(true);
   };
+  
+  const handlePaymentActionSuccess = () => {
+    fetchInvoices(patients); // Re-fetch all invoices
+    if (viewingInvoice) { // If the detailed view dialog is open, refresh its content too
+        // This will be handled by the DialogViewInvoicePayments itself by re-fetching transactions
+    }
+  };
+
 
   return (
     <div className="space-y-6">
@@ -177,7 +186,7 @@ export default function StaffPaymentsPage() {
                           <DialogRecordPayment
                             invoice={invoice}
                             patientName={invoice.patientName}
-                            onSuccess={() => fetchInvoices(patients)}
+                            onSuccess={handlePaymentActionSuccess}
                           />
                       </TableCell>
                     </TableRow>
@@ -199,6 +208,7 @@ export default function StaffPaymentsPage() {
           invoice={viewingInvoice}
           isOpen={isViewInvoiceModalOpen}
           onOpenChange={setIsViewInvoiceModalOpen}
+          onPaymentActionSuccess={handlePaymentActionSuccess} // Pass the callback here
         />
       )}
     </div>
@@ -252,7 +262,7 @@ function DialogRecordPayment({ invoice, patientName, onSuccess }: DialogRecordPa
           amountPaidNow: parsedAmount, 
           paymentMethod, 
           paymentDate, 
-          notes: paymentNotes 
+          notes: paymentNotes.trim() === '' ? undefined : paymentNotes.trim()
         }),
       });
       const result = await response.json();
@@ -544,40 +554,77 @@ function DialogCreateInvoice({ patients, onSuccess }: DialogCreateInvoiceProps) 
 
 // Dialog for Viewing Invoice Details and Payment History
 interface DialogViewInvoicePaymentsProps {
-  invoice: EnhancedInvoice; // Use EnhancedInvoice here
+  invoice: EnhancedInvoice; 
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  onPaymentActionSuccess: () => void; // Callback for when a payment is deleted
 }
 
-function DialogViewInvoicePayments({ invoice, isOpen, onOpenChange }: DialogViewInvoicePaymentsProps) {
+function DialogViewInvoicePayments({ invoice, isOpen, onOpenChange, onPaymentActionSuccess }: DialogViewInvoicePaymentsProps) {
   const { toast } = useToast();
   const [paymentHistory, setPaymentHistory] = useState<PaymentTransaction[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
 
+  const [isDeletingPayment, setIsDeletingPayment] = useState(false);
+  const [paymentToDelete, setPaymentToDelete] = useState<PaymentTransaction | null>(null);
+  const [isConfirmDeleteDialogOpen, setIsConfirmDeleteDialogOpen] = useState(false);
+
+
+  const fetchPaymentHistory = useCallback(async () => {
+    if (!invoice?.id) return;
+    setIsLoadingHistory(true);
+    setHistoryError(null);
+    try {
+      const response = await fetch(`/api/invoices/${invoice.id}/transactions?_cb=${new Date().getTime()}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch payment history');
+      }
+      const data: PaymentTransaction[] = await response.json();
+      setPaymentHistory(data);
+    } catch (err: any) {
+      setHistoryError(err.message);
+      // toast({ variant: "destructive", title: "Error", description: "Could not load payment history." });
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  }, [invoice]);
+
   useEffect(() => {
-    if (isOpen && invoice?.id) {
-      const fetchPaymentHistory = async () => {
-        setIsLoadingHistory(true);
-        setHistoryError(null);
-        try {
-          const response = await fetch(`/api/invoices/${invoice.id}/transactions`);
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to fetch payment history');
-          }
-          const data: PaymentTransaction[] = await response.json();
-          setPaymentHistory(data);
-        } catch (err: any) {
-          setHistoryError(err.message);
-          toast({ variant: "destructive", title: "Error", description: "Could not load payment history." });
-        } finally {
-          setIsLoadingHistory(false);
-        }
-      };
+    if (isOpen) {
       fetchPaymentHistory();
     }
-  }, [isOpen, invoice, toast]);
+  }, [isOpen, fetchPaymentHistory]);
+
+  const handleDeletePaymentClick = (payment: PaymentTransaction) => {
+    setPaymentToDelete(payment);
+    setIsConfirmDeleteDialogOpen(true);
+  };
+
+  const confirmDeletePayment = async () => {
+    if (!paymentToDelete || !invoice) return;
+    setIsDeletingPayment(true);
+    try {
+      const response = await fetch(`/api/invoices/${invoice.id}/transactions/${paymentToDelete.id}`, {
+        method: 'DELETE',
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to delete payment transaction');
+      }
+      toast({ title: "Payment Deleted", description: `Payment of $${paymentToDelete.amountPaid.toFixed(2)} has been deleted.` });
+      fetchPaymentHistory(); // Refresh payment history in the dialog
+      if (onPaymentActionSuccess) onPaymentActionSuccess(); // Trigger refresh of main invoice list
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Deletion Error", description: err.message });
+    } finally {
+      setIsDeletingPayment(false);
+      setIsConfirmDeleteDialogOpen(false);
+      setPaymentToDelete(null);
+    }
+  };
+
 
   if (!invoice) return null;
 
@@ -631,6 +678,7 @@ function DialogViewInvoicePayments({ invoice, isOpen, onOpenChange }: DialogView
                     <div className="flex flex-col items-center justify-center p-4 text-destructive">
                         <AlertTriangle className="h-6 w-6 mb-1" />
                         <p>{historyError}</p>
+                         <Button variant="outline" size="sm" onClick={fetchPaymentHistory} className="mt-2">Try Again</Button>
                     </div>
                 ) : paymentHistory.length > 0 ? (
                     <Table>
@@ -640,6 +688,7 @@ function DialogViewInvoicePayments({ invoice, isOpen, onOpenChange }: DialogView
                         <TableHead className="text-right">Amount Paid</TableHead>
                         <TableHead>Method</TableHead>
                         <TableHead>Notes</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -649,6 +698,21 @@ function DialogViewInvoicePayments({ invoice, isOpen, onOpenChange }: DialogView
                             <TableCell className="text-right">${pt.amountPaid.toFixed(2)}</TableCell>
                             <TableCell>{pt.paymentMethod}</TableCell>
                             <TableCell className="text-xs">{pt.notes || '-'}</TableCell>
+                            <TableCell className="text-right">
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="text-destructive hover:text-destructive/80"
+                                    onClick={() => handleDeletePaymentClick(pt)}
+                                    disabled={isDeletingPayment && paymentToDelete?.id === pt.id}
+                                    aria-label="Delete Payment"
+                                >
+                                    {isDeletingPayment && paymentToDelete?.id === pt.id 
+                                        ? <Loader2 className="h-4 w-4 animate-spin" /> 
+                                        : <Trash2 className="h-4 w-4"/>
+                                    }
+                                </Button>
+                            </TableCell>
                         </TableRow>
                         ))}
                     </TableBody>
@@ -662,6 +726,24 @@ function DialogViewInvoicePayments({ invoice, isOpen, onOpenChange }: DialogView
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
         </DialogFooter>
       </DialogContent>
+      <AlertDialog open={isConfirmDeleteDialogOpen} onOpenChange={setIsConfirmDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Payment Deletion</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this payment of ${paymentToDelete?.amountPaid.toFixed(2)} made on {paymentToDelete ? new Date(paymentToDelete.paymentDate).toLocaleDateString() : ''}? This action cannot be undone and will update the invoice balance.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPaymentToDelete(null)} disabled={isDeletingPayment}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeletePayment} disabled={isDeletingPayment} className="bg-destructive hover:bg-destructive/90">
+              {isDeletingPayment ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Delete Payment
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
+
