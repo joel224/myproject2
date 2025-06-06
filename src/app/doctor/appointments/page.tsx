@@ -1,15 +1,77 @@
+
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
-import { mockAppointments, mockPatients, mockStaff } from "@/lib/mockData";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import type { Appointment } from "@/lib/types";
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, AlertTriangle } from 'lucide-react';
+
+// Mock current doctor ID - in a real app, this would come from auth context
+const MOCK_DOCTOR_ID = "doc1";
 
 export default function DoctorAppointmentsPage() {
-  // Filter appointments for the logged-in doctor (assuming doc1 for mock)
-  const doctorAppointments = mockAppointments
-    .filter(apt => apt.doctorId === 'doc1')
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const { toast } = useToast();
+  const [doctorAppointments, setDoctorAppointments] = useState<Appointment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+
+  const fetchDoctorAppointments = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/appointments?doctorId=${MOCK_DOCTOR_ID}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch appointments');
+      }
+      let data: Appointment[] = await response.json();
+      
+      // Sort appointments by date and time
+      const parseTime = (timeStr: string) => {
+            const [time, modifier] = timeStr.split(' ');
+            if (!time || !modifier) return 0;
+            let [hours, minutes] = time.split(':').map(Number);
+            if (modifier.toUpperCase() === 'PM' && hours < 12) hours += 12;
+            if (modifier.toUpperCase() === 'AM' && hours === 12) hours = 0; // Midnight case
+            return hours * 60 + minutes;
+      };
+
+      data.sort((a, b) => {
+        const dateA = new Date(a.date).getTime();
+        const dateB = new Date(b.date).getTime();
+        if (dateA !== dateB) return dateA - dateB;
+        return parseTime(a.time) - parseTime(b.time);
+      });
+
+      setDoctorAppointments(data);
+    } catch (err: any) {
+      setError(err.message || "Could not load appointments.");
+      toast({ variant: "destructive", title: "Error", description: err.message || "Could not load appointments." });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    fetchDoctorAppointments();
+  }, [fetchDoctorAppointments]);
+
+  // Filter appointments for the selected date on the calendar
+  const appointmentsForSelectedDate = doctorAppointments.filter(apt => {
+    if (!selectedDate) return true; // Show all if no date selected (or handle as needed)
+    const aptDate = new Date(apt.date);
+    aptDate.setHours(0,0,0,0); // Normalize appointment date
+    const selDate = new Date(selectedDate);
+    selDate.setHours(0,0,0,0); // Normalize selected date
+    return aptDate.getTime() === selDate.getTime();
+  });
+
 
   return (
     <div className="space-y-6">
@@ -20,15 +82,15 @@ export default function DoctorAppointmentsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Calendar</CardTitle>
-              <CardDescription>Your upcoming schedule.</CardDescription>
+              <CardDescription>Select a date to view appointments.</CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center">
               <Calendar
                 mode="single"
-                // selected={date}
-                // onSelect={setDate}
+                selected={selectedDate}
+                onSelect={setSelectedDate}
                 className="rounded-md border"
-                // You might want to add event indicators to the calendar here
+                // TODO: Add event indicators to the calendar here based on doctorAppointments
               />
             </CardContent>
           </Card>
@@ -38,10 +100,24 @@ export default function DoctorAppointmentsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Appointment List</CardTitle>
-              <CardDescription>All your scheduled appointments.</CardDescription>
+              <CardDescription>
+                {selectedDate 
+                  ? `Appointments for ${selectedDate.toLocaleDateString()}` 
+                  : "All your scheduled appointments."}
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              {doctorAppointments.length > 0 ? (
+              {isLoading ? (
+                <div className="flex items-center justify-center p-4">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="ml-2 text-muted-foreground">Loading appointments...</p>
+                </div>
+              ) : error ? (
+                <div className="flex flex-col items-center justify-center p-4 text-destructive">
+                  <AlertTriangle className="h-8 w-8 mb-2" />
+                  <p>{error}</p>
+                </div>
+              ) : appointmentsForSelectedDate.length > 0 ? (
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -53,10 +129,10 @@ export default function DoctorAppointmentsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {doctorAppointments.map(apt => (
+                    {appointmentsForSelectedDate.map(apt => (
                       <TableRow key={apt.id}>
                         <TableCell>{new Date(apt.date).toLocaleDateString()} - {apt.time}</TableCell>
-                        <TableCell>{apt.patientName || mockPatients.find(p => p.id === apt.patientId)?.name}</TableCell>
+                        <TableCell>{apt.patientName || 'N/A'}</TableCell>
                         <TableCell>{apt.type}</TableCell>
                         <TableCell><Badge variant={apt.status === 'Confirmed' || apt.status === 'Completed' ? 'default' : 'secondary'}>{apt.status}</Badge></TableCell>
                         <TableCell className="text-right space-x-1">
@@ -68,7 +144,9 @@ export default function DoctorAppointmentsPage() {
                   </TableBody>
                 </Table>
               ) : (
-                <p className="text-muted-foreground">No appointments found.</p>
+                <p className="text-muted-foreground text-center py-4">
+                  {selectedDate ? "No appointments found for the selected date." : "No appointments found."}
+                </p>
               )}
             </CardContent>
           </Card>
