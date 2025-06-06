@@ -93,7 +93,7 @@ export interface Invoice {
   items: InvoiceItem[];
   totalAmount: number;
   amountPaid: number;
-  status: 'Pending' | 'Paid' | 'Overdue' | 'Partial';
+  status: 'Pending' | 'Paid' | 'Overdue' | 'Partial' | 'Cancelled'; // Added 'Cancelled'
   // paymentHistory?: PaymentTransaction[]; // Optional: if embedding, otherwise fetch separately
 }
 

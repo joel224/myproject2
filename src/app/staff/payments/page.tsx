@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, PlusCircle, Search, Receipt, Loader2, AlertTriangle, Edit, Trash2, Eye } from "lucide-react";
+import { DollarSign, PlusCircle, Search, Receipt, Loader2, AlertTriangle, Edit, Trash2, Eye, Ban } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -102,8 +102,9 @@ export default function StaffPaymentsPage() {
   
   const handlePaymentActionSuccess = () => {
     fetchInvoices(patients); // Re-fetch all invoices
-    if (viewingInvoice) { // If the detailed view dialog is open, refresh its content too
-        // This will be handled by the DialogViewInvoicePayments itself by re-fetching transactions
+    if (viewingInvoice) { 
+        // If view dialog is open, re-fetch its content too (or rely on its internal refresh)
+        // For now, DialogViewInvoicePayments handles its own refresh
     }
   };
 
@@ -176,7 +177,8 @@ export default function StaffPaymentsPage() {
                           variant={
                             invoice.status === 'Paid' ? 'default' : 
                             invoice.status === 'Pending' ? 'secondary' : 
-                            invoice.status === 'Overdue' ? 'destructive' : 'outline'
+                            invoice.status === 'Overdue' || invoice.status === 'Cancelled' ? 'destructive' : 
+                            'outline' // For Partial
                           }
                         >
                           {invoice.status}
@@ -208,7 +210,7 @@ export default function StaffPaymentsPage() {
           invoice={viewingInvoice}
           isOpen={isViewInvoiceModalOpen}
           onOpenChange={setIsViewInvoiceModalOpen}
-          onPaymentActionSuccess={handlePaymentActionSuccess} // Pass the callback here
+          onPaymentActionSuccess={handlePaymentActionSuccess} 
         />
       )}
     </div>
@@ -226,6 +228,8 @@ function DialogRecordPayment({ invoice, patientName, onSuccess }: DialogRecordPa
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isCancellingInvoice, setIsCancellingInvoice] = useState(false);
+  const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   
   const [amountPaidNowStr, setAmountPaidNowStr] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<string>('Card');
@@ -279,67 +283,124 @@ function DialogRecordPayment({ invoice, patientName, onSuccess }: DialogRecordPa
     }
   };
   
+  const handleCancelInvoice = async () => {
+    if (!invoice) return;
+    setIsCancellingInvoice(true);
+    try {
+      const response = await fetch(`/api/invoices/${invoice.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'Cancelled' }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to cancel invoice');
+      }
+      toast({ title: "Invoice Cancelled", description: `Invoice ${invoice.id} has been marked as Cancelled.` });
+      setIsOpen(false); // Close the record payment dialog
+      setIsCancelConfirmOpen(false); // Close confirmation dialog
+      if (onSuccess) onSuccess(); // Refresh main list
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Cancellation Error", description: err.message });
+    } finally {
+      setIsCancellingInvoice(false);
+    }
+  };
+  
   const amountDue = invoice ? (invoice.totalAmount - invoice.amountPaid).toFixed(2) : '0.00';
   const totalInvoiceAmount = invoice ? invoice.totalAmount.toFixed(2) : '0.00';
+  const canCancelInvoice = invoice && invoice.status !== 'Paid' && invoice.status !== 'Cancelled';
+
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" disabled={invoice.status === 'Paid'}>
-          <DollarSign className="mr-1 h-4 w-4"/> Record Payment
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <form onSubmit={handlePaymentSubmit}>
-          <DialogHeader>
-            <DialogTitle>Record Payment For Invoice {invoice.id}</DialogTitle>
-            <DialogDescription>
-              Patient: {patientName || 'N/A'}. Invoice Total: ${totalInvoiceAmount}. Amount Due: ${amountDue}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-             <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="payment-amount" className="text-right">Amount Paid</Label>
-                <Input 
-                  id="payment-amount" 
-                  type="number" 
-                  placeholder="0.00" 
-                  className="col-span-3" 
-                  value={amountPaidNowStr} 
-                  onChange={e => setAmountPaidNowStr(e.target.value)} 
-                  step="1" 
-                />
-            </div>
+    <>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm" disabled={invoice.status === 'Paid' || invoice.status === 'Cancelled'}>
+            <DollarSign className="mr-1 h-4 w-4"/> Record Payment
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-md">
+          <form onSubmit={handlePaymentSubmit}>
+            <DialogHeader>
+              <DialogTitle>Record Payment For Invoice {invoice.id}</DialogTitle>
+              <DialogDescription>
+                Patient: {patientName || 'N/A'}. Invoice Total: ${totalInvoiceAmount}. Amount Due: ${amountDue}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="payment-amount" className="text-right">Amount Paid</Label>
+                  <Input 
+                    id="payment-amount" 
+                    type="number" 
+                    placeholder="0.00" 
+                    className="col-span-3" 
+                    value={amountPaidNowStr} 
+                    onChange={e => setAmountPaidNowStr(e.target.value)} 
+                    step="1" 
+                  />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="payment-method" className="text-right">Method</Label>
+                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                      <SelectTrigger id="payment-method" className="col-span-3">
+                          <SelectValue placeholder="Select method" />
+                      </SelectTrigger>
+                      <SelectContent>
+                          {PAYMENT_METHODS.map(method => <SelectItem key={method} value={method}>{method}</SelectItem>)}
+                      </SelectContent>
+                  </Select>
+              </div>
             <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="payment-method" className="text-right">Method</Label>
-                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                    <SelectTrigger id="payment-method" className="col-span-3">
-                        <SelectValue placeholder="Select method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {PAYMENT_METHODS.map(method => <SelectItem key={method} value={method}>{method}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+                  <Label htmlFor="payment-date" className="text-right">Payment Date</Label>
+                  <Input id="payment-date" type="date" value={paymentDate} onChange={e => setPaymentDate(e.target.value)} className="col-span-3" />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="payment-notes" className="text-right">Notes</Label>
+                  <Textarea id="payment-notes" placeholder="Optional transaction notes (e.g., check #, partial payment for X)" className="col-span-3" value={paymentNotes} onChange={e => setPaymentNotes(e.target.value)} rows={2}/>
+              </div>
             </div>
-           <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="payment-date" className="text-right">Payment Date</Label>
-                <Input id="payment-date" type="date" value={paymentDate} onChange={e => setPaymentDate(e.target.value)} className="col-span-3" />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="payment-notes" className="text-right">Notes</Label>
-                <Textarea id="payment-notes" placeholder="Optional transaction notes (e.g., check #, partial payment for X)" className="col-span-3" value={paymentNotes} onChange={e => setPaymentNotes(e.target.value)} rows={2}/>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsOpen(false)} disabled={isSaving}>Cancel</Button>
-            <Button type="submit" disabled={isSaving}>
-              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Record Payment
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+            <DialogFooter className="flex flex-col sm:flex-row sm:justify-between items-center pt-4">
+              <Button 
+                type="button" 
+                variant="destructive" 
+                onClick={() => setIsCancelConfirmOpen(true)} 
+                disabled={!canCancelInvoice || isSaving || isCancellingInvoice}
+              >
+                {isCancellingInvoice ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Ban className="mr-2 h-4 w-4" />}
+                Cancel Invoice
+              </Button>
+              <div className="flex gap-2 mt-2 sm:mt-0">
+                <Button type="button" variant="outline" onClick={() => setIsOpen(false)} disabled={isSaving || isCancellingInvoice}>Cancel Payment</Button>
+                <Button type="submit" disabled={isSaving || isCancellingInvoice}>
+                  {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Record Payment
+                </Button>
+              </div>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={isCancelConfirmOpen} onOpenChange={setIsCancelConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Invoice Cancellation</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel invoice {invoice?.id}? This action will mark the invoice as 'Cancelled' and it cannot be undone. Any recorded payments will remain for historical purposes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isCancellingInvoice}>Dismiss</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCancelInvoice} disabled={isCancellingInvoice} className="bg-destructive hover:bg-destructive/90">
+              {isCancellingInvoice ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Confirm Cancellation
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }
 
