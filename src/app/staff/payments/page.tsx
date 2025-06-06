@@ -89,11 +89,15 @@ export default function StaffPaymentsPage() {
   }, [fetchPatients, fetchInvoices]);
 
 
-  const filteredInvoices = invoices.filter(invoice =>
-    (invoice.patientName && invoice.patientName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (invoice.patientPhone && invoice.patientPhone.includes(searchTerm)) ||
-    invoice.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredInvoices = invoices.filter(invoice => {
+    const matchesSearchTerm = (
+        (invoice.patientName && invoice.patientName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (invoice.patientPhone && invoice.patientPhone.includes(searchTerm)) ||
+        invoice.id.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    // Exclude 'Cancelled' invoices from the main list view
+    return invoice.status !== 'Cancelled' && matchesSearchTerm;
+  });
 
   const handleViewInvoiceDetails = (invoice: EnhancedInvoice) => {
     setViewingInvoice(invoice);
@@ -101,10 +105,17 @@ export default function StaffPaymentsPage() {
   };
   
   const handlePaymentActionSuccess = () => {
-    fetchInvoices(patients); // Re-fetch all invoices
-    if (viewingInvoice) { 
-        // If view dialog is open, re-fetch its content too (or rely on its internal refresh)
-        // For now, DialogViewInvoicePayments handles its own refresh
+    fetchInvoices(patients); 
+    if (viewingInvoice && isViewInvoiceModalOpen) {
+        // If the view dialog is open and an action occurred (like deleting a payment transaction from it),
+        // we need to refresh the data for THAT dialog too, or close it to avoid stale data.
+        // For simplicity, we might choose to close it or rely on its internal fetch for payment history.
+        // If a payment was recorded/invoice cancelled from DialogRecordPayment, DialogViewInvoicePayments is not open.
+        // If a payment transaction was deleted from DialogViewInvoicePayments, it internally refreshes its history.
+        // The main concern is if the invoice's total paid/status changed and DialogViewInvoicePayments is open.
+        // A robust solution would be to also update `viewingInvoice` state or re-trigger its internal fetch.
+        // For now, simply re-fetching the main list is the primary action.
+        // The DialogViewInvoicePayments itself fetches its payment history when opened.
     }
   };
 
@@ -618,7 +629,7 @@ interface DialogViewInvoicePaymentsProps {
   invoice: EnhancedInvoice; 
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onPaymentActionSuccess: () => void; // Callback for when a payment is deleted
+  onPaymentActionSuccess: () => void; // Callback for when a payment is deleted or invoice status changes via this dialog
 }
 
 function DialogViewInvoicePayments({ invoice, isOpen, onOpenChange, onPaymentActionSuccess }: DialogViewInvoicePaymentsProps) {
@@ -653,10 +664,10 @@ function DialogViewInvoicePayments({ invoice, isOpen, onOpenChange, onPaymentAct
   }, [invoice]);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && invoice) { // Make sure invoice is also defined
       fetchPaymentHistory();
     }
-  }, [isOpen, fetchPaymentHistory]);
+  }, [isOpen, invoice, fetchPaymentHistory]); // Added invoice to dependency array
 
   const handleDeletePaymentClick = (payment: PaymentTransaction) => {
     setPaymentToDelete(payment);
@@ -675,8 +686,8 @@ function DialogViewInvoicePayments({ invoice, isOpen, onOpenChange, onPaymentAct
         throw new Error(result.message || 'Failed to delete payment transaction');
       }
       toast({ title: "Payment Deleted", description: `Payment of $${paymentToDelete.amountPaid.toFixed(2)} has been deleted.` });
-      fetchPaymentHistory(); // Refresh payment history in the dialog
-      if (onPaymentActionSuccess) onPaymentActionSuccess(); // Trigger refresh of main invoice list
+      fetchPaymentHistory(); 
+      if (onPaymentActionSuccess) onPaymentActionSuccess(); 
     } catch (err: any) {
       toast({ variant: "destructive", title: "Deletion Error", description: err.message });
     } finally {
