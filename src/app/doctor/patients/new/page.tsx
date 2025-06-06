@@ -225,7 +225,7 @@ export default function DoctorAddNewPatientPage() {
       <Card className="w-full max-w-2xl mx-auto shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl">Add New Patient (Doctor Portal)</CardTitle>
-          <CardDescription>Fill in the patient's details and medical information.</CardDescription>
+          <CardDescription>Enter the patient's details. This will add them to the central clinic records accessible by authorized staff and doctors.</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-6">
@@ -370,4 +370,6 @@ export default function DoctorAddNewPatientPage() {
     </div>
   );
 }
+    
+
     
