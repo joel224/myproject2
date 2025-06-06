@@ -3,10 +3,12 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { db, generateId, authorize, UserAuth } from '@/lib/mockServerDb'; // Assuming UserAuth is exported
+import { db as firestoreDb } from '@/lib/firebase'; // Use actual Firestore instance
+import { collection, getDocs, addDoc, query, where, serverTimestamp } from 'firebase/firestore';
 import type { Patient } from '@/lib/types';
+import type { UserAuth } from '@/lib/mockServerDb'; // For UserAuth type
 
-// Schema for creating a new patient
+// Schema for creating a new patient profile in Firestore's 'users' collection
 const createPatientSchema = z.object({
   name: z.string().min(2, "Name is required"),
   email: z.string().email("Invalid email address"),
@@ -22,52 +24,56 @@ const createPatientSchema = z.object({
   hasAllergy: z.boolean().optional().default(false),
   allergySpecifics: z.string().optional(),
   hasAsthma: z.boolean().optional().default(false),
-  password: z.string().min(6, "Password must be at least 6 characters").optional(), // For creating user account
+  // Password field removed from staff creation API, should be handled via auth flows
 });
 
 /**
- * Handles GET requests to /api/patients
+ * Handles GET requests to /api/patients - Fetches patients from Firestore
  * @param request - The incoming NextRequest object
  * @returns A NextResponse object containing a list of patients or an error.
  */
 export async function GET(request: NextRequest) {
-  // const authResult = await authorize(request, 'staff'); 
-  // if (!authResult.authorized || !authResult.user) {
-  //   return authResult.error;
-  // }
+  // TODO: Add proper authorization check using Firebase Auth context if needed for staff access
+  try {
+    const usersCollectionRef = collection(firestoreDb, 'users');
+    const q = query(usersCollectionRef, where('role', '==', 'patient'));
+    const querySnapshot = await getDocs(q);
 
-  const patientUsers = db.users.filter(u => u.role === 'patient').map(u => ({
-    id: u.id,
-    name: u.name,
-    email: u.email,
-    phone: u.phone,
-    dateOfBirth: u.dateOfBirth,
-    age: u.age,
-    medicalRecords: u.medicalRecords,
-    xrayImageUrls: u.xrayImageUrls,
-    hasDiabetes: u.hasDiabetes,
-    hasHighBloodPressure: u.hasHighBloodPressure,
-    hasStrokeOrHeartAttackHistory: u.hasStrokeOrHeartAttackHistory,
-    hasBleedingDisorders: u.hasBleedingDisorders,
-    hasAllergy: u.hasAllergy,
-    allergySpecifics: u.allergySpecifics,
-    hasAsthma: u.hasAsthma,
-  }));
-  
-  return NextResponse.json(patientUsers, { status: 200 });
+    const patientsList: Patient[] = [];
+    querySnapshot.forEach((doc) => {
+      const data = doc.data() as UserAuth; // UserAuth contains all patient fields
+      patientsList.push({
+        id: doc.id, // Use Firestore document ID
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        dateOfBirth: data.dateOfBirth,
+        age: data.age,
+        medicalRecords: data.medicalRecords,
+        xrayImageUrls: data.xrayImageUrls || [],
+        hasDiabetes: data.hasDiabetes,
+        hasHighBloodPressure: data.hasHighBloodPressure,
+        hasStrokeOrHeartAttackHistory: data.hasStrokeOrHeartAttackHistory,
+        hasBleedingDisorders: data.hasBleedingDisorders,
+        hasAllergy: data.hasAllergy,
+        allergySpecifics: data.allergySpecifics,
+        hasAsthma: data.hasAsthma,
+      });
+    });
+    return NextResponse.json(patientsList, { status: 200 });
+  } catch (error) {
+    console.error('Error fetching patients from Firestore:', error);
+    return NextResponse.json({ message: 'Error fetching patients' }, { status: 500 });
+  }
 }
 
 /**
- * Handles POST requests to /api/patients to create a new patient.
+ * Handles POST requests to /api/patients to create a new patient in Firestore.
  * @param request - The incoming NextRequest object
  * @returns A NextResponse object containing the new patient or an error.
  */
 export async function POST(request: NextRequest) {
-  // const authResult = await authorize(request, 'staff');
-  // if (!authResult.authorized || !authResult.user) {
-  //   return authResult.error;
-  // }
-
+  // TODO: Add proper authorization check for staff
   try {
     const body = await request.json();
     const validation = createPatientSchema.safeParse(body);
@@ -76,74 +82,48 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Validation failed", errors: validation.error.flatten().fieldErrors }, { status: 400 });
     }
 
-    const { 
-        name, email, phone, dateOfBirth, age, 
-        medicalRecords, xrayImageUrls, 
-        hasDiabetes, hasHighBloodPressure, hasStrokeOrHeartAttackHistory, 
-        hasBleedingDisorders, hasAllergy, allergySpecifics, hasAsthma, 
-        password 
-    } = validation.data;
+    const patientData = validation.data;
 
-    if (db.users.find(u => u.email === email)) {
+    // Check if email already exists
+    const usersCollectionRef = collection(firestoreDb, 'users');
+    const q = query(usersCollectionRef, where('email', '==', patientData.email));
+    const existingUserSnapshot = await getDocs(q);
+
+    if (!existingUserSnapshot.empty) {
       return NextResponse.json({ message: "A user with this email already exists." }, { status: 409 });
     }
 
-    const newUserId = generateId('user_');
-    const passwordHash = password ? `$2a$10$${generateId('fakeHash')}${password.substring(0,3)}` : `$2a$10$defaultHash${generateId()}`;
-
-    const newUserForPatient: UserAuth = {
-      id: newUserId,
-      name,
-      email,
-      passwordHash,
+    const newPatientDoc: Omit<UserAuth, 'id' | 'passwordHash'> = {
+      ...patientData,
       role: 'patient',
-      phone,
-      dateOfBirth,
-      age,
-      medicalRecords,
-      xrayImageUrls,
-      hasDiabetes,
-      hasHighBloodPressure,
-      hasStrokeOrHeartAttackHistory,
-      hasBleedingDisorders,
-      hasAllergy,
-      allergySpecifics: hasAllergy ? allergySpecifics : undefined, // Only store specifics if allergy is true
-      hasAsthma,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      // Ensure optional fields are handled if not present in patientData
+      phone: patientData.phone || undefined,
+      dateOfBirth: patientData.dateOfBirth || undefined,
+      age: patientData.age || undefined,
+      medicalRecords: patientData.medicalRecords || undefined,
+      xrayImageUrls: patientData.xrayImageUrls || [],
+      hasDiabetes: patientData.hasDiabetes || false,
+      hasHighBloodPressure: patientData.hasHighBloodPressure || false,
+      hasStrokeOrHeartAttackHistory: patientData.hasStrokeOrHeartAttackHistory || false,
+      hasBleedingDisorders: patientData.hasBleedingDisorders || false,
+      hasAllergy: patientData.hasAllergy || false,
+      allergySpecifics: patientData.hasAllergy ? (patientData.allergySpecifics || undefined) : undefined,
+      hasAsthma: patientData.hasAsthma || false,
     };
-    db.users.push(newUserForPatient);
 
-    // Also update the separate db.patients array if it's being used as primary source for Patient type
-     const newPatientRecord: Patient = {
-      id: newUserId,
-      name,
-      email,
-      phone,
-      dateOfBirth,
-      age,
-      medicalRecords,
-      xrayImageUrls,
-      hasDiabetes,
-      hasHighBloodPressure,
-      hasStrokeOrHeartAttackHistory,
-      hasBleedingDisorders,
-      hasAllergy,
-      allergySpecifics: hasAllergy ? allergySpecifics : undefined,
-      hasAsthma,
+    const docRef = await addDoc(usersCollectionRef, newPatientDoc);
+
+    const newPatient: Patient = {
+      id: docRef.id,
+      ...patientData, // Spread validated data, ensuring all fields are present
     };
-    const patientIndex = db.patients.findIndex(p => p.id === newUserId);
-    if (patientIndex !== -1) {
-        db.patients[patientIndex] = newPatientRecord;
-    } else {
-        db.patients.push(newPatientRecord);
-    }
 
-
-    const patientToReturn = { ...newPatientRecord }; // Return the patient object
-
-    return NextResponse.json(patientToReturn, { status: 201 });
+    return NextResponse.json(newPatient, { status: 201 });
 
   } catch (error) {
-    console.error('Error creating patient:', error);
+    console.error('Error creating patient in Firestore:', error);
     return NextResponse.json({ message: 'Error creating patient' }, { status: 500 });
   }
 }
