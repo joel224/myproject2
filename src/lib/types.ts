@@ -106,3 +106,24 @@ export interface PaymentTransaction {
   notes?: string;
   recordedAt: string; // ISO string for timestamp
 }
+
+export interface Message {
+  id: string;
+  conversationId: string;
+  senderId: string; // Can be patientId or staffId
+  senderRole: 'patient' | 'staff';
+  text: string;
+  timestamp: string; // ISO string
+  attachments?: { type: string; url: string }[]; // Optional
+}
+
+export interface Conversation {
+  id: string;
+  patientId: string;
+  staffId?: string; // Could be a general clinic ID or specific staff
+  patientName?: string; // Denormalized
+  patientAvatarUrl?: string; // Denormalized
+  lastMessageText?: string;
+  lastMessageTimestamp?: string; // ISO string
+  unreadCountForStaff?: number; // Number of messages unread by staff
+}
