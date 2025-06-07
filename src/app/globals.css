@@ -56,8 +56,8 @@
     --staff-content-background: 50 80% 96%; /* Light, soft cream */
 
     /* Navbar specific background */
-    --navbar-background-main: 166 100% 30%; /* Lighter Emerald Green */
-    --navbar-foreground-main: 0 0% 98%; /* Off-white for text on emerald */
+    --navbar-background-main: 0 0% 100%; /* Default to white if solid */
+    --navbar-foreground-main: 25 50% 25%; /* Dark Brown for text on light/white navbar */
  }
 
   .dark {
@@ -109,9 +109,9 @@
     /* Staff page specific background for dark mode */
     --staff-content-background: 45 15% 16%; /* Dark, slightly warm off-black/grey */
     
-    /* Navbar specific background for dark mode */
-    --navbar-background-main: 166 90% 28%; /* Lighter Rich Emerald for Dark Mode */
-    --navbar-foreground-main: 0 0% 95%; /* Slightly softer off-white for dark mode navbar text */
+    /* Navbar specific background */
+    --navbar-background-main: 30 20% 12%; /* Default to dark if solid */
+    --navbar-foreground-main: 0 0% 95%; /* Off-white for text on dark navbar */
  }
 }
 

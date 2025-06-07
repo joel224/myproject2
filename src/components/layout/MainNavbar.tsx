@@ -37,19 +37,19 @@ export function MainNavbar() {
 
   return (
     <header className={cn(
-      "sticky top-0 z-50 w-full border-b border-border/40 backdrop-blur supports-[backdrop-filter]:bg-opacity-60",
-      "bg-navbar-background-main/95 text-navbar-foreground-main", // Apply new background and text colors
-      "[&_svg]:text-navbar-foreground-main" // Ensure SVGs directly inside also get the color
+      "sticky top-0 z-50 w-full border-b border-border/40 text-navbar-foreground-main backdrop-blur",
+      "bg-white/50 dark:bg-neutral-800/60", // Semi-transparent white/dark backgrounds
+      "[&_svg]:text-navbar-foreground-main"
     )}>
       <div className="container flex h-16 max-w-screen-2xl items-center justify-between">
         <Link href="/" className="flex items-center space-x-2">
-          <Logo className="h-8 w-auto" /> {/* Logo text color updated internally */}
+          <Logo className="h-8 w-auto" />
         </Link>
-        <nav className="flex items-center space-x-1 sm:space-x-2"> {/* Adjusted spacing */}
+        <nav className="flex items-center space-x-1 sm:space-x-2">
           <Link href="/#services" onClick={(e) => handleNavClickAndAnimate(e, '/#services')}>
             <Button 
               variant="ghost" 
-              className="text-navbar-foreground-main hover:bg-navbar-foreground-main/10 hover:text-navbar-foreground-main"
+              className="text-navbar-foreground-main hover:bg-black/5 dark:hover:bg-white/5"
             >
               Services
             </Button>
@@ -57,7 +57,7 @@ export function MainNavbar() {
           <Link href="/#team" onClick={(e) => handleNavClickAndAnimate(e, '/#team')}>
             <Button 
               variant="ghost" 
-              className="text-navbar-foreground-main hover:bg-navbar-foreground-main/10 hover:text-navbar-foreground-main"
+              className="text-navbar-foreground-main hover:bg-black/5 dark:hover:bg-white/5"
             >
               Our Team
             </Button>
@@ -65,13 +65,13 @@ export function MainNavbar() {
           <Link href="/#appointment" onClick={(e) => handleNavClickAndAnimate(e, '/#appointment')}>
             <Button 
               variant="ghost" 
-              className="text-navbar-foreground-main hover:bg-navbar-foreground-main/10 hover:text-navbar-foreground-main"
+              className="text-navbar-foreground-main hover:bg-black/5 dark:hover:bg-white/5"
             >
               Contact
             </Button>
           </Link>
           <Link href="/login">
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90"> {/* Default variant, should contrast well */}
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
               <LogIn className="mr-2 h-4 w-4 text-primary-foreground" /> Login
             </Button>
           </Link>
@@ -80,7 +80,7 @@ export function MainNavbar() {
             <Button 
               variant="outline" 
               size="sm" 
-              className="border-navbar-foreground-main/70 text-navbar-foreground-main hover:bg-navbar-foreground-main/10 hover:text-navbar-foreground-main"
+              className="border-navbar-foreground-main/50 text-navbar-foreground-main hover:bg-black/5 dark:hover:bg-white/5 hover:text-navbar-foreground-main"
             >
               <LayoutDashboard className="mr-1 h-4 w-4 sm:mr-2" /> 
               <span className="hidden sm:inline">Staff</span>
@@ -90,7 +90,7 @@ export function MainNavbar() {
             <Button 
               variant="outline" 
               size="sm"
-              className="border-navbar-foreground-main/70 text-navbar-foreground-main hover:bg-navbar-foreground-main/10 hover:text-navbar-foreground-main"
+              className="border-navbar-foreground-main/50 text-navbar-foreground-main hover:bg-black/5 dark:hover:bg-white/5 hover:text-navbar-foreground-main"
             >
               <LayoutDashboard className="mr-1 h-4 w-4 sm:mr-2" /> 
               <span className="hidden sm:inline">Doctor</span>
