@@ -56,8 +56,12 @@
     --staff-content-background: 50 80% 96%; /* Light, soft cream */
 
     /* Navbar specific background */
-    --navbar-background-main: 0 0% 100%; /* Default to white if solid */
-    --navbar-foreground-main: 25 50% 25%; /* Dark Brown for text on light/white navbar */
+    --navbar-background-main: 0 0% 100%; 
+    --navbar-foreground-main: 25 50% 25%;
+
+    /* Medical Freshness Accent */
+    --medical-accent: 165 55% 58%; /* Soft Teal */
+    --medical-accent-foreground: 165 30% 15%; /* Dark Teal */
  }
 
   .dark {
@@ -110,8 +114,12 @@
     --staff-content-background: 45 15% 16%; /* Dark, slightly warm off-black/grey */
     
     /* Navbar specific background */
-    --navbar-background-main: 30 20% 12%; /* Default to dark if solid */
-    --navbar-foreground-main: 0 0% 95%; /* Off-white for text on dark navbar */
+    --navbar-background-main: 30 20% 12%; 
+    --navbar-foreground-main: 0 0% 95%;
+
+    /* Medical Freshness Accent */
+    --medical-accent: 165 50% 68%; /* Brighter Soft Teal for dark mode */
+    --medical-accent-foreground: 165 30% 90%; /* Very Light Teal */
  }
 }
 
@@ -121,14 +129,12 @@
   }
   body {
     @apply bg-background text-foreground;
-    /* font-family removed, will be handled by Next/Font and Tailwind config */
   }
 }
 
-/* Marquee highlight animation for headings */
 .animate-marquee-bg {
-  position: relative; /* Necessary for ::after positioning */
-  overflow: hidden;   /* To clip the ::after element */
+  position: relative; 
+  overflow: hidden;   
 }
 
 .animate-marquee-bg::after {
@@ -138,10 +144,10 @@
   left: 0;
   width: 100%; 
   height: 100%;
-  background-color: hsl(var(--accent) / 0.3); /* Uses the new accent color, translucent */
-  transform: translateX(-100%); /* Start off-screen to the left */
+  background-color: hsl(var(--accent) / 0.3); 
+  transform: translateX(-100%); 
   animation: marquee-bg-animation 1s ease-out; 
-  z-index: -1; /* Behind the text */
+  z-index: -1; 
   pointer-events: none; 
 }
 
@@ -149,10 +155,10 @@
   0% {
     transform: translateX(-100%);
   }
-  40%, 60% { /* Dwell in the middle for a bit to be visible */
+  40%, 60% { 
     transform: translateX(0%);
   }
   100% {
-    transform: translateX(100%); /* Sweep out to the right */
+    transform: translateX(100%); 
   }
 }

@@ -32,7 +32,7 @@ export default function VirtualConsultationPage() {
                   <li>Have any relevant photos or X-rays ready if requested.</li>
                 </ul>
               </div>
-              <Button size="lg" className="w-full">
+              <Button size="lg" className="w-full bg-medicalAccent text-medicalAccent-foreground hover:bg-medicalAccent/90">
                 Join Waiting Room
               </Button>
               <p className="text-xs text-muted-foreground">
@@ -44,7 +44,7 @@ export default function VirtualConsultationPage() {
           <div className="mt-12 grid md:grid-cols-2 gap-6 max-w-3xl w-full">
             <Card>
               <CardHeader className="flex flex-row items-center space-x-3 pb-3">
-                <CheckCircle className="h-6 w-6 text-accent"/>
+                <CheckCircle className="h-6 w-6 text-medicalAccent"/>
                 <CardTitle className="text-lg">Benefits</CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground">

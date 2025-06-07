@@ -17,15 +17,16 @@ export function HeroSection() {
             </p>
             <div className="flex flex-col items-center lg:items-start space-y-4">
               <Link href="/#appointment">
-                <Button size="lg" className="px-8 py-6 text-lg shadow-lg hover:shadow-primary/30 transition-shadow">
+                <Button 
+                  size="lg" 
+                  className="px-8 py-6 text-lg shadow-lg bg-medicalAccent text-medicalAccent-foreground hover:bg-medicalAccent/90 transition-shadow"
+                >
                   Book an Appointment in 30 Seconds
                 </Button>
               </Link>
             </div>
           </div>
           <div className="flex justify-center items-center">
-            {/* Optional: subtle animation could be applied here */}
-            {/* <SmilingToothIcon className="w-48 h-48 md:w-64 md:h-64 text-primary opacity-80 animate-pulse" /> */}
             <Image
               src="https://placehold.co/600x400.png"
               alt="Happy patient smiling"

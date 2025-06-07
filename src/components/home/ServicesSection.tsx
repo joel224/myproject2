@@ -20,7 +20,7 @@ export function ServicesSection() {
           {services.map(service => (
             <Card key={service} className="shadow-md hover:shadow-xl transition-all duration-300 ease-in-out hover:-translate-y-1">
               <CardContent className="p-6 flex items-center space-x-3">
-                <CheckCircle className="h-6 w-6 text-accent" />
+                <CheckCircle className="h-6 w-6 text-medicalAccent" />
                 <h3 className="text-lg font-semibold text-foreground">{service}</h3>
               </CardContent>
             </Card>
@@ -30,4 +30,3 @@ export function ServicesSection() {
     </section>
   );
 }
-

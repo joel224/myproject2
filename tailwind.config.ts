@@ -13,7 +13,7 @@ export default {
   	extend: {
       fontFamily: {
         sans: ["var(--font-open-sans)", ...fontFamily.sans],
-        manrope: ["var(--font-manrope)", ...fontFamily.sans], // Added Manrope utility
+        manrope: ["var(--font-manrope)", ...fontFamily.sans], 
       },
   		colors: {
         background: 'hsl(var(--background))',
@@ -69,6 +69,10 @@ export default {
         'staff-content-area': 'hsl(var(--staff-content-background))',
         'navbar-background-main': 'hsl(var(--navbar-background-main))',
         'navbar-foreground-main': 'hsl(var(--navbar-foreground-main))',
+        'medicalAccent': {
+          DEFAULT: 'hsl(var(--medical-accent))',
+          foreground: 'hsl(var(--medical-accent-foreground))'
+        },
       },
   		borderRadius: {
   			lg: 'var(--radius)',

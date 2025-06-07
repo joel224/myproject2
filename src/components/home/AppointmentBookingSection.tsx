@@ -17,11 +17,16 @@ export function AppointmentBookingSection() {
             <CardDescription>Fill out the form below or call us directly.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Simplified form placeholder */}
             <div><label htmlFor="name" className="block text-sm font-medium text-foreground">Full Name</label><input type="text" id="name" className="mt-1 block w-full rounded-md border-input shadow-sm p-2" placeholder="Your Name" /></div>
             <div><label htmlFor="phone" className="block text-sm font-medium text-foreground">Phone Number</label><input type="tel" id="phone" className="mt-1 block w-full rounded-md border-input shadow-sm p-2" placeholder="Your Phone" /></div>
             <div><label htmlFor="service" className="block text-sm font-medium text-foreground">Service Needed</label><select id="service" className="mt-1 block w-full rounded-md border-input shadow-sm p-2 bg-background"><option>General Checkup</option><option>Cleaning</option><option>Whitening</option><option>Other</option></select></div>
-            <Button type="submit" className="w-full" size="lg">Request Appointment</Button>
+            <Button 
+              type="submit" 
+              className="w-full bg-medicalAccent text-medicalAccent-foreground hover:bg-medicalAccent/90" 
+              size="lg"
+            >
+              Request Appointment
+            </Button>
             <p className="text-sm text-muted-foreground text-center">Or call us at <a href="tel:+1234567890" className="text-primary hover:underline">(123) 456-7890</a></p>
           </CardContent>
         </Card>
