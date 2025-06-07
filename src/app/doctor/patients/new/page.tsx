@@ -188,7 +188,7 @@ export default function DoctorAddNewPatientPage() {
       hasAllergy: formData.hasAllergy,
       allergySpecifics: formData.hasAllergy ? (formData.allergySpecifics.trim() === '' ? undefined : formData.allergySpecifics.trim()) : undefined,
       hasAsthma: formData.hasAsthma,
-      // No password field here, as per API for staff/doctor patient creation
+      // No password field here for doctor creation, handled by staff/signup API
     };
 
     try {
@@ -207,7 +207,7 @@ export default function DoctorAddNewPatientPage() {
         throw new Error(errorMessage);
       }
 
-      toast({ title: "Patient Added!", description: `${data.name} has been successfully added to the records.` });
+      toast({ title: "Patient Added!", description: `${data.name} has been successfully added to the central clinic records.` });
       setFormData(initialFormData); // Reset form
       setSelectedFiles([]); // Clear selected files
       setShowUploadOrClearMessage(false);
@@ -221,16 +221,18 @@ export default function DoctorAddNewPatientPage() {
   };
 
   return (
-    <div className="space-y-6 mb-12">
+    <div className="space-y-8 mb-16"> {/* Increased bottom margin and internal space */}
       <Card className="w-full max-w-2xl mx-auto shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl">Add New Patient (Doctor Portal)</CardTitle>
-          <CardDescription>Enter the patient's details. This will add them to the central clinic records accessible by authorized staff and doctors.</CardDescription>
+          <CardDescription>
+            Enter the patient's details. This will add them to the central clinic records accessible by authorized staff and doctors.
+          </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-8"> {/* Increased vertical spacing between form sections */}
             {/* Basic Info */}
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-6"> {/* Increased gap */}
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
                 <Input id="name" name="name" value={formData.name} onChange={handleChange} placeholder="Patient's full name" />
@@ -242,7 +244,7 @@ export default function DoctorAddNewPatientPage() {
                 {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
               </div>
             </div>
-             <div className="grid sm:grid-cols-2 gap-4">
+             <div className="grid sm:grid-cols-2 gap-6"> {/* Increased gap */}
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number (Optional)</Label>
                 <Input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} />
@@ -252,7 +254,7 @@ export default function DoctorAddNewPatientPage() {
                 <Input id="dateOfBirth" name="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={handleChange} />
               </div>
             </div>
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-6"> {/* Increased gap */}
               <div className="space-y-2">
                 <Label htmlFor="age">Age (Optional)</Label>
                 <Input id="age" name="age" type="number" value={formData.age} onChange={handleChange} />
@@ -269,7 +271,7 @@ export default function DoctorAddNewPatientPage() {
             {/* Medical Conditions */}
             <div className="space-y-4">
               <Label className="font-semibold">Medical Conditions (Optional):</Label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4"> {/* Increased gap-x and gap-y */}
                 {[
                   { id: 'hasDiabetes', label: 'Diabetes', icon: <HeartPulse className="h-4 w-4 mr-2" /> },
                   { id: 'hasHighBloodPressure', label: 'High Blood Pressure', icon: <ShieldAlert className="h-4 w-4 mr-2" /> },
@@ -298,7 +300,7 @@ export default function DoctorAddNewPatientPage() {
                 ))}
               </div>
               {formData.hasAllergy && (
-                <div className="space-y-1 pl-6">
+                <div className="space-y-1 pl-6 mt-3"> {/* Added mt-3 for spacing */}
                   <Label htmlFor="allergySpecifics">Allergy Specifics (if any)</Label>
                   <Input id="allergySpecifics" name="allergySpecifics" value={formData.allergySpecifics} onChange={handleChange} placeholder="e.g., Penicillin, Latex" />
                 </div>
@@ -351,7 +353,7 @@ export default function DoctorAddNewPatientPage() {
               )}
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-4">
+          <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4"> {/* Increased gap */}
             <Button variant="outline" type="button" onClick={() => router.back()} disabled={isSubmitting || isUploading}>
               Cancel
             </Button>
