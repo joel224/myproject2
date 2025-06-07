@@ -53,6 +53,9 @@
 
     /* Staff page specific background */
     --staff-content-background: 50 80% 96%; /* Light, soft cream */
+
+    /* Navbar specific background */
+    --navbar-bg-subtle-emerald: 145 40% 88%;
   }
 
   .dark {
@@ -103,6 +106,9 @@
 
     /* Staff page specific background for dark mode */
     --staff-content-background: 45 15% 16%; /* Dark, slightly warm off-black/grey */
+    
+    /* Navbar specific background for dark mode */
+    --navbar-bg-subtle-emerald: 145 30% 20%; /* A darker, desaturated emerald for dark mode */
   }
 }
 

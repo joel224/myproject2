@@ -66,6 +66,7 @@ export default {
           ring: 'hsl(var(--sidebar-ring))'
         },
         'staff-content-area': 'hsl(var(--staff-content-background))',
+        'navbar-subtle-emerald': 'hsl(var(--navbar-bg-subtle-emerald))',
       },
   		borderRadius: {
   			lg: 'var(--radius)',
