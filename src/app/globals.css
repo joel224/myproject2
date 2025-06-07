@@ -56,8 +56,8 @@
     --staff-content-background: 50 80% 96%; /* Light, soft cream */
 
     /* Navbar specific background */
-    --navbar-background-main: 166 100% 20%; /* Rich Emerald Green #00674F */
-    --navbar-foreground-main: 0 0% 98%; /* Off-white for text on rich emerald */
+    --navbar-background-main: 166 100% 30%; /* Lighter Emerald Green */
+    --navbar-foreground-main: 0 0% 98%; /* Off-white for text on emerald */
  }
 
   .dark {
@@ -110,7 +110,7 @@
     --staff-content-background: 45 15% 16%; /* Dark, slightly warm off-black/grey */
     
     /* Navbar specific background for dark mode */
-    --navbar-background-main: 166 90% 18%; /* Darker Rich Emerald for Dark Mode */
+    --navbar-background-main: 166 90% 28%; /* Lighter Rich Emerald for Dark Mode */
     --navbar-foreground-main: 0 0% 95%; /* Slightly softer off-white for dark mode navbar text */
  }
 }
