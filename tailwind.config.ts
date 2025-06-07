@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 const { fontFamily } = require("tailwindcss/defaultTheme")
 
@@ -66,7 +67,8 @@ export default {
           ring: 'hsl(var(--sidebar-ring))'
         },
         'staff-content-area': 'hsl(var(--staff-content-background))',
-        'navbar-subtle-emerald': 'hsl(var(--navbar-bg-subtle-emerald))',
+        'navbar-background-main': 'hsl(var(--navbar-background-main))',
+        'navbar-foreground-main': 'hsl(var(--navbar-foreground-main))',
       },
   		borderRadius: {
   			lg: 'var(--radius)',

@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -55,8 +56,9 @@
     --staff-content-background: 50 80% 96%; /* Light, soft cream */
 
     /* Navbar specific background */
-    --navbar-bg-subtle-emerald: 145 40% 88%;
-  }
+    --navbar-background-main: 166 100% 20%; /* Rich Emerald Green #00674F */
+    --navbar-foreground-main: 0 0% 98%; /* Off-white for text on rich emerald */
+ }
 
   .dark {
     --background: 30 20% 12%; /* Very dark warm brown/gray */
@@ -108,8 +110,9 @@
     --staff-content-background: 45 15% 16%; /* Dark, slightly warm off-black/grey */
     
     /* Navbar specific background for dark mode */
-    --navbar-bg-subtle-emerald: 145 30% 20%; /* A darker, desaturated emerald for dark mode */
-  }
+    --navbar-background-main: 166 90% 18%; /* Darker Rich Emerald for Dark Mode */
+    --navbar-foreground-main: 0 0% 95%; /* Slightly softer off-white for dark mode navbar text */
+ }
 }
 
 @layer base {

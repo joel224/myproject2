@@ -1,3 +1,4 @@
+
 import type { SVGProps } from 'react';
 
 export function Logo(props: SVGProps<SVGSVGElement>) {
@@ -28,7 +29,7 @@ export function Logo(props: SVGProps<SVGSVGElement>) {
         fontFamily="var(--font-open-sans), sans-serif"
         fontSize="20"
         fontWeight="bold"
-        fill="hsl(var(--foreground))"
+        fill="hsl(var(--navbar-foreground-main))" // Use navbar foreground for contrast
       >
         Dr. Loji's
       </text>
@@ -37,7 +38,7 @@ export function Logo(props: SVGProps<SVGSVGElement>) {
         y="46" // Adjusted for vertical alignment
         fontFamily="var(--font-open-sans), sans-serif"
         fontSize="12"
-        fill="hsl(var(--muted-foreground))"
+        fill="hsl(var(--navbar-foreground-main), 0.8)" // Slightly dimmer for hierarchy
       >
         D E N T A L H U B
       </text>
