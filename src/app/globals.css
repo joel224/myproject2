@@ -162,3 +162,37 @@
     transform: translateX(100%); 
   }
 }
+
+@layer utilities {
+  /* Initial states for animations */
+  .initial-fade-in-up {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+  .initial-fade-in-left {
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+  .initial-fade-in-right {
+    opacity: 0;
+    transform: translateX(20px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+  .initial-fade-in {
+    opacity: 0;
+    transition: opacity 0.8s ease-out;
+  }
+
+  /* Visible state */
+  .is-visible {
+    opacity: 1;
+    transform: translateY(0) translateX(0);
+  }
+
+  /* Staggering utility (if needed, applied via JS) */
+  .delay-100 { transition-delay: 100ms; }
+  .delay-200 { transition-delay: 200ms; }
+  .delay-300 { transition-delay: 300ms; }
+}

@@ -1,19 +1,44 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, Loader2, AlertTriangle } from 'lucide-react'; // Added Loader2 and AlertTriangle
+import { Clock, Loader2, AlertTriangle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ClinicWaitTime {
   text: string;
-  updatedAt?: string; // Optional, as we mainly use text
+  updatedAt?: string;
 }
 
 export function WaitTimeWidget() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
   const [waitTime, setWaitTime] = useState<ClinicWaitTime | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
+    return () => {
+      if (sectionRef.current) observer.unobserve(sectionRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchWaitTime = async () => {
@@ -35,13 +60,17 @@ export function WaitTimeWidget() {
     };
 
     fetchWaitTime();
-    // Optional: set an interval to refresh the wait time periodically
-    // const intervalId = setInterval(fetchWaitTime, 60000); // Refresh every 60 seconds
-    // return () => clearInterval(intervalId);
   }, []);
 
   return (
-    <section className="w-full py-8 md:py-12">
+    <section
+      ref={sectionRef}
+      className={cn(
+        "w-full py-8 md:py-12",
+        "initial-fade-in-up",
+        isVisible && "is-visible"
+      )}
+    >
       <div className="container px-4 md:px-6 flex justify-center">
         <Card className="bg-primary text-primary-foreground shadow-lg w-full max-w-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -63,7 +92,6 @@ export function WaitTimeWidget() {
                 <div className="text-3xl font-bold">{waitTime.text}</div>
                 <p className="text-xs text-primary-foreground/70">
                   Current estimated wait time for walk-ins.
-                  {/* {waitTime.updatedAt && ` Last updated: ${new Date(waitTime.updatedAt).toLocaleTimeString()}`} */}
                 </p>
               </>
             ) : (
