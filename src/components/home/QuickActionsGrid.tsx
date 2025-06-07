@@ -85,7 +85,7 @@ export function QuickActionsGrid() {
             <Card
               key={action.title}
               className={cn(
-                "flex flex-col items-center text-center shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out hover:-translate-y-1",
+                "flex flex-col items-center text-center shadow-lg hover:shadow-2xl transition-all duration-200 ease-in-out hover:-translate-y-2 hover:scale-[1.03]",
                 "initial-fade-in-up", // Apply to each card for potential stagger
                 isVisible && "is-visible"
               )}
@@ -110,3 +110,4 @@ export function QuickActionsGrid() {
     </section>
   );
 }
+
