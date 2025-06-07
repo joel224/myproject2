@@ -1,3 +1,4 @@
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { PhoneCall, CalendarPlus, Video, LogIn } from 'lucide-react';
@@ -44,7 +45,7 @@ export function QuickActionsGrid() {
       <div className="container px-4 md:px-6">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {actions.map((action) => (
-            <Card key={action.title} className="flex flex-col items-center text-center shadow-lg hover:shadow-xl transition-shadow">
+            <Card key={action.title} className="flex flex-col items-center text-center shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out hover:-translate-y-1">
               <CardHeader className="items-center">
                 {action.icon}
                 <CardTitle className="mt-4">{action.title}</CardTitle>
