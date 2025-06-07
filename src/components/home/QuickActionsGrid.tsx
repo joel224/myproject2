@@ -45,7 +45,7 @@ export function QuickActionsGrid() {
       <div className="container px-4 md:px-6">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {actions.map((action) => (
-            <Card key={action.title} className="flex flex-col items-center text-center shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out hover:-translate-y-1">
+            <Card key={action.title} className="flex flex-col items-center text-center shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out hover:-translate-y-1.5">
               <CardHeader className="items-center">
                 {action.icon}
                 <CardTitle className="mt-4">{action.title}</CardTitle>
@@ -65,3 +65,4 @@ export function QuickActionsGrid() {
     </section>
   );
 }
+
