@@ -2,16 +2,15 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import Image from 'next/image'; // Keep for type consistency if needed, but will be replaced
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 export function HeroSection() {
   const textRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLIFrameElement>(null); // Changed from imageRef
+  const videoRef = useRef<HTMLIFrameElement>(null);
   const [textVisible, setTextVisible] = useState(false);
-  const [videoVisible, setVideoVisible] = useState(false); // Changed from imageVisible
+  const [videoVisible, setVideoVisible] = useState(false);
 
   useEffect(() => {
     const observerOptions = {
@@ -27,7 +26,7 @@ export function HeroSection() {
       });
     }, observerOptions);
 
-    const videoObserver = new IntersectionObserver((entries) => { // Changed from imageObserver
+    const videoObserver = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           setVideoVisible(true);
@@ -39,18 +38,18 @@ export function HeroSection() {
     if (textRef.current) {
       textObserver.observe(textRef.current);
     }
-    if (videoRef.current) { // Changed from imageRef
+    if (videoRef.current) {
       videoObserver.observe(videoRef.current);
     }
 
     return () => {
       if (textRef.current) textObserver.unobserve(textRef.current);
-      if (videoRef.current) videoObserver.unobserve(videoRef.current); // Changed from imageRef
+      if (videoRef.current) videoObserver.unobserve(videoRef.current);
     };
   }, []);
 
-  const videoId = "1zePIw9tOkxwBULvtQsohAvjcYndtRwBI";
-  const videoSrc = `https://drive.google.com/file/d/${videoId}/preview?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&modestbranding=1&playsinline=1&fs=0&rel=0&vq=hd720`;
+  const videoId = "BABoDj2WF34"; // YouTube Video ID
+  const videoSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&showinfo=0&modestbranding=1&playsinline=1&fs=0&rel=0&vq=hd720`;
 
   return (
     <section className="w-full py-12 md:py-24 lg:py-32">
@@ -83,21 +82,21 @@ export function HeroSection() {
           </div>
           <div
             className={cn(
-              "flex justify-center", // Parent div for animation
+              "flex justify-center",
               "initial-fade-in-right",
               videoVisible && "is-visible"
             )}
           >
             <iframe
-              ref={videoRef} // Attach ref to the iframe
+              ref={videoRef}
               src={videoSrc}
-              width="600" // Width from original image
-              height="400" // Height from original image
-              className="mx-auto overflow-hidden rounded-xl sm:w-full lg:order-last shadow-xl" // Adapted classes
-              allow="autoplay; encrypted-media;"
-              title="Dr. Loji's Dental Hub Video Background"
-              allowFullScreen={false} // Explicitly false, typically not needed for this usage
-              sandbox="allow-scripts allow-same-origin" // Basic sandbox for security
+              width="600"
+              height="400"
+              className="mx-auto overflow-hidden rounded-xl sm:w-full lg:order-last shadow-xl"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              title="Dr. Loji's Dental Hub Video"
+              allowFullScreen={false} // Explicitly false
+              sandbox="allow-scripts allow-same-origin allow-presentation" // Allow presentation for YouTube embeds
             ></iframe>
           </div>
         </div>
