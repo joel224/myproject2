@@ -19,7 +19,7 @@ export function HeroSection() {
   const imageRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
-  const playerRef = useRef<any>(null); // Stores the YT.Player instance
+  const playerRef = useRef<any>(null); 
 
   const [textVisible, setTextVisible] = useState(false);
   const [imageVisible, setImageVisible] = useState(false);
@@ -27,7 +27,6 @@ export function HeroSection() {
 
   const videoId = "BABoDj2WF34";
 
-  // Initialize YouTube Player
   const initializePlayer = useCallback(() => {
     if (!playerContainerRef.current || playerRef.current || !window.YT?.Player) return;
 
@@ -39,22 +38,19 @@ export function HeroSection() {
         autoplay: 1,
         controls: 0,
         loop: 1,
-        playlist: videoId, // Required for loop to work with a single video
-        mute: 1,           // Autoplay usually requires mute
-        playsinline: 1,    // Important for iOS and inline playback
+        playlist: videoId, 
+        mute: 1,
+        playsinline: 1,
         modestbranding: 1,
         showinfo: 0,
         rel: 0,
-        iv_load_policy: 3, // Don't show video annotations
+        iv_load_policy: 3,
       },
       events: {
         onReady: (event: any) => {
-          // The video will autoplay due to playerVars.
-          // Set initial playback rate based on scroll.
           handleScrollPlayback();
         },
         onStateChange: (event: any) => {
-          // Ensure looping
           if (event.data === window.YT.PlayerState.ENDED) {
             playerRef.current?.seekTo(0);
             playerRef.current?.playVideo();
@@ -62,9 +58,8 @@ export function HeroSection() {
         },
       },
     });
-  }, [videoId]); // Add videoId to dependencies
+  }, [videoId]); 
 
-  // Load YouTube API Script
   useEffect(() => {
     if (window.YT && window.YT.Player) {
       setIsPlayerApiReady(true);
@@ -88,12 +83,10 @@ export function HeroSection() {
       setIsPlayerApiReady(true);
     };
 
-    // Cleanup: remove the global handler if the component unmounts
-    // This is a simplified cleanup. A more robust solution might involve a counter
-    // if multiple components could load the API.
     return () => {
-      if ((window as any).onYouTubeIframeAPIReadyInternal === initializePlayer) {
-        delete (window as any).onYouTubeIframeAPIReadyInternal;
+      // Simplified cleanup
+      if (window.onYouTubeIframeAPIReady === initializePlayer) {
+        window.onYouTubeIframeAPIReady = undefined;
       }
     };
   }, [initializePlayer]);
@@ -106,7 +99,6 @@ export function HeroSection() {
   }, [isPlayerApiReady, initializePlayer]);
 
 
-  // Scroll handler for playback rate
   const handleScrollPlayback = useCallback(() => {
     if (!playerRef.current || typeof playerRef.current.setPlaybackRate !== 'function' || !sectionRef.current) {
       return;
@@ -114,22 +106,17 @@ export function HeroSection() {
 
     const sectionRect = sectionRef.current.getBoundingClientRect();
     const windowHeight = window.innerHeight;
-
-    // Determine if the section is "in focus"
-    // In focus if its center is roughly in the middle 60% of the viewport
     const sectionCenterY = sectionRect.top + sectionRect.height / 2;
     const viewportCenterFocusMin = windowHeight * 0.2;
     const viewportCenterFocusMax = windowHeight * 0.8;
 
     const isInFocus = sectionCenterY > viewportCenterFocusMin && sectionCenterY < viewportCenterFocusMax && sectionRect.bottom > 0 && sectionRect.top < windowHeight;
-
     const targetRate = isInFocus ? 1 : 0.5;
 
     try {
       if (playerRef.current.getPlaybackRate() !== targetRate) {
         playerRef.current.setPlaybackRate(targetRate);
       }
-      // Ensure video is playing, especially if it was paused for some reason (e.g. browser policies)
       if (playerRef.current.getPlayerState() !== window.YT.PlayerState.PLAYING &&
           playerRef.current.getPlayerState() !== window.YT.PlayerState.BUFFERING) {
         playerRef.current.playVideo();
@@ -146,7 +133,6 @@ export function HeroSection() {
     };
   }, [handleScrollPlayback]);
 
-  // Intersection observers for content animations
   useEffect(() => {
     const observerOptions = { threshold: 0.1 };
 
@@ -188,14 +174,21 @@ export function HeroSection() {
     >
       {/* Background Video Player Container */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-        <div id="hero-youtube-player" ref={playerContainerRef} className="w-full h-full" />
+        <div id="hero-youtube-player" ref={playerContainerRef} className="w-full h-full scale-[1.8] md:scale-150" />
       </div>
 
       {/* Dark Overlay for text readability */}
       <div className="absolute top-0 left-0 w-full h-full bg-black/50 z-[1]" />
 
+      {/* Decorative Partial Circle */}
+      <div
+        className="absolute w-[150vw] h-[150vw] md:w-[100vw] md:h-[100vw] lg:w-[80vw] lg:h-[80vw] 
+                   top-[-75vw] left-[-75vw] md:top-[-50vw] md:left-[-50vw] lg:top-[-40vw] lg:left-[-40vw]
+                   rounded-full border-2 border-primary/20 pointer-events-none z-[2]"
+      />
+
       {/* Content Container */}
-      <div className="container relative px-4 md:px-6 z-[2] py-12 md:py-24 lg:py-32">
+      <div className="container relative px-4 md:px-6 z-[3] py-12 md:py-24 lg:py-32">
         <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 xl:gap-16 items-center">
           <div
             ref={textRef}
@@ -227,7 +220,7 @@ export function HeroSection() {
             ref={imageRef}
             className={cn(
               "flex justify-center lg:justify-end",
-              "initial-fade-in-right",
+              "initial-fade-in-right", 
               imageVisible && "is-visible"
             )}
           >
@@ -237,7 +230,7 @@ export function HeroSection() {
               width={600}
               height={400}
               className="rounded-lg shadow-xl object-cover"
-              priority // Consider adding priority if it's LCP
+              priority 
               data-ai-hint="dental team smile"
             />
           </div>
@@ -246,3 +239,4 @@ export function HeroSection() {
     </section>
   );
 }
+
