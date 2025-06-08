@@ -63,6 +63,7 @@ export function HeroSection() {
   useEffect(() => {
     if (window.YT && window.YT.Player) {
       setIsPlayerApiReady(true);
+      initializePlayer(); // Attempt to initialize if API was already loaded
       return;
     }
 
@@ -84,8 +85,7 @@ export function HeroSection() {
     };
 
     return () => {
-      // Simplified cleanup
-      if (window.onYouTubeIframeAPIReady === initializePlayer) {
+      if (window.onYouTubeIframeAPIReady === initializePlayer) { // Be more specific for cleanup
         window.onYouTubeIframeAPIReady = undefined;
       }
     };
@@ -174,7 +174,11 @@ export function HeroSection() {
     >
       {/* Background Video Player Container */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-        <div id="hero-youtube-player" ref={playerContainerRef} className="w-full h-full scale-[1.8] md:scale-150" />
+        <div 
+            id="hero-youtube-player" 
+            ref={playerContainerRef} 
+            className="w-full h-full scale-[2.5] sm:scale-[2.0] md:scale-[1.8] lg:scale-150" 
+        />
       </div>
 
       {/* Dark Overlay for text readability */}
@@ -239,4 +243,3 @@ export function HeroSection() {
     </section>
   );
 }
-

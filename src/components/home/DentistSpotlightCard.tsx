@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
 import React, { useEffect, useRef, useState } from 'react';
+import { cn } from '@/lib/utils';
 
 export function DentistSpotlightCard() {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -75,20 +76,28 @@ export function DentistSpotlightCard() {
     <section 
       id="team" 
       ref={sectionRef}
-      className="w-full py-12 md:py-16 lg:py-20 overflow-hidden" // Added overflow-hidden to contain elements during animation
+      className="w-full py-12 md:py-16 lg:py-20 overflow-hidden" 
     >
       <div className="container px-4 md:px-6 flex flex-col items-center relative z-10">
         <h2 
           ref={titleRef}
-          className="text-3xl font-bold tracking-tight text-center mb-2 text-primary"
-          style={{ transition: 'transform 75ms linear' }}
+          className={cn(
+            "text-3xl sm:text-4xl font-bold tracking-tight text-center mb-2 text-primary",
+            "initial-fade-in-up",
+            isCardVisible && "is-visible" 
+          )}
+          style={{ transition: 'transform 75ms linear', transitionDelay: isCardVisible ? `0ms` : '0ms' }}
         >
           Meet Our Lead Dentist
         </h2>
         <p 
           ref={descriptionRef}
-          className="text-muted-foreground text-center mb-10 max-w-xl"
-          style={{ transition: 'transform 75ms linear' }}
+          className={cn(
+            "text-muted-foreground md:text-lg text-center mb-10 max-w-xl",
+            "initial-fade-in-up",
+            isCardVisible && "is-visible"
+          )}
+          style={{ transition: 'transform 75ms linear', transitionDelay: isCardVisible ? `100ms` : '0ms' }}
         >
             Dedicated to providing the highest quality care with a gentle touch.
         </p>
@@ -97,6 +106,7 @@ export function DentistSpotlightCard() {
           className={`w-full max-w-md shadow-xl overflow-hidden bg-card
             transition-all duration-700 ease-out
             ${isCardVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+           style={{ transitionDelay: isCardVisible ? `200ms` : '0ms' }}
         >
           <CardHeader className="p-0">
             <Image

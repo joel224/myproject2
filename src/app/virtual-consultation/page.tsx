@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Video, CheckCircle, WifiOff } from "lucide-react";
@@ -14,7 +15,7 @@ export default function VirtualConsultationPage() {
         <div className="flex flex-col items-center text-center">
           <Video className="h-24 w-24 text-primary mb-6" />
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">Virtual Consultation</h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mb-8">
+          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mb-8">
             Connect with our experienced dentists from the comfort of your home. Get professional advice, discuss treatment options, or get a second opinion.
           </p>
 

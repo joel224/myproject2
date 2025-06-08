@@ -50,8 +50,8 @@ export function ServicesSection() {
         <div
           className={cn("mb-10", "initial-fade-in-up", isVisible && "is-visible")}
         >
-          <h2 ref={titleRef} className="text-3xl font-bold tracking-tight mb-4 text-primary">Our Services</h2>
-          <p ref={descriptionRef} className="text-muted-foreground max-w-xl mx-auto">
+          <h2 ref={titleRef} className="text-3xl sm:text-4xl font-bold tracking-tight mb-4 text-primary">Our Services</h2>
+          <p ref={descriptionRef} className="text-muted-foreground md:text-lg max-w-xl mx-auto">
             Comprehensive dental solutions tailored to your needs.
           </p>
         </div>

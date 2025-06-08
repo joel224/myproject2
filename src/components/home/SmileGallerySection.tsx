@@ -47,8 +47,8 @@ export function SmileGallerySection() {
     <section id="gallery" ref={sectionRef} className="w-full py-12 md:py-16 lg:py-20 bg-background">
       <div className="container px-4 md:px-6 text-center">
         <div className={cn("initial-fade-in-up", isVisible && "is-visible")} style={{ transitionDelay: isVisible ? `0ms` : '0ms' }}>
-          <h2 className="text-3xl font-bold tracking-tight mb-2 text-primary">Transform Your Smile</h2>
-          <p className="text-muted-foreground mb-10 max-w-xl mx-auto">
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2 text-primary">Transform Your Smile</h2>
+          <p className="text-muted-foreground md:text-lg mb-10 max-w-xl mx-auto">
             See the stunning results we've achieved for our happy patients.
           </p>
         </div>
@@ -78,7 +78,7 @@ export function SmileGallerySection() {
         </div>
         <div className={cn("initial-fade-in-up", isVisible && "is-visible")} style={{ transitionDelay: isVisible ? `${100 + galleryImages.length * 100}ms` : '0ms' }}>
           <Link href="/#appointment">
-            <Button size="lg" variant="default">
+            <Button className="px-6 py-3 text-base sm:px-8 sm:text-lg">
               Want a smile like this? Book now!
             </Button>
           </Link>

@@ -44,8 +44,8 @@ export function AppointmentBookingSection() {
     >
       <div className="container px-4 md:px-6 text-center">
         <div className={cn("initial-fade-in-up", isVisible && "is-visible")} style={{ transitionDelay: isVisible ? `0ms` : '0ms' }}>
-          <h2 className="text-3xl font-bold tracking-tight mb-4 text-primary">Book Your Appointment</h2>
-          <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4 text-primary">Book Your Appointment</h2>
+          <p className="text-muted-foreground md:text-lg mb-8 max-w-xl mx-auto">
             Ready to take the next step towards a healthier smile? Booking is quick and easy!
           </p>
         </div>
