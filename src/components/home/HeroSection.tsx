@@ -3,15 +3,15 @@
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import Image from 'next/image'; // Import Next.js Image component
+import Image from 'next/image'; // Import Next.js Image
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 export function HeroSection() {
   const textRef = useRef<HTMLDivElement>(null);
-  const imageRef = useRef<HTMLDivElement>(null); // Changed from videoRef to imageRef
+  const imageRef = useRef<HTMLDivElement>(null);
   const [textVisible, setTextVisible] = useState(false);
-  const [imageVisible, setImageVisible] = useState(false); // Changed from videoVisible to imageVisible
+  const [imageVisible, setImageVisible] = useState(false); // Renamed from videoVisible
 
   useEffect(() => {
     const observerOptions = {
@@ -27,41 +27,46 @@ export function HeroSection() {
       });
     }, observerOptions);
 
-    const imageObserver = new IntersectionObserver((entries) => {
+    const imageObserver = new IntersectionObserver((entries) => { // Renamed from videoObserver
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          setImageVisible(true);
-          imageObserver.unobserve(entry.target);
+          setImageVisible(true); // Use setImageVisible
+          imageObserver.unobserve(entry.target); // Use imageObserver
         }
       });
     }, observerOptions);
 
-    if (textRef.current) {
-      textObserver.observe(textRef.current);
+    const currentTextRef = textRef.current;
+    const currentImageRef = imageRef.current;
+
+    if (currentTextRef) {
+      textObserver.observe(currentTextRef);
     }
-    if (imageRef.current) { // Observe imageRef
-      imageObserver.observe(imageRef.current);
+    if (currentImageRef) {
+      imageObserver.observe(currentImageRef); // Use imageObserver
     }
 
     return () => {
-      if (textRef.current) textObserver.unobserve(textRef.current);
-      if (imageRef.current) imageObserver.unobserve(imageRef.current); // Unobserve imageRef
+      if (currentTextRef) {
+        textObserver.unobserve(currentTextRef);
+      }
+      if (currentImageRef) {
+        imageObserver.unobserve(currentImageRef); // Use imageObserver
+      }
     };
   }, []);
 
-  const videoId = "BABoDj2WF34";
-  const videoSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&showinfo=0&modestbranding=1&playsinline=1&fs=0&rel=0&vq=hd720`;
+  const videoId = "BABoDj2WF34"; // Updated YouTube video ID
+  const videoSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&showinfo=0&modestbranding=1&playsinline=1&fs=0&rel=0`;
 
   return (
     <section className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] flex items-center"> {/* Assuming navbar is h-16 (4rem) */}
       {/* Background Video Iframe */}
-      {/* Wrapper to help with cover effect for iframe */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
         <iframe
           src={videoSrc}
-          className="absolute top-1/2 left-1/2 min-w-full min-h-full w-auto h-auto transform -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-          style={{ objectFit: 'cover' }} // Not standard for iframe, but some browsers might interpret
-                                        // The min-width/min-height with w-auto/h-auto should force cover for 16:9
+          className="absolute top-1/2 left-1/2 min-w-full min-h-full w-auto h-auto transform -translate-x-1/2 -translate-y-1/2"
+          style={{ objectFit: 'cover' }}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           title="Dr. Loji's Dental Hub Background Video"
           allowFullScreen={false}
@@ -80,14 +85,14 @@ export function HeroSection() {
             className={cn(
               "space-y-6",
               "initial-fade-in-left",
-              textVisible && "is-visible",
-              "text-neutral-100" // Make text light for contrast
+              textVisible && "is-visible", // Added comma
+              "text-neutral-100"
             )}
           >
             <h1 className="font-manrope text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
               Your Smile, Our Passion!
             </h1>
-            <p className="max-w-[600px] text-neutral-200 md:text-xl"> {/* Lighter text for paragraph */}
+            <p className="max-w-[600px] text-neutral-200 md:text-xl">
               Experience exceptional dental care at Dr. Loji's Dental Hub. We're dedicated to creating healthy, beautiful smiles for life.
             </p>
             <div className="flex flex-col gap-2 min-[400px]:flex-row">
@@ -102,20 +107,20 @@ export function HeroSection() {
             </div>
           </div>
           <div
-            ref={imageRef} // Use imageRef
+            ref={imageRef}
             className={cn(
-              "flex justify-center",
-              "initial-fade-in-right",
+              "flex justify-center lg:justify-end",
+              "initial-fade-in-right", // Added comma
               imageVisible && "is-visible" // Use imageVisible
             )}
           >
             <Image
-              src="https://placehold.co/600x400.png"
-              alt="Dental Clinic Highlight"
+              src="https://placehold.co/600x400.png" // Placeholder image
+              alt="Dental office or smiling patient"
               width={600}
               height={400}
-              className="mx-auto overflow-hidden rounded-xl sm:w-full lg:order-last shadow-xl"
-              data-ai-hint="dental team smile" // Updated hint
+              className="rounded-lg shadow-xl object-cover"
+              data-ai-hint="dental team smile"
             />
           </div>
         </div>
