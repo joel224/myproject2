@@ -3,20 +3,152 @@
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import Image from 'next/image'; // Import Next.js Image
-import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
+
+declare global {
+  interface Window {
+    YT: any;
+    onYouTubeIframeAPIReady: (() => void) | undefined;
+  }
+}
 
 export function HeroSection() {
   const textRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const playerContainerRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<any>(null); // Stores the YT.Player instance
+
   const [textVisible, setTextVisible] = useState(false);
-  const [imageVisible, setImageVisible] = useState(false); // Renamed from videoVisible
+  const [imageVisible, setImageVisible] = useState(false);
+  const [isPlayerApiReady, setIsPlayerApiReady] = useState(false);
+
+  const videoId = "BABoDj2WF34";
+
+  // Initialize YouTube Player
+  const initializePlayer = useCallback(() => {
+    if (!playerContainerRef.current || playerRef.current || !window.YT?.Player) return;
+
+    playerRef.current = new window.YT.Player(playerContainerRef.current.id, {
+      videoId: videoId,
+      width: '100%',
+      height: '100%',
+      playerVars: {
+        autoplay: 1,
+        controls: 0,
+        loop: 1,
+        playlist: videoId, // Required for loop to work with a single video
+        mute: 1,           // Autoplay usually requires mute
+        playsinline: 1,    // Important for iOS and inline playback
+        modestbranding: 1,
+        showinfo: 0,
+        rel: 0,
+        iv_load_policy: 3, // Don't show video annotations
+      },
+      events: {
+        onReady: (event: any) => {
+          // The video will autoplay due to playerVars.
+          // Set initial playback rate based on scroll.
+          handleScrollPlayback();
+        },
+        onStateChange: (event: any) => {
+          // Ensure looping
+          if (event.data === window.YT.PlayerState.ENDED) {
+            playerRef.current?.seekTo(0);
+            playerRef.current?.playVideo();
+          }
+        },
+      },
+    });
+  }, [videoId]); // Add videoId to dependencies
+
+  // Load YouTube API Script
+  useEffect(() => {
+    if (window.YT && window.YT.Player) {
+      setIsPlayerApiReady(true);
+      return;
+    }
+
+    const scriptId = 'youtube-iframe-api';
+    if (!document.getElementById(scriptId)) {
+      const tag = document.createElement('script');
+      tag.id = scriptId;
+      tag.src = 'https://www.youtube.com/iframe_api';
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      if (firstScriptTag && firstScriptTag.parentNode) {
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+      } else {
+        document.head.appendChild(tag);
+      }
+    }
+
+    window.onYouTubeIframeAPIReady = () => {
+      setIsPlayerApiReady(true);
+    };
+
+    // Cleanup: remove the global handler if the component unmounts
+    // This is a simplified cleanup. A more robust solution might involve a counter
+    // if multiple components could load the API.
+    return () => {
+      if ((window as any).onYouTubeIframeAPIReadyInternal === initializePlayer) {
+        delete (window as any).onYouTubeIframeAPIReadyInternal;
+      }
+    };
+  }, [initializePlayer]);
+
 
   useEffect(() => {
-    const observerOptions = {
-      threshold: 0.1,
+    if (isPlayerApiReady) {
+      initializePlayer();
+    }
+  }, [isPlayerApiReady, initializePlayer]);
+
+
+  // Scroll handler for playback rate
+  const handleScrollPlayback = useCallback(() => {
+    if (!playerRef.current || typeof playerRef.current.setPlaybackRate !== 'function' || !sectionRef.current) {
+      return;
+    }
+
+    const sectionRect = sectionRef.current.getBoundingClientRect();
+    const windowHeight = window.innerHeight;
+
+    // Determine if the section is "in focus"
+    // In focus if its center is roughly in the middle 60% of the viewport
+    const sectionCenterY = sectionRect.top + sectionRect.height / 2;
+    const viewportCenterFocusMin = windowHeight * 0.2;
+    const viewportCenterFocusMax = windowHeight * 0.8;
+
+    const isInFocus = sectionCenterY > viewportCenterFocusMin && sectionCenterY < viewportCenterFocusMax && sectionRect.bottom > 0 && sectionRect.top < windowHeight;
+
+    const targetRate = isInFocus ? 1 : 0.5;
+
+    try {
+      if (playerRef.current.getPlaybackRate() !== targetRate) {
+        playerRef.current.setPlaybackRate(targetRate);
+      }
+      // Ensure video is playing, especially if it was paused for some reason (e.g. browser policies)
+      if (playerRef.current.getPlayerState() !== window.YT.PlayerState.PLAYING &&
+          playerRef.current.getPlayerState() !== window.YT.PlayerState.BUFFERING) {
+        playerRef.current.playVideo();
+      }
+    } catch (e) {
+      // console.warn("Error interacting with YouTube player:", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('scroll', handleScrollPlayback);
+    return () => {
+      window.removeEventListener('scroll', handleScrollPlayback);
     };
+  }, [handleScrollPlayback]);
+
+  // Intersection observers for content animations
+  useEffect(() => {
+    const observerOptions = { threshold: 0.1 };
 
     const textObserver = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
@@ -27,11 +159,11 @@ export function HeroSection() {
       });
     }, observerOptions);
 
-    const imageObserver = new IntersectionObserver((entries) => { // Renamed from videoObserver
+    const imageObserver = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          setImageVisible(true); // Use setImageVisible
-          imageObserver.unobserve(entry.target); // Use imageObserver
+          setImageVisible(true);
+          imageObserver.unobserve(entry.target);
         }
       });
     }, observerOptions);
@@ -39,45 +171,30 @@ export function HeroSection() {
     const currentTextRef = textRef.current;
     const currentImageRef = imageRef.current;
 
-    if (currentTextRef) {
-      textObserver.observe(currentTextRef);
-    }
-    if (currentImageRef) {
-      imageObserver.observe(currentImageRef); // Use imageObserver
-    }
+    if (currentTextRef) textObserver.observe(currentTextRef);
+    if (currentImageRef) imageObserver.observe(currentImageRef);
 
     return () => {
-      if (currentTextRef) {
-        textObserver.unobserve(currentTextRef);
-      }
-      if (currentImageRef) {
-        imageObserver.unobserve(currentImageRef); // Use imageObserver
-      }
+      if (currentTextRef) textObserver.unobserve(currentTextRef);
+      if (currentImageRef) imageObserver.unobserve(currentImageRef);
     };
   }, []);
 
-  const videoId = "BABoDj2WF34"; // Updated YouTube video ID
-  const videoSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&showinfo=0&modestbranding=1&playsinline=1&fs=0&rel=0`;
 
   return (
-    <section className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] flex items-center"> {/* Assuming navbar is h-16 (4rem) */}
-      {/* Background Video Iframe */}
+    <section
+      ref={sectionRef}
+      className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] flex items-center"
+    >
+      {/* Background Video Player Container */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-        <iframe
-          src={videoSrc}
-          className="absolute top-1/2 left-1/2 min-w-full min-h-full w-auto h-auto transform -translate-x-1/2 -translate-y-1/2"
-          style={{ objectFit: 'cover' }}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          title="Dr. Loji's Dental Hub Background Video"
-          allowFullScreen={false}
-          sandbox="allow-scripts allow-same-origin allow-presentation"
-        ></iframe>
+        <div id="hero-youtube-player" ref={playerContainerRef} className="w-full h-full" />
       </div>
 
       {/* Dark Overlay for text readability */}
       <div className="absolute top-0 left-0 w-full h-full bg-black/50 z-[1]" />
 
-      {/* Content Container - positioned above video and overlay */}
+      {/* Content Container */}
       <div className="container relative px-4 md:px-6 z-[2] py-12 md:py-24 lg:py-32">
         <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 xl:gap-16 items-center">
           <div
@@ -85,7 +202,7 @@ export function HeroSection() {
             className={cn(
               "space-y-6",
               "initial-fade-in-left",
-              textVisible && "is-visible", // Added comma
+              textVisible && "is-visible",
               "text-neutral-100"
             )}
           >
@@ -110,16 +227,17 @@ export function HeroSection() {
             ref={imageRef}
             className={cn(
               "flex justify-center lg:justify-end",
-              "initial-fade-in-right", // Added comma
-              imageVisible && "is-visible" // Use imageVisible
+              "initial-fade-in-right",
+              imageVisible && "is-visible"
             )}
           >
             <Image
-              src="https://placehold.co/600x400.png" // Placeholder image
+              src="https://placehold.co/600x400.png"
               alt="Dental office or smiling patient"
               width={600}
               height={400}
               className="rounded-lg shadow-xl object-cover"
+              priority // Consider adding priority if it's LCP
               data-ai-hint="dental team smile"
             />
           </div>
