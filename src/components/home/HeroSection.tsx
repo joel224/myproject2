@@ -63,7 +63,7 @@ export function HeroSection() {
   useEffect(() => {
     if (window.YT && window.YT.Player) {
       setIsPlayerApiReady(true);
-      initializePlayer(); // Attempt to initialize if API was already loaded
+      initializePlayer();
       return;
     }
 
@@ -85,7 +85,7 @@ export function HeroSection() {
     };
 
     return () => {
-      if (window.onYouTubeIframeAPIReady === initializePlayer) { // Be more specific for cleanup
+      if (window.onYouTubeIframeAPIReady === initializePlayer) { 
         window.onYouTubeIframeAPIReady = undefined;
       }
     };
@@ -188,7 +188,7 @@ export function HeroSection() {
       <div
         className="absolute w-[150vw] h-[150vw] md:w-[100vw] md:h-[100vw] lg:w-[80vw] lg:h-[80vw] 
                    top-[-75vw] left-[-75vw] md:top-[-50vw] md:left-[-50vw] lg:top-[-40vw] lg:left-[-40vw]
-                   rounded-full border-2 border-primary/20 pointer-events-none z-[2]"
+                   rounded-full border-2 border-accent/40 pointer-events-none z-[2]"
       />
 
       {/* Content Container */}
