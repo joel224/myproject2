@@ -3,7 +3,6 @@
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -20,13 +19,11 @@ const MOBILE_VIDEO_ID = "U6oZFT5Omdk";
 
 export function HeroSection() {
   const textRef = useRef<HTMLDivElement>(null);
-  const imageRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
 
   const [textVisible, setTextVisible] = useState(false);
-  const [imageVisible, setImageVisible] = useState(false);
   const [isPlayerApiReady, setIsPlayerApiReady] = useState(false);
   const isMobile = useIsMobile();
 
@@ -161,24 +158,12 @@ export function HeroSection() {
       });
     }, observerOptions);
 
-    const imageObserver = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          setImageVisible(true);
-          imageObserver.unobserve(entry.target);
-        }
-      });
-    }, observerOptions);
-
     const currentTextRef = textRef.current;
-    const currentImageRef = imageRef.current;
 
     if (currentTextRef) textObserver.observe(currentTextRef);
-    if (currentImageRef) imageObserver.observe(currentImageRef);
 
     return () => {
       if (currentTextRef) textObserver.unobserve(currentTextRef);
-      if (currentImageRef) imageObserver.unobserve(currentImageRef);
     };
   }, []);
 
@@ -197,9 +182,16 @@ export function HeroSection() {
       </div>
       <div className="absolute top-0 left-0 w-full h-full bg-black/50 z-[1]" />
 
+      {/* Top-left decorative circle */}
       <div
         className="absolute w-[150vw] h-[150vw] md:w-[100vw] md:h-[100vw] lg:w-[80vw] lg:h-[80vw]
                    top-[-75vw] left-[-75vw] md:top-[-50vw] md:left-[-50vw] lg:top-[-40vw] lg:left-[-40vw]
+                   rounded-full border-2 border-accent/40 pointer-events-none z-[2]"
+      />
+      {/* New Top-right decorative circle */}
+      <div
+        className="absolute w-[150vw] h-[150vw] md:w-[100vw] md:h-[100vw] lg:w-[80vw] lg:h-[80vw]
+                   top-[-75vw] right-[-75vw] md:top-[-50vw] md:right-[-50vw] lg:top-[-40vw] lg:right-[-40vw]
                    rounded-full border-2 border-accent/40 pointer-events-none z-[2]"
       />
 
@@ -232,22 +224,7 @@ export function HeroSection() {
               </Link>
             </div>
           </div>
-          <div
-            ref={imageRef}
-            className={cn(
-              "flex justify-center lg:justify-end",
-              "initial-fade-in-right",
-              imageVisible && "is-visible"
-            )}
-          >
-             <iframe
-              src={`https://docs.google.com/presentation/d/14NokkmdCvoin7j6WqUvcEcl_ddpN5LoQb_3_ABk_EW8/embed?start=false&loop=false&delayms=3000&rm=minimal`}
-              frameBorder="0"
-              allowFullScreen={true}
-              className="w-full max-w-[600px] aspect-[3/2] rounded-lg shadow-xl"
-              title="Dental Presentation"
-            ></iframe>
-          </div>
+          {/* The column where the image/doc was is now empty, allowing the text to take the first grid column and the background decorations to be more visible. */}
         </div>
       </div>
     </section>
