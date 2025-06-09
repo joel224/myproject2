@@ -15,8 +15,8 @@ declare global {
   }
 }
 
-const DESKTOP_VIDEO_ID = "BABoDj2WF34";
-const MOBILE_VIDEO_ID = "BABoDj2WF34"; // << --- REPLACE THIS WITH YOUR MOBILE-SPECIFIC YOUTUBE VIDEO ID
+const DESKTOP_VIDEO_ID = "Svcb6Pf8PL4";
+const MOBILE_VIDEO_ID = "U6oZFT5Omdk";
 
 export function HeroSection() {
   const textRef = useRef<HTMLDivElement>(null);
@@ -57,7 +57,7 @@ export function HeroSection() {
     } catch (e) {
       // console.warn("Error interacting with YouTube player:", e);
     }
-  }, []); // Empty dependency array as it doesn't depend on props/state outside its scope that change
+  }, []);
 
 
   const initializePlayer = useCallback(() => {
