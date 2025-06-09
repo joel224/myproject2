@@ -6,8 +6,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
-// Allow YT global to be accessed
 declare global {
   interface Window {
     YT: any;
@@ -15,9 +15,12 @@ declare global {
   }
 }
 
+const DESKTOP_VIDEO_ID = "BABoDj2WF34";
+const MOBILE_VIDEO_ID = "BABoDj2WF34"; // << --- REPLACE THIS WITH YOUR MOBILE-SPECIFIC YOUTUBE VIDEO ID
+
 export function HeroSection() {
   const textRef = useRef<HTMLDivElement>(null);
-  const imageRef = useRef<HTMLDivElement>(null); // Ref for the div containing the iframe/image
+  const imageRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
@@ -25,21 +28,52 @@ export function HeroSection() {
   const [textVisible, setTextVisible] = useState(false);
   const [imageVisible, setImageVisible] = useState(false);
   const [isPlayerApiReady, setIsPlayerApiReady] = useState(false);
+  const isMobile = useIsMobile();
 
-  const videoId = "BABoDj2WF34"; // YouTube Video ID
+  const handleScrollPlayback = useCallback(() => {
+    if (!playerRef.current || typeof playerRef.current.setPlaybackRate !== 'function' || !sectionRef.current || !window.YT) {
+      return;
+    }
+
+    const sectionRect = sectionRef.current.getBoundingClientRect();
+    const windowHeight = window.innerHeight;
+    const sectionCenterY = sectionRect.top + sectionRect.height / 2;
+    const viewportCenterFocusMin = windowHeight * 0.2;
+    const viewportCenterFocusMax = windowHeight * 0.8;
+
+    const isInFocus = sectionCenterY > viewportCenterFocusMin && sectionCenterY < viewportCenterFocusMax &&
+                      sectionRect.bottom > 0 && sectionRect.top < windowHeight;
+
+    const targetRate = isInFocus ? 1 : 0.5;
+
+    try {
+      if (playerRef.current.getPlaybackRate() !== targetRate) {
+        playerRef.current.setPlaybackRate(targetRate);
+      }
+      if (playerRef.current.getPlayerState() !== window.YT.PlayerState.PLAYING &&
+          playerRef.current.getPlayerState() !== window.YT.PlayerState.BUFFERING) {
+        playerRef.current.playVideo();
+      }
+    } catch (e) {
+      // console.warn("Error interacting with YouTube player:", e);
+    }
+  }, []); // Empty dependency array as it doesn't depend on props/state outside its scope that change
+
 
   const initializePlayer = useCallback(() => {
     if (!playerContainerRef.current || playerRef.current || !window.YT?.Player) return;
 
+    const videoIdToUse = isMobile ? MOBILE_VIDEO_ID : DESKTOP_VIDEO_ID;
+
     playerRef.current = new window.YT.Player(playerContainerRef.current.id, {
-      videoId: videoId,
+      videoId: videoIdToUse,
       width: '100%',
       height: '100%',
       playerVars: {
         autoplay: 1,
         controls: 0,
         loop: 1,
-        playlist: videoId,
+        playlist: videoIdToUse,
         mute: 1,
         playsinline: 1,
         modestbranding: 1,
@@ -59,12 +93,11 @@ export function HeroSection() {
         },
       },
     });
-  }, [videoId]);
+  }, [isMobile, handleScrollPlayback]);
 
   useEffect(() => {
     if (window.YT && window.YT.Player) {
       setIsPlayerApiReady(true);
-      initializePlayer();
       return;
     }
 
@@ -86,50 +119,26 @@ export function HeroSection() {
     };
 
     return () => {
-      if (window.onYouTubeIframeAPIReady === initializePlayer) { // Check if our specific initializer was set
-        window.onYouTubeIframeAPIReady = undefined;
+      if (window.onYouTubeIframeAPIReady) {
+         const currentCallbackStr = window.onYouTubeIframeAPIReady.toString();
+         const expectedCallbackStrPattern = /setIsPlayerApiReady\(true\)/;
+         if (expectedCallbackStrPattern.test(currentCallbackStr)) {
+            window.onYouTubeIframeAPIReady = undefined;
+         }
       }
     };
-  }, [initializePlayer]);
+  }, []);
 
 
   useEffect(() => {
     if (isPlayerApiReady) {
+      if (playerRef.current && typeof playerRef.current.destroy === 'function') {
+        playerRef.current.destroy();
+        playerRef.current = null;
+      }
       initializePlayer();
     }
-  }, [isPlayerApiReady, initializePlayer]);
-
-  const handleScrollPlayback = useCallback(() => {
-    if (!playerRef.current || typeof playerRef.current.setPlaybackRate !== 'function' || !sectionRef.current) {
-      return;
-    }
-
-    const sectionRect = sectionRef.current.getBoundingClientRect();
-    const windowHeight = window.innerHeight;
-    // Consider the section in focus if its center is within a certain range of the viewport center
-    const sectionCenterY = sectionRect.top + sectionRect.height / 2;
-    const viewportCenterFocusMin = windowHeight * 0.2; // e.g., top 20% of viewport
-    const viewportCenterFocusMax = windowHeight * 0.8; // e.g., bottom 20% of viewport
-
-    // Ensure video is actually on screen
-    const isInFocus = sectionCenterY > viewportCenterFocusMin && sectionCenterY < viewportCenterFocusMax &&
-                      sectionRect.bottom > 0 && sectionRect.top < windowHeight;
-
-    const targetRate = isInFocus ? 1 : 0.5; // Normal speed in focus, slower otherwise
-
-    try {
-      if (playerRef.current.getPlaybackRate() !== targetRate) {
-        playerRef.current.setPlaybackRate(targetRate);
-      }
-      // Ensure video plays if it's paused and supposed to be in focus
-      if (playerRef.current.getPlayerState() !== window.YT.PlayerState.PLAYING &&
-          playerRef.current.getPlayerState() !== window.YT.PlayerState.BUFFERING) {
-        playerRef.current.playVideo();
-      }
-    } catch (e) {
-      // console.warn("Error interacting with YouTube player:", e);
-    }
-  }, []);
+  }, [isPlayerApiReady, initializePlayer, isMobile]);
 
 
   useEffect(() => {
@@ -179,7 +188,6 @@ export function HeroSection() {
       ref={sectionRef}
       className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] flex items-center"
     >
-      {/* Background Video Iframe */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
         <div
             id="hero-youtube-player"
@@ -187,10 +195,8 @@ export function HeroSection() {
             className="w-full h-full scale-[2.5] sm:scale-[2.0] md:scale-[1.8] lg:scale-150"
         />
       </div>
-      {/* Overlay for text readability */}
       <div className="absolute top-0 left-0 w-full h-full bg-black/50 z-[1]" />
 
-      {/* Decorative partial circle */}
       <div
         className="absolute w-[150vw] h-[150vw] md:w-[100vw] md:h-[100vw] lg:w-[80vw] lg:h-[80vw]
                    top-[-75vw] left-[-75vw] md:top-[-50vw] md:left-[-50vw] lg:top-[-40vw] lg:left-[-40vw]
@@ -234,8 +240,8 @@ export function HeroSection() {
               imageVisible && "is-visible"
             )}
           >
-            <iframe
-              src="https://docs.google.com/presentation/d/14NokkmdCvoin7j6WqUvcEcl_ddpN5LoQb_3_ABk_EW8/embed?start=false&loop=false&delayms=3000&rm=minimal"
+             <iframe
+              src={`https://docs.google.com/presentation/d/14NokkmdCvoin7j6WqUvcEcl_ddpN5LoQb_3_ABk_EW8/embed?start=false&loop=false&delayms=3000&rm=minimal`}
               frameBorder="0"
               allowFullScreen={true}
               className="w-full max-w-[600px] aspect-[3/2] rounded-lg shadow-xl"
@@ -247,3 +253,4 @@ export function HeroSection() {
     </section>
   );
 }
+
