@@ -26,7 +26,7 @@ export function HeroSection() {
   const [imageVisible, setImageVisible] = useState(false);
   const [isPlayerApiReady, setIsPlayerApiReady] = useState(false);
 
-  const videoId = "BABoDj2WF34";
+  const videoId = "BABoDj2WF34"; // YouTube Video ID
 
   const initializePlayer = useCallback(() => {
     if (!playerContainerRef.current || playerRef.current || !window.YT?.Player) return;
@@ -86,11 +86,12 @@ export function HeroSection() {
     };
 
     return () => {
-      if (window.onYouTubeIframeAPIReady === initializePlayer) {
+      if (window.onYouTubeIframeAPIReady === initializePlayer) { // Check if our specific initializer was set
         window.onYouTubeIframeAPIReady = undefined;
       }
     };
   }, [initializePlayer]);
+
 
   useEffect(() => {
     if (isPlayerApiReady) {
@@ -105,19 +106,22 @@ export function HeroSection() {
 
     const sectionRect = sectionRef.current.getBoundingClientRect();
     const windowHeight = window.innerHeight;
+    // Consider the section in focus if its center is within a certain range of the viewport center
     const sectionCenterY = sectionRect.top + sectionRect.height / 2;
-    const viewportCenterFocusMin = windowHeight * 0.2;
-    const viewportCenterFocusMax = windowHeight * 0.8;
+    const viewportCenterFocusMin = windowHeight * 0.2; // e.g., top 20% of viewport
+    const viewportCenterFocusMax = windowHeight * 0.8; // e.g., bottom 20% of viewport
 
+    // Ensure video is actually on screen
     const isInFocus = sectionCenterY > viewportCenterFocusMin && sectionCenterY < viewportCenterFocusMax &&
                       sectionRect.bottom > 0 && sectionRect.top < windowHeight;
 
-    const targetRate = isInFocus ? 1 : 0.5;
+    const targetRate = isInFocus ? 1 : 0.5; // Normal speed in focus, slower otherwise
 
     try {
       if (playerRef.current.getPlaybackRate() !== targetRate) {
         playerRef.current.setPlaybackRate(targetRate);
       }
+      // Ensure video plays if it's paused and supposed to be in focus
       if (playerRef.current.getPlayerState() !== window.YT.PlayerState.PLAYING &&
           playerRef.current.getPlayerState() !== window.YT.PlayerState.BUFFERING) {
         playerRef.current.playVideo();
@@ -127,12 +131,14 @@ export function HeroSection() {
     }
   }, []);
 
+
   useEffect(() => {
     window.addEventListener('scroll', handleScrollPlayback);
     return () => {
       window.removeEventListener('scroll', handleScrollPlayback);
     };
   }, [handleScrollPlayback]);
+
 
   useEffect(() => {
     const observerOptions = { threshold: 0.1 };
@@ -167,11 +173,13 @@ export function HeroSection() {
     };
   }, []);
 
+
   return (
     <section
       ref={sectionRef}
       className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] flex items-center"
     >
+      {/* Background Video Iframe */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
         <div
             id="hero-youtube-player"
@@ -179,12 +187,16 @@ export function HeroSection() {
             className="w-full h-full scale-[2.5] sm:scale-[2.0] md:scale-[1.8] lg:scale-150"
         />
       </div>
+      {/* Overlay for text readability */}
       <div className="absolute top-0 left-0 w-full h-full bg-black/50 z-[1]" />
+
+      {/* Decorative partial circle */}
       <div
         className="absolute w-[150vw] h-[150vw] md:w-[100vw] md:h-[100vw] lg:w-[80vw] lg:h-[80vw]
                    top-[-75vw] left-[-75vw] md:top-[-50vw] md:left-[-50vw] lg:top-[-40vw] lg:left-[-40vw]
                    rounded-full border-2 border-accent/40 pointer-events-none z-[2]"
       />
+
 
       <div className="container relative px-4 md:px-6 z-[3] py-12 md:py-24 lg:py-32">
         <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 xl:gap-16 items-center">
@@ -223,7 +235,7 @@ export function HeroSection() {
             )}
           >
             <iframe
-              src="https://docs.google.com/presentation/d/14NokkmdCvoin7j6WqUvcEcl_ddpN5LoQb_3_ABk_EW8/embed?start=false&loop=false&delayms=3000"
+              src="https://docs.google.com/presentation/d/14NokkmdCvoin7j6WqUvcEcl_ddpN5LoQb_3_ABk_EW8/embed?start=false&loop=false&delayms=3000&rm=minimal"
               frameBorder="0"
               allowFullScreen={true}
               className="w-full max-w-[600px] aspect-[3/2] rounded-lg shadow-xl"
