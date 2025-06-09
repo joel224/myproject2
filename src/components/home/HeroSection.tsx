@@ -17,16 +17,16 @@ declare global {
 
 export function HeroSection() {
   const textRef = useRef<HTMLDivElement>(null);
-  const imageRef = useRef<HTMLDivElement>(null); // This ref is for the container of the image
+  const imageRef = useRef<HTMLDivElement>(null); // Ref for the div containing the iframe/image
   const sectionRef = useRef<HTMLDivElement>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
 
   const [textVisible, setTextVisible] = useState(false);
-  const [imageVisible, setImageVisible] = useState(false); // Corrected state name
+  const [imageVisible, setImageVisible] = useState(false);
   const [isPlayerApiReady, setIsPlayerApiReady] = useState(false);
 
-  const videoId = "BABoDj2WF34"; // Updated video ID
+  const videoId = "BABoDj2WF34";
 
   const initializePlayer = useCallback(() => {
     if (!playerContainerRef.current || playerRef.current || !window.YT?.Player) return;
@@ -49,7 +49,7 @@ export function HeroSection() {
       },
       events: {
         onReady: (event: any) => {
-          handleScrollPlayback(); // Call handleScrollPlayback when player is ready
+          handleScrollPlayback();
         },
         onStateChange: (event: any) => {
           if (event.data === window.YT.PlayerState.ENDED) {
@@ -59,13 +59,12 @@ export function HeroSection() {
         },
       },
     });
-  }, [videoId]); // Added videoId to dependencies
+  }, [videoId]);
 
-  // Effect to load YouTube API
   useEffect(() => {
     if (window.YT && window.YT.Player) {
-      setIsPlayerApiReady(true); // API already loaded
-      initializePlayer(); // Initialize player if API already there
+      setIsPlayerApiReady(true);
+      initializePlayer();
       return;
     }
 
@@ -78,25 +77,21 @@ export function HeroSection() {
       if (firstScriptTag && firstScriptTag.parentNode) {
         firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
       } else {
-        document.head.appendChild(tag); // Fallback if no script tags exist
+        document.head.appendChild(tag);
       }
     }
 
-    // Set the global callback function
     window.onYouTubeIframeAPIReady = () => {
       setIsPlayerApiReady(true);
     };
 
-    // Cleanup function to remove the global callback if the component unmounts
-    // before the API loads.
     return () => {
-      if (window.onYouTubeIframeAPIReady === initializePlayer) { // Check if it's our function
+      if (window.onYouTubeIframeAPIReady === initializePlayer) {
         window.onYouTubeIframeAPIReady = undefined;
       }
     };
-  }, [initializePlayer]); // Added initializePlayer to dependencies
+  }, [initializePlayer]);
 
-  // Effect to initialize player once API is ready
   useEffect(() => {
     if (isPlayerApiReady) {
       initializePlayer();
@@ -110,24 +105,19 @@ export function HeroSection() {
 
     const sectionRect = sectionRef.current.getBoundingClientRect();
     const windowHeight = window.innerHeight;
-
-    // Define a "focus zone" in the viewport where the video plays at normal speed
-    // For example, when the section's center is between 20% and 80% of viewport height
     const sectionCenterY = sectionRect.top + sectionRect.height / 2;
     const viewportCenterFocusMin = windowHeight * 0.2;
     const viewportCenterFocusMax = windowHeight * 0.8;
 
-    // Check if the section is generally in view and within the focus zone
     const isInFocus = sectionCenterY > viewportCenterFocusMin && sectionCenterY < viewportCenterFocusMax &&
                       sectionRect.bottom > 0 && sectionRect.top < windowHeight;
 
-    const targetRate = isInFocus ? 1 : 0.5; // Normal speed in focus, slower otherwise
+    const targetRate = isInFocus ? 1 : 0.5;
 
     try {
       if (playerRef.current.getPlaybackRate() !== targetRate) {
         playerRef.current.setPlaybackRate(targetRate);
       }
-      // Ensure video plays if it's supposed to be visible and isn't already playing/buffering
       if (playerRef.current.getPlayerState() !== window.YT.PlayerState.PLAYING &&
           playerRef.current.getPlayerState() !== window.YT.PlayerState.BUFFERING) {
         playerRef.current.playVideo();
@@ -135,7 +125,7 @@ export function HeroSection() {
     } catch (e) {
       // console.warn("Error interacting with YouTube player:", e);
     }
-  }, []); // Removed sectionRef from dependencies as it's stable
+  }, []);
 
   useEffect(() => {
     window.addEventListener('scroll', handleScrollPlayback);
@@ -144,7 +134,6 @@ export function HeroSection() {
     };
   }, [handleScrollPlayback]);
 
-  // Intersection Observers for text and image animations
   useEffect(() => {
     const observerOptions = { threshold: 0.1 };
 
@@ -157,11 +146,11 @@ export function HeroSection() {
       });
     }, observerOptions);
 
-    const imageObserver = new IntersectionObserver((entries) => { // Corrected observer name
+    const imageObserver = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          setImageVisible(true); // Corrected state setter
-          imageObserver.unobserve(entry.target); // Corrected observer name
+          setImageVisible(true);
+          imageObserver.unobserve(entry.target);
         }
       });
     }, observerOptions);
@@ -170,11 +159,11 @@ export function HeroSection() {
     const currentImageRef = imageRef.current;
 
     if (currentTextRef) textObserver.observe(currentTextRef);
-    if (currentImageRef) imageObserver.observe(currentImageRef); // Corrected ref name
+    if (currentImageRef) imageObserver.observe(currentImageRef);
 
     return () => {
       if (currentTextRef) textObserver.unobserve(currentTextRef);
-      if (currentImageRef) imageObserver.unobserve(currentImageRef); // Corrected ref name
+      if (currentImageRef) imageObserver.unobserve(currentImageRef);
     };
   }, []);
 
@@ -183,27 +172,20 @@ export function HeroSection() {
       ref={sectionRef}
       className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] flex items-center"
     >
-      {/* Background Video Player Container */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
         <div
             id="hero-youtube-player"
             ref={playerContainerRef}
-            className="w-full h-full scale-[2.5] sm:scale-[2.0] md:scale-[1.8] lg:scale-150" // Responsive scaling
+            className="w-full h-full scale-[2.5] sm:scale-[2.0] md:scale-[1.8] lg:scale-150"
         />
       </div>
-
-      {/* Dark Overlay for text readability */}
       <div className="absolute top-0 left-0 w-full h-full bg-black/50 z-[1]" />
-
-      {/* Decorative Partial Circle */}
       <div
         className="absolute w-[150vw] h-[150vw] md:w-[100vw] md:h-[100vw] lg:w-[80vw] lg:h-[80vw]
                    top-[-75vw] left-[-75vw] md:top-[-50vw] md:left-[-50vw] lg:top-[-40vw] lg:left-[-40vw]
                    rounded-full border-2 border-accent/40 pointer-events-none z-[2]"
       />
 
-
-      {/* Content Container */}
       <div className="container relative px-4 md:px-6 z-[3] py-12 md:py-24 lg:py-32">
         <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 xl:gap-16 items-center">
           <div
@@ -233,34 +215,23 @@ export function HeroSection() {
             </div>
           </div>
           <div
-            ref={imageRef} // Ref for the div containing the image
+            ref={imageRef}
             className={cn(
               "flex justify-center lg:justify-end",
               "initial-fade-in-right",
               imageVisible && "is-visible"
             )}
           >
-            <a
-              href="https://docs.google.com/presentation/d/14NokkmdCvoin7j6WqUvcEcl_ddpN5LoQb_3_ABk_EW8/edit?usp=sharing"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="View Dental Presentation"
-              className="block rounded-lg shadow-xl overflow-hidden" // Added overflow-hidden to ensure border-radius applies to image
-            >
-              <Image
-                src="https://placehold.co/600x400.png"
-                alt="Dental office or smiling patient"
-                width={600}
-                height={400}
-                className="rounded-lg object-cover" // Image keeps its own rounding, cover ensures it fills the <a>
-                priority
-                data-ai-hint="dental team smile"
-              />
-            </a>
+            <iframe
+              src="https://docs.google.com/presentation/d/14NokkmdCvoin7j6WqUvcEcl_ddpN5LoQb_3_ABk_EW8/embed?start=false&loop=false&delayms=3000"
+              frameBorder="0"
+              allowFullScreen={true}
+              className="w-full max-w-[600px] aspect-[3/2] rounded-lg shadow-xl"
+              title="Dental Presentation"
+            ></iframe>
           </div>
         </div>
       </div>
     </section>
   );
 }
-    
