@@ -3,6 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import Image from 'next/image'; // Import Next.js Image component
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -15,17 +16,17 @@ declare global {
 }
 
 const DESKTOP_VIDEO_ID = "Svcb6Pf8PL4";
-const MOBILE_VIDEO_ID = "U6oZFT5Omdk";
+const MOBILE_VIDEO_ID = "U6oZFT5Omdk"; // From shorts link
 
 export function HeroSection() {
   const textRef = useRef<HTMLDivElement>(null);
-  const imageRef = useRef<HTMLDivElement>(null);
+  const imageContainerRef = useRef<HTMLDivElement>(null); // Renamed from imageRef for clarity
   const sectionRef = useRef<HTMLDivElement>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
 
   const [textVisible, setTextVisible] = useState(false);
-  const [imageVisible, setImageVisible] = useState(false);
+  const [imageVisible, setImageVisible] = useState(false); // For the image container
   const [isPlayerApiReady, setIsPlayerApiReady] = useState(false);
   const isMobile = useIsMobile();
 
@@ -72,7 +73,7 @@ export function HeroSection() {
         autoplay: 1,
         controls: 0,
         loop: 1,
-        playlist: videoIdToUse,
+        playlist: videoIdToUse, // Required for loop to work
         mute: 1,
         playsinline: 1,
         modestbranding: 1,
@@ -82,7 +83,7 @@ export function HeroSection() {
       },
       events: {
         onReady: (event: any) => {
-          handleScrollPlayback();
+          handleScrollPlayback(); // Initial check
         },
         onStateChange: (event: any) => {
           if (event.data === window.YT.PlayerState.ENDED) {
@@ -129,6 +130,7 @@ export function HeroSection() {
 
   useEffect(() => {
     if (isPlayerApiReady) {
+      // If player exists and isMobile state changes, destroy and reinitialize
       if (playerRef.current && typeof playerRef.current.destroy === 'function') {
         playerRef.current.destroy();
         playerRef.current = null;
@@ -158,24 +160,24 @@ export function HeroSection() {
       });
     }, observerOptions);
 
-    const imageObserver = new IntersectionObserver((entries) => {
+    const imageContainerObserver = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           setImageVisible(true);
-          imageObserver.unobserve(entry.target);
+          imageContainerObserver.unobserve(entry.target);
         }
       });
     }, observerOptions);
 
     const currentTextRef = textRef.current;
-    const currentImageRef = imageRef.current;
+    const currentImageContainerRef = imageContainerRef.current;
 
     if (currentTextRef) textObserver.observe(currentTextRef);
-    if (currentImageRef) imageObserver.observe(currentImageRef);
+    if (currentImageContainerRef) imageContainerObserver.observe(currentImageContainerRef);
 
     return () => {
       if (currentTextRef) textObserver.unobserve(currentTextRef);
-      if (currentImageRef) imageObserver.unobserve(currentImageRef);
+      if (currentImageContainerRef) imageContainerObserver.unobserve(currentImageContainerRef);
     };
   }, []);
 
@@ -185,15 +187,17 @@ export function HeroSection() {
       ref={sectionRef}
       className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] flex items-center"
     >
+      {/* Background Video Container */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
         <div
-            id="hero-youtube-player"
+            id="hero-youtube-player" // Unique ID for the player container
             ref={playerContainerRef}
-            className="w-full h-full scale-[2.5] sm:scale-[2.0] md:scale-[1.8] lg:scale-150"
+            className="w-full h-full scale-[2.5] sm:scale-[2.0] md:scale-[1.8] lg:scale-150" // Responsive scaling
         />
       </div>
       <div className="absolute top-0 left-0 w-full h-full bg-black/50 z-[1]" />
 
+      {/* Decorative Top-Left Circle (Filled) */}
       <div
         className="absolute w-[150vw] h-[150vw] md:w-[100vw] md:h-[100vw] lg:w-[80vw] lg:h-[80vw]
                    top-[-75vw] left-[-75vw] md:top-[-50vw] md:left-[-50vw] lg:top-[-40vw] lg:left-[-40vw]
@@ -202,24 +206,33 @@ export function HeroSection() {
 
       <div className="container relative px-4 md:px-6 z-[3] py-12 md:py-24 lg:py-32">
         <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 xl:gap-16 items-center">
-          {/* Google Slides Embed - LEFT Column */}
+          {/* Image with Link - LEFT Column */}
           <div
-            ref={imageRef}
+            ref={imageContainerRef}
             className={cn(
               "flex justify-center items-center w-full",
               "initial-fade-in-left",
               imageVisible && "is-visible"
             )}
           >
-            <div className="w-full max-w-[600px] aspect-[4/3] rounded-lg shadow-xl overflow-hidden">
-              <iframe
-                src="https://docs.google.com/presentation/d/14NokkmdCvoin7j6WqUvcEcl_ddpN5LoQb_3_ABk_EW8/embed?start=false&loop=false&delayms=3000&rm=minimal"
-                frameBorder="0"
-                width="100%"
-                height="100%"
-                allowFullScreen={true}
-              ></iframe>
-            </div>
+            <a
+              href="https://drive.google.com/file/d/18aD-AVHaGk9vR5OhDtS15IwSVPwDGmUF/view?usp=sharing"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full max-w-[600px] aspect-[4/3] rounded-lg shadow-xl overflow-hidden"
+              aria-label="View Document on Google Drive"
+            >
+              <Image
+                src="https://placehold.co/600x400.png" // Placeholder image URL
+                alt="Dental Care Document Preview" // Descriptive alt text
+                width={600}
+                height={400}
+                layout="responsive" // Use responsive layout
+                objectFit="cover" // Or "contain" depending on desired fit
+                className="rounded-lg"
+                data-ai-hint="dental presentation document" // AI Hint for placeholder replacement
+              />
+            </a>
           </div>
 
           {/* Text Content - RIGHT Column */}
@@ -229,7 +242,7 @@ export function HeroSection() {
               "space-y-6 lg:text-left text-center",
               "initial-fade-in-right",
               textVisible && "is-visible",
-              "text-neutral-100"
+              "text-neutral-100" 
             )}
           >
             <h1 className="font-manrope text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
