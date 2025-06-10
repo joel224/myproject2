@@ -15,17 +15,17 @@ declare global {
 }
 
 const DESKTOP_VIDEO_ID = "Svcb6Pf8PL4";
-const MOBILE_VIDEO_ID = "U6oZFT5Omdk"; 
+const MOBILE_VIDEO_ID = "U6oZFT5Omdk";
 
 export function HeroSection() {
   const textRef = useRef<HTMLDivElement>(null);
-  const embedRef = useRef<HTMLDivElement>(null); // Renamed from imageRef
+  const imageRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
 
   const [textVisible, setTextVisible] = useState(false);
-  const [embedVisible, setEmbedVisible] = useState(false); // Renamed from imageVisible
+  const [imageVisible, setImageVisible] = useState(false);
   const [isPlayerApiReady, setIsPlayerApiReady] = useState(false);
   const isMobile = useIsMobile();
 
@@ -72,7 +72,7 @@ export function HeroSection() {
         autoplay: 1,
         controls: 0,
         loop: 1,
-        playlist: videoIdToUse, // Required for loop to work with a single video
+        playlist: videoIdToUse,
         mute: 1,
         playsinline: 1,
         modestbranding: 1,
@@ -120,9 +120,6 @@ export function HeroSection() {
     };
 
     return () => {
-      // Clean up: check if the current onYouTubeIframeAPIReady is the one we set
-      // This is a bit tricky if multiple components try to set this global.
-      // A more robust solution might involve a global script loader or context.
       if (window.onYouTubeIframeAPIReady && window.onYouTubeIframeAPIReady.toString().includes("setIsPlayerApiReady(true)")) {
         window.onYouTubeIframeAPIReady = existingApiReady;
       }
@@ -161,24 +158,24 @@ export function HeroSection() {
       });
     }, observerOptions);
 
-    const embedObserver = new IntersectionObserver((entries) => { // Renamed from imageObserver
+    const imageObserver = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          setEmbedVisible(true); // Renamed from setImageVisible
-          embedObserver.unobserve(entry.target);
+          setImageVisible(true);
+          imageObserver.unobserve(entry.target);
         }
       });
     }, observerOptions);
 
     const currentTextRef = textRef.current;
-    const currentEmbedRef = embedRef.current; // Renamed from currentImageRef
+    const currentImageRef = imageRef.current;
 
     if (currentTextRef) textObserver.observe(currentTextRef);
-    if (currentEmbedRef) embedObserver.observe(currentEmbedRef);
+    if (currentImageRef) imageObserver.observe(currentImageRef);
 
     return () => {
       if (currentTextRef) textObserver.unobserve(currentTextRef);
-      if (currentEmbedRef) embedObserver.unobserve(currentEmbedRef);
+      if (currentImageRef) imageObserver.unobserve(currentImageRef);
     };
   }, []);
 
@@ -197,7 +194,6 @@ export function HeroSection() {
       </div>
       <div className="absolute top-0 left-0 w-full h-full bg-black/50 z-[1]" />
 
-      {/* Top-left decorative circle - FILLED */}
       <div
         className="absolute w-[150vw] h-[150vw] md:w-[100vw] md:h-[100vw] lg:w-[80vw] lg:h-[80vw]
                    top-[-75vw] left-[-75vw] md:top-[-50vw] md:left-[-50vw] lg:top-[-40vw] lg:left-[-40vw]
@@ -206,33 +202,32 @@ export function HeroSection() {
 
       <div className="container relative px-4 md:px-6 z-[3] py-12 md:py-24 lg:py-32">
         <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 xl:gap-16 items-center">
-          {/* Google Slides Embed - Now on the LEFT */}
+          {/* Google Slides Embed - LEFT Column */}
           <div
-            ref={embedRef}
+            ref={imageRef}
             className={cn(
               "flex justify-center items-center w-full",
-              "initial-fade-in-left", // Changed from right
-              embedVisible && "is-visible"
+              "initial-fade-in-left",
+              imageVisible && "is-visible"
             )}
           >
-            <div className="w-full max-w-[600px] aspect-[4/3] md:aspect-[16/9] lg:aspect-[4/3] bg-black/30 rounded-lg shadow-xl overflow-hidden">
+            <div className="w-full max-w-[600px] aspect-[4/3] rounded-lg shadow-xl overflow-hidden">
               <iframe
                 src="https://docs.google.com/presentation/d/14NokkmdCvoin7j6WqUvcEcl_ddpN5LoQb_3_ABk_EW8/embed?start=false&loop=false&delayms=3000&rm=minimal"
                 frameBorder="0"
                 width="100%"
                 height="100%"
                 allowFullScreen={true}
-                // Removed sandbox attributes that might restrict YouTube embeds within slides, if any
               ></iframe>
             </div>
           </div>
 
-          {/* Text Content - Now on the RIGHT */}
+          {/* Text Content - RIGHT Column */}
           <div
             ref={textRef}
             className={cn(
-              "space-y-6 lg:text-left text-center", // Centered text on small screens, left on large
-              "initial-fade-in-right", // Changed from left
+              "space-y-6 lg:text-left text-center",
+              "initial-fade-in-right",
               textVisible && "is-visible",
               "text-neutral-100"
             )}
