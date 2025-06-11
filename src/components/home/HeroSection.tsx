@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import Image from 'next/image';
+// Removed import for next/image
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -58,6 +58,7 @@ export function HeroSection() {
       // console.warn("Error interacting with YouTube player:", e);
     }
   }, []);
+
 
   const initializePlayer = useCallback(() => {
     if (!playerContainerRef.current || playerRef.current || !window.YT?.Player) return;
@@ -211,19 +212,14 @@ export function HeroSection() {
               href="https://drive.google.com/file/d/18aD-AVHaGk9vR5OhDtS15IwSVPwDGmUF/view?usp=sharing"
               target="_blank"
               rel="noopener noreferrer"
-              className="block w-full max-w-[600px] aspect-[4/3] rounded-lg shadow-xl overflow-hidden"
+              className="block w-full max-w-[600px] aspect-[4/3] rounded-lg shadow-xl overflow-hidden bg-neutral-800/30"
               aria-label="View Document on Google Drive"
             >
-              <Image
+              <img
                 src="https://drive.google.com/uc?export=download&id=18aD-AVHaGk9vR5OhDtS15IwSVPwDGmUF"
                 alt="Dental Care Document Preview"
-                width={600}
-                height={450} // Adjusted height for 4:3 aspect ratio
-                layout="responsive"
-                objectFit="contain" // Changed to contain to better show documents, or 'cover' if cropping is fine
-                className="rounded-lg bg-neutral-800/30" // Added a subtle background for the image container
+                className="rounded-lg w-full h-full object-contain"
                 data-ai-hint="dental presentation document"
-                unoptimized={true} // Recommended for external URLs not on whitelisted CDNs or if optimization issues arise
               />
             </a>
           </div>
