@@ -3,7 +3,6 @@
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import Image from 'next/image'; // Reinstated next/image
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -18,19 +17,14 @@ declare global {
 const DESKTOP_VIDEO_ID = "Svcb6Pf8PL4";
 const MOBILE_VIDEO_ID = "U6oZFT5Omdk";
 
-// Simulated Firebase Storage URL - replace with your actual URL after uploading
-const FIREBASE_STORAGE_IMAGE_URL = "https://storage.googleapis.com/dr-lojis-dental-hub.appspot.com/hero_dentist_image.png";
-
 
 export function HeroSection() {
   const textRef = useRef<HTMLDivElement>(null);
-  const imageContainerRef = useRef<HTMLDivElement>(null); // Keeping this for the image container animations
   const sectionRef = useRef<HTMLDivElement>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
 
   const [textVisible, setTextVisible] = useState(false);
-  const [imageVisible, setImageVisible] = useState(false); // For image container animation
   const [isPlayerApiReady, setIsPlayerApiReady] = useState(false);
   const isMobile = useIsMobile();
 
@@ -160,24 +154,13 @@ export function HeroSection() {
       });
     }, observerOptions);
 
-    const imageContainerObserver = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          setImageVisible(true); // This will trigger the image container animation
-          imageContainerObserver.unobserve(entry.target);
-        }
-      });
-    }, observerOptions);
 
     const currentTextRef = textRef.current;
-    const currentImageContainerRef = imageContainerRef.current;
 
     if (currentTextRef) textObserver.observe(currentTextRef);
-    if (currentImageContainerRef) imageContainerObserver.observe(currentImageContainerRef);
 
     return () => {
       if (currentTextRef) textObserver.unobserve(currentTextRef);
-      if (currentImageContainerRef) imageContainerObserver.unobserve(currentImageContainerRef);
     };
   }, []);
 
@@ -185,7 +168,7 @@ export function HeroSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] flex items-center"
+      className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] flex items-center justify-center" // Added justify-center
     >
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
         <div
@@ -201,53 +184,32 @@ export function HeroSection() {
                    top-[-75vw] left-[-75vw] md:top-[-50vw] md:left-[-50vw] lg:top-[-40vw] lg:left-[-40vw]
                    bg-accent/20 pointer-events-none z-[2] rounded-full"
       />
+      <div
+        className="absolute w-[150vw] h-[150vw] md:w-[100vw] md:h-[100vw] lg:w-[80vw] lg:h-[80vw]
+                   top-[-75vw] right-[-75vw] md:top-[-50vw] md:right-[-50vw] lg:top-[-40vw] lg:right-[-40vw]
+                   border-2 border-accent/40 pointer-events-none z-[2] rounded-full"
+      />
+
 
       <div className="container relative px-4 md:px-6 z-[3] py-12 md:py-24 lg:py-32">
-        <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 xl:gap-16 items-center">
-          {/* Image/Document on the Left (Order 1 on mobile, Order 1 on large) */}
-          <div
-            ref={imageContainerRef}
-            className={cn(
-              "flex justify-center items-center w-full order-1 lg:order-1",
-              "initial-fade-in-left",
-              imageVisible && "is-visible"
-            )}
-          >
-             <a
-              href="https://drive.google.com/file/d/18aD-AVHaGk9vR5OhDtS15IwSVPwDGmUF/view?usp=sharing"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-full max-w-[600px] aspect-[4/3] rounded-lg shadow-xl overflow-hidden"
-              aria-label="View Document on Google Drive"
-            >
-              <Image
-                src={FIREBASE_STORAGE_IMAGE_URL}
-                alt="Dr. Loji - Dental Care Presentation"
-                layout="fill"
-                objectFit="contain"
-                className="rounded-lg"
-                data-ai-hint="dentist portrait"
-              />
-            </a>
-          </div>
-
-          {/* Text Content on the Right (Order 2 on mobile, Order 2 on large) */}
+        <div className="flex flex-col items-center justify-center"> {/* Simplified grid to flex for single content block */}
           <div
             ref={textRef}
             className={cn(
-              "space-y-6 lg:text-left text-center order-2 lg:order-2",
-              "initial-fade-in-right",
+              "space-y-6 text-center", // Ensure text content itself is centered
+              "initial-fade-in-right", // You can change this to initial-fade-in-up if preferred
               textVisible && "is-visible",
-              "text-neutral-100"
+              "text-neutral-100",
+              "max-w-2xl" // Optional: constrain width for better readability
             )}
           >
             <h1 className="font-manrope text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
               Your Smile, Our Passion!
             </h1>
-            <p className="max-w-[600px] text-neutral-200 md:text-xl lg:mx-0 mx-auto">
+            <p className="max-w-[600px] text-neutral-200 md:text-xl mx-auto"> {/* Added mx-auto for paragraph centering */}
               Experience exceptional dental care at Dr. Loji's Dental Hub. We're dedicated to creating healthy, beautiful smiles for life.
             </p>
-            <div className="flex flex-col gap-2 min-[400px]:flex-row lg:justify-start justify-center">
+            <div className="flex flex-col gap-2 min-[400px]:flex-row justify-center"> {/* Ensured button container is centered */}
               <Link href="/#appointment">
                 <Button
                   size="lg"
@@ -263,3 +225,4 @@ export function HeroSection() {
     </section>
   );
 }
+
