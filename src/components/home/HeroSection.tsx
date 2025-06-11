@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import Image from 'next/image'; // Import Next.js Image component
+import Image from 'next/image';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -16,17 +16,17 @@ declare global {
 }
 
 const DESKTOP_VIDEO_ID = "Svcb6Pf8PL4";
-const MOBILE_VIDEO_ID = "U6oZFT5Omdk"; // From shorts link
+const MOBILE_VIDEO_ID = "U6oZFT5Omdk";
 
 export function HeroSection() {
   const textRef = useRef<HTMLDivElement>(null);
-  const imageContainerRef = useRef<HTMLDivElement>(null); // Renamed from imageRef for clarity
+  const imageContainerRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
 
   const [textVisible, setTextVisible] = useState(false);
-  const [imageVisible, setImageVisible] = useState(false); // For the image container
+  const [imageVisible, setImageVisible] = useState(false);
   const [isPlayerApiReady, setIsPlayerApiReady] = useState(false);
   const isMobile = useIsMobile();
 
@@ -59,7 +59,6 @@ export function HeroSection() {
     }
   }, []);
 
-
   const initializePlayer = useCallback(() => {
     if (!playerContainerRef.current || playerRef.current || !window.YT?.Player) return;
 
@@ -73,7 +72,7 @@ export function HeroSection() {
         autoplay: 1,
         controls: 0,
         loop: 1,
-        playlist: videoIdToUse, // Required for loop to work
+        playlist: videoIdToUse,
         mute: 1,
         playsinline: 1,
         modestbranding: 1,
@@ -83,7 +82,7 @@ export function HeroSection() {
       },
       events: {
         onReady: (event: any) => {
-          handleScrollPlayback(); // Initial check
+          handleScrollPlayback();
         },
         onStateChange: (event: any) => {
           if (event.data === window.YT.PlayerState.ENDED) {
@@ -127,10 +126,8 @@ export function HeroSection() {
     };
   }, []);
 
-
   useEffect(() => {
     if (isPlayerApiReady) {
-      // If player exists and isMobile state changes, destroy and reinitialize
       if (playerRef.current && typeof playerRef.current.destroy === 'function') {
         playerRef.current.destroy();
         playerRef.current = null;
@@ -139,14 +136,12 @@ export function HeroSection() {
     }
   }, [isPlayerApiReady, initializePlayer, isMobile]);
 
-
   useEffect(() => {
     window.addEventListener('scroll', handleScrollPlayback);
     return () => {
       window.removeEventListener('scroll', handleScrollPlayback);
     };
   }, [handleScrollPlayback]);
-
 
   useEffect(() => {
     const observerOptions = { threshold: 0.1 };
@@ -187,17 +182,15 @@ export function HeroSection() {
       ref={sectionRef}
       className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] flex items-center"
     >
-      {/* Background Video Container */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
         <div
-            id="hero-youtube-player" // Unique ID for the player container
+            id="hero-youtube-player"
             ref={playerContainerRef}
-            className="w-full h-full scale-[2.5] sm:scale-[2.0] md:scale-[1.8] lg:scale-150" // Responsive scaling
+            className="w-full h-full scale-[2.5] sm:scale-[2.0] md:scale-[1.8] lg:scale-150"
         />
       </div>
       <div className="absolute top-0 left-0 w-full h-full bg-black/50 z-[1]" />
 
-      {/* Decorative Top-Left Circle (Filled) */}
       <div
         className="absolute w-[150vw] h-[150vw] md:w-[100vw] md:h-[100vw] lg:w-[80vw] lg:h-[80vw]
                    top-[-75vw] left-[-75vw] md:top-[-50vw] md:left-[-50vw] lg:top-[-40vw] lg:left-[-40vw]
@@ -206,7 +199,6 @@ export function HeroSection() {
 
       <div className="container relative px-4 md:px-6 z-[3] py-12 md:py-24 lg:py-32">
         <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 xl:gap-16 items-center">
-          {/* Image with Link - LEFT Column */}
           <div
             ref={imageContainerRef}
             className={cn(
@@ -223,26 +215,26 @@ export function HeroSection() {
               aria-label="View Document on Google Drive"
             >
               <Image
-                src="https://placehold.co/600x400.png" // Placeholder image URL
-                alt="Dental Care Document Preview" // Descriptive alt text
+                src="https://drive.google.com/uc?export=download&id=18aD-AVHaGk9vR5OhDtS15IwSVPwDGmUF"
+                alt="Dental Care Document Preview"
                 width={600}
-                height={400}
-                layout="responsive" // Use responsive layout
-                objectFit="cover" // Or "contain" depending on desired fit
-                className="rounded-lg"
-                data-ai-hint="dental presentation document" // AI Hint for placeholder replacement
+                height={450} // Adjusted height for 4:3 aspect ratio
+                layout="responsive"
+                objectFit="contain" // Changed to contain to better show documents, or 'cover' if cropping is fine
+                className="rounded-lg bg-neutral-800/30" // Added a subtle background for the image container
+                data-ai-hint="dental presentation document"
+                unoptimized={true} // Recommended for external URLs not on whitelisted CDNs or if optimization issues arise
               />
             </a>
           </div>
 
-          {/* Text Content - RIGHT Column */}
           <div
             ref={textRef}
             className={cn(
               "space-y-6 lg:text-left text-center",
               "initial-fade-in-right",
               textVisible && "is-visible",
-              "text-neutral-100" 
+              "text-neutral-100"
             )}
           >
             <h1 className="font-manrope text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
