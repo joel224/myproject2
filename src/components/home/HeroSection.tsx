@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-// Removed import for next/image
+import Image from 'next/image'; // Reinstated next/image
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -18,15 +18,19 @@ declare global {
 const DESKTOP_VIDEO_ID = "Svcb6Pf8PL4";
 const MOBILE_VIDEO_ID = "U6oZFT5Omdk";
 
+// Simulated Firebase Storage URL - replace with your actual URL after uploading
+const FIREBASE_STORAGE_IMAGE_URL = "https://storage.googleapis.com/dr-lojis-dental-hub.appspot.com/hero_dentist_image.png";
+
+
 export function HeroSection() {
   const textRef = useRef<HTMLDivElement>(null);
-  const imageContainerRef = useRef<HTMLDivElement>(null);
+  const imageContainerRef = useRef<HTMLDivElement>(null); // Keeping this for the image container animations
   const sectionRef = useRef<HTMLDivElement>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
 
   const [textVisible, setTextVisible] = useState(false);
-  const [imageVisible, setImageVisible] = useState(false);
+  const [imageVisible, setImageVisible] = useState(false); // For image container animation
   const [isPlayerApiReady, setIsPlayerApiReady] = useState(false);
   const isMobile = useIsMobile();
 
@@ -159,7 +163,7 @@ export function HeroSection() {
     const imageContainerObserver = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          setImageVisible(true);
+          setImageVisible(true); // This will trigger the image container animation
           imageContainerObserver.unobserve(entry.target);
         }
       });
@@ -195,39 +199,43 @@ export function HeroSection() {
       <div
         className="absolute w-[150vw] h-[150vw] md:w-[100vw] md:h-[100vw] lg:w-[80vw] lg:h-[80vw]
                    top-[-75vw] left-[-75vw] md:top-[-50vw] md:left-[-50vw] lg:top-[-40vw] lg:left-[-40vw]
-                   rounded-full bg-accent/20 pointer-events-none z-[2]"
+                   bg-accent/20 pointer-events-none z-[2] rounded-full"
       />
 
       <div className="container relative px-4 md:px-6 z-[3] py-12 md:py-24 lg:py-32">
         <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 xl:gap-16 items-center">
+          {/* Image/Document on the Left (Order 1 on mobile, Order 1 on large) */}
           <div
             ref={imageContainerRef}
             className={cn(
-              "flex justify-center items-center w-full",
+              "flex justify-center items-center w-full order-1 lg:order-1",
               "initial-fade-in-left",
               imageVisible && "is-visible"
             )}
           >
-            <a
+             <a
               href="https://drive.google.com/file/d/18aD-AVHaGk9vR5OhDtS15IwSVPwDGmUF/view?usp=sharing"
               target="_blank"
               rel="noopener noreferrer"
-              className="block w-full max-w-[600px] aspect-[4/3] rounded-lg shadow-xl overflow-hidden bg-neutral-800/30"
+              className="block w-full max-w-[600px] aspect-[4/3] rounded-lg shadow-xl overflow-hidden"
               aria-label="View Document on Google Drive"
             >
-              <img
-                src="https://drive.google.com/uc?export=download&id=18aD-AVHaGk9vR5OhDtS15IwSVPwDGmUF"
-                alt="Dental Care Document Preview"
-                className="rounded-lg w-full h-full object-contain"
-                data-ai-hint="dental presentation document"
+              <Image
+                src={FIREBASE_STORAGE_IMAGE_URL}
+                alt="Dr. Loji - Dental Care Presentation"
+                layout="fill"
+                objectFit="contain"
+                className="rounded-lg"
+                data-ai-hint="dentist portrait"
               />
             </a>
           </div>
 
+          {/* Text Content on the Right (Order 2 on mobile, Order 2 on large) */}
           <div
             ref={textRef}
             className={cn(
-              "space-y-6 lg:text-left text-center",
+              "space-y-6 lg:text-left text-center order-2 lg:order-2",
               "initial-fade-in-right",
               textVisible && "is-visible",
               "text-neutral-100"
