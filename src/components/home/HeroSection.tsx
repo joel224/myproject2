@@ -38,7 +38,6 @@ export function HeroSection() {
     const sectionRect = sectionRef.current.getBoundingClientRect();
     const scrollPosition = window.scrollY;
     const sectionTop = sectionRect.top + scrollPosition;
-    // const sectionHeight = sectionRect.height; // Not directly used for parallax transform here
     const translateY = (scrollPosition - sectionTop) * PARALLAX_FACTOR;
     parallaxVideoWrapperRef.current.style.transform = `translateY(${translateY}px)`;
 
@@ -189,14 +188,16 @@ export function HeroSection() {
         </div>
       </div>
 
-      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-black/60 via-black/30 to-[hsl(var(--background))] z-[1]" />
+      {/* Overlay for text readability and fade effect */}
+      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-black/40 via-transparent to-[hsl(var(--background))] z-[1]" />
 
+      {/* Decorative Circles */}
       <div
         className="absolute w-[150vw] h-[150vw] md:w-[100vw] md:h-[100vw] lg:w-[80vw] lg:h-[80vw]
                    top-[-75vw] left-[-75vw] md:top-[-50vw] md:left-[-50vw] lg:top-[-40vw] lg:left-[-40vw]
                    bg-accent/20 pointer-events-none z-[2] rounded-full"
       />
-      <div
+       <div
         className="absolute w-[150vw] h-[150vw] md:w-[100vw] md:h-[100vw] lg:w-[80vw] lg:h-[80vw]
                    top-[-75vw] right-[-75vw] md:top-[-50vw] md:right-[-50vw] lg:top-[-40vw] lg:right-[-40vw]
                    border-2 border-accent/40 pointer-events-none z-[2] rounded-full"
@@ -211,7 +212,7 @@ export function HeroSection() {
               "space-y-6 text-center",
               "initial-fade-in-up", 
               textVisible && "is-visible",
-              "text-neutral-100",
+              "text-neutral-100", // Ensure text remains light for contrast against potentially darker video parts
               "max-w-2xl" 
             )}
           >
@@ -237,4 +238,3 @@ export function HeroSection() {
     </section>
   );
 }
-
