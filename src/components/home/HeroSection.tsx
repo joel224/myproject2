@@ -180,7 +180,7 @@ export function HeroSection() {
       {/* Video background */}
       <div className={cn("absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none")}>
         <div ref={parallaxVideoWrapperRef} className="relative w-full h-[150%] top-[-25%]"> 
-          <div
+          <div 
             id="hero-youtube-player"
             ref={playerContainerRef}
             className="w-full h-full scale-[2.5] sm:scale-[2.0] md:scale-[1.8] lg:scale-150"
@@ -188,8 +188,8 @@ export function HeroSection() {
         </div>
       </div>
 
-      {/* Overlay for text readability and fade effect */}
-      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-black/40 via-transparent to-[hsl(var(--background))] z-[1]" />
+      {/* Overlay gradient to ensure text readability over the video and transition to background */}
+      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-black/20 via-transparent to-[hsl(var(--background))] z-[1]" />
 
       {/* Decorative Circles */}
       <div
@@ -212,7 +212,7 @@ export function HeroSection() {
               "space-y-6 text-center",
               "initial-fade-in-up", 
               textVisible && "is-visible",
-              "text-neutral-100", // Ensure text remains light for contrast against potentially darker video parts
+              "text-neutral-100", 
               "max-w-2xl" 
             )}
           >
