@@ -189,7 +189,7 @@ export function HeroSection() {
       </div>
 
       {/* Overlay gradient to ensure text readability over the video and transition to background */}
-      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-black/20 via-transparent to-[hsl(var(--background))] z-[1]" />
+      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent via-transparent to-[hsl(var(--background))] z-[1]" />
 
       {/* Decorative Circles */}
       <div

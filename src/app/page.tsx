@@ -8,7 +8,7 @@ import { WaitTimeWidget } from '@/components/home/WaitTimeWidget';
 import { HealthTipCard } from '@/components/home/HealthTipCard';
 import { Separator } from '@/components/ui/separator';
 import { AppointmentBookingSection } from '@/components/home/AppointmentBookingSection';
-import { ServicesSection } from '@/components/home/ServicesSection';
+import { ScrollControlledVideoSection } from '@/components/home/ScrollControlledVideoSection';
 
 
 export default function Home() {
@@ -19,7 +19,7 @@ export default function Home() {
         <HeroSection />
         <QuickActionsGrid />
         <Separator className="my-8 md:my-12" />
-        <ServicesSection />
+        <ScrollControlledVideoSection />
         <Separator className="my-8 md:my-12" />
         <DentistSpotlightCard />
         <Separator className="my-8 md:my-12" />
