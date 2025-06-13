@@ -19,12 +19,12 @@ const services = [
 ];
 
 const MUX_PLAYBACK_ID = "1BDuplVB02AJgtBfToI1kc3S4ITsqCI4b2H3uuTvpz00I";
-const PARALLAX_AMOUNT = 0.15; // How much the video background moves relative to scroll
+const PARALLAX_AMOUNT = 0.15; 
 const MIN_PLAYBACK_RATE = 0.8;
-const MAX_PLAYBACK_RATE = 1.8; // Max speed for faster scrolls
-const PAUSE_TIMEOUT_MS = 200; // Pause after 200ms of no scrolling
-const baseSpeedThreshold = 0.1; // Scroll speed (px/ms) below which playback aims for 1.0x
-const maxSpeedForScaling = 2.5; // Scroll speed at which playback rate should reach MAX_PLAYBACK_RATE
+const MAX_PLAYBACK_RATE = 2.0; // Increased max speed slightly
+const PAUSE_TIMEOUT_MS = 200; 
+const baseSpeedThreshold = 0.15; // Scroll speed (px/ms) below which playback aims for 1.0x
+const maxSpeedForScaling = 3.0; // Scroll speed at which playback rate should reach MAX_PLAYBACK_RATE
 
 export function ServicesSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -43,7 +43,7 @@ export function ServicesSection() {
           setIsVisible(entry.isIntersecting);
         });
       },
-      { threshold: 0.2 } // Trigger when 20% of the section is visible
+      { threshold: 0.1 } // Trigger when 10% is visible to start/stop listeners sooner
     );
 
     const currentSectionRef = sectionRef.current;
@@ -70,10 +70,11 @@ export function ServicesSection() {
       const translateY = scrollAmountForParallax * PARALLAX_AMOUNT;
       videoContainerRef.current.style.transform = `translateY(${translateY}px)`;
     }
+    
+    if (!player) return;
 
-    if (!player || !isVisible) {
-      if (player && !player.paused) {
-        // console.log('handleScroll: Pausing because !isVisible or no player');
+    if (!isVisible) {
+      if (!player.paused) {
         player.playbackRate = 1.0;
         player.pause();
       }
@@ -83,34 +84,31 @@ export function ServicesSection() {
     const currentTime = Date.now();
     const currentScrollY = window.scrollY;
     const timeDiff = currentTime - lastScrollTime.current;
-    const scrollDistance = currentScrollY - lastScrollY.current;
+    const scrollDistance = Math.abs(currentScrollY - lastScrollY.current);
 
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current);
     }
 
-    // If there's any scroll, or if the player is paused and we are visible (e.g. initial trigger)
-    if (scrollDistance !== 0 || (player.paused && isVisible)) {
+    if (scrollDistance > 0 || (player.paused && isVisible)) { // If scrolling or if paused but should be visible
       if (player.paused) {
-        // console.log('Playing video due to scroll or initial visible state');
         player.play().catch((e: any) => console.warn("Video play on scroll failed:", e));
       }
 
-      if (timeDiff > 16 && scrollDistance !== 0) { // Avoid division by zero or tiny time diffs for rate change
-        const scrollSpeed = scrollDistance / timeDiff;
-        const absoluteScrollSpeed = Math.abs(scrollSpeed);
+      if (timeDiff > 16 && scrollDistance > 0) { // Min time diff to avoid jerky calculations on tiny scrolls
+        const scrollSpeed = scrollDistance / timeDiff; // Absolute speed
         let newRate;
 
-        if (absoluteScrollSpeed < baseSpeedThreshold) {
+        if (scrollSpeed < baseSpeedThreshold) {
           newRate = 1.0;
         } else {
-          const speedInRange = Math.min(Math.max(absoluteScrollSpeed, baseSpeedThreshold), maxSpeedForScaling);
+          // Scale rate between 1.0 and MAX_PLAYBACK_RATE based on speed
+          const speedInRange = Math.min(Math.max(scrollSpeed, baseSpeedThreshold), maxSpeedForScaling);
           newRate = 1.0 + ((speedInRange - baseSpeedThreshold) / (maxSpeedForScaling - baseSpeedThreshold)) * (MAX_PLAYBACK_RATE - 1.0);
         }
         newRate = Math.max(MIN_PLAYBACK_RATE, Math.min(MAX_PLAYBACK_RATE, newRate));
-
+        
         if (Math.abs(player.playbackRate - newRate) > 0.05) {
-          // console.log('Setting playbackRate to:', newRate, 'Scroll speed:', absoluteScrollSpeed.toFixed(2));
           player.playbackRate = newRate;
         }
       }
@@ -121,26 +119,25 @@ export function ServicesSection() {
 
     scrollTimeoutRef.current = setTimeout(() => {
       if (player && !player.paused) {
-        // console.log('Pausing video due to scroll stop');
         player.playbackRate = 1.0;
         player.pause();
       }
     }, PAUSE_TIMEOUT_MS);
-  }, [isVisible]); // isVisible is the main dependency here, refs are stable
+  }, [isVisible]);
 
   useEffect(() => {
     const player = videoPlayerRef.current?.mediaElement as HTMLVideoElement | undefined;
-
+    
     if (isVisible && player) {
       window.addEventListener('scroll', handleScroll, { passive: true });
-      // Call handleScroll once when the component becomes visible and player is ready
-      // This ensures that if the page loads with the section already in view and scrolled,
-      // the playback logic (including initial play if conditions met) is evaluated.
-      handleScroll();
+      // Initial check when section becomes visible
+      if (player.paused) { // If it was previously paused by scrolling out, or never started
+          // Optionally, could check if user is actively scrolling here too, or just play
+          // For now, we rely on the first scroll event *after* visibility to trigger play.
+      }
     } else {
       window.removeEventListener('scroll', handleScroll);
       if (player && !player.paused) {
-        // console.log('Pausing video in useEffect due to !isVisible or no player');
         player.playbackRate = 1.0;
         player.pause();
       }
@@ -151,15 +148,14 @@ export function ServicesSection() {
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
       }
-      // Ensure player is paused and rate reset when component unmounts or isVisible changes to false
       const cleanupPlayer = videoPlayerRef.current?.mediaElement as HTMLVideoElement | undefined;
       if (cleanupPlayer && !cleanupPlayer.paused) {
-        // console.log('Pausing video in useEffect cleanup');
         cleanupPlayer.playbackRate = 1.0;
         cleanupPlayer.pause();
       }
     };
   }, [isVisible, handleScroll]);
+
 
   return (
     <section
@@ -175,8 +171,8 @@ export function ServicesSection() {
           ref={videoPlayerRef}
           playbackId={MUX_PLAYBACK_ID}
           muted
-          loop={true} // Ensure looping
-          autoPlay={false} // Controlled by scroll
+          loop={true} 
+          autoPlay={false} 
           playsInline
           className="w-full h-full object-cover"
         />
