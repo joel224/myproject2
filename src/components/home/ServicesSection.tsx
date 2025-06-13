@@ -1,3 +1,4 @@
+
 // src/components/home/ServicesSection.tsx
 'use client';
 
@@ -18,11 +19,14 @@ const services = [
 ];
 
 const MUX_PLAYBACK_ID = "1BDuplVB02AJgtBfToI1kc3S4ITsqCI4b2H3uuTvpz00I";
+const IDLE_PLAYBACK_RATE = 0.2; // Play at 20% speed when idle
 
 export function ServicesSection() {
   const playerRef = useRef<MuxPlayerRefAttributes>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
+
   const [isSectionVisible, setIsSectionVisible] = useState(false);
+  const [isPlayerReady, setIsPlayerReady] = useState(false);
 
   // IntersectionObserver for section visibility
   useEffect(() => {
@@ -30,6 +34,7 @@ export function ServicesSection() {
       (entries) => {
         entries.forEach((entry) => {
           setIsSectionVisible(entry.isIntersecting);
+          console.log(`Services MuxPlayer: Section isIntersecting: ${entry.isIntersecting}`);
         });
       },
       { threshold: 0.1 } // Trigger when 10% of the section is visible
@@ -47,36 +52,47 @@ export function ServicesSection() {
     };
   }, []);
 
+  const handlePlayerReady = useCallback(() => {
+    console.log('Services MuxPlayer: Player is ready (onLoadedData fired).');
+    setIsPlayerReady(true);
+  }, []);
+
   useEffect(() => {
     const player = playerRef.current;
-    if (player) {
-      if (isSectionVisible) {
-        player.play()?.catch(e => console.warn("Services MuxPlayer: Play error on visibility change:", e));
-        console.log("Services MuxPlayer: Section visible, attempting to play.");
-      } else {
-        player.pause();
-        console.log("Services MuxPlayer: Section hidden, pausing video.");
-      }
+    if (!player) {
+      console.log('Services MuxPlayer: Player ref not available yet.');
+      return;
     }
-  }, [isSectionVisible]);
+
+    if (isSectionVisible && isPlayerReady) {
+      console.log(`Services MuxPlayer: Section visible and player ready. Setting rate to ${IDLE_PLAYBACK_RATE} and playing.`);
+      player.playbackRate = IDLE_PLAYBACK_RATE;
+      player.play()?.catch(e => console.warn("Services MuxPlayer: Play error on visibility change:", e));
+    } else if (!isSectionVisible && isPlayerReady) {
+      console.log('Services MuxPlayer: Section not visible. Pausing video.');
+      player.pause();
+    } else {
+      console.log(`Services MuxPlayer: Conditions not met for play/pause. Visible: ${isSectionVisible}, Ready: ${isPlayerReady}`);
+    }
+  }, [isSectionVisible, isPlayerReady]);
 
   const muxPlayerProps: MuxPlayerProps = {
     ref: playerRef,
     playbackId: MUX_PLAYBACK_ID,
     muted: true,
-    autoPlay: true, // Autoplay when component mounts, visibility will then control
+    autoPlay: false, // Important: We control play programmatically
     loop: true,
     playsInline: true,
     noControls: true,
     className: "w-full h-full object-cover",
-    onPlayerReady: () => console.log('Services MuxPlayer: Player is ready.'),
-    onLoadedData: () => console.log('Services MuxPlayer: Video data has been loaded.'),
-    onCanPlay: () => console.log('Services MuxPlayer: Browser reports it can play the video.'),
+    onLoadedData: handlePlayerReady, // Use onLoadedData for readiness
     onPlay: () => console.log('Services MuxPlayer: Play event triggered.'),
-    onPlaying: () => console.log('Services MuxPlayer: Playing event triggered (playback has started).'),
     onPause: () => console.log('Services MuxPlayer: Pause event triggered.'),
     onError: (e) => console.error('Services MuxPlayer: Error event:', e.detail),
-    onEnded: () => console.log('Services MuxPlayer: Ended event triggered.'),
+    onEnded: () => console.log('Services MuxPlayer: Ended event triggered (should loop).'),
+    onRateChange: () => playerRef.current && console.log('Services MuxPlayer: RateChange event, new rate:', playerRef.current.playbackRate),
+    onTimeUpdate: () => playerRef.current && console.log('Services MuxPlayer: TimeUpdate - ', playerRef.current.currentTime),
+    onDurationChange: () => playerRef.current && console.log('Services MuxPlayer: DurationChange - ', playerRef.current.duration),
   };
 
   return (
@@ -97,7 +113,7 @@ export function ServicesSection() {
           className={cn(
             "text-center mb-10 md:mb-12",
             "initial-fade-in-up",
-            isSectionVisible && "is-visible"
+            isSectionVisible && "is-visible" // Animation for text content
           )}
         >
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">Our Services</h2>
@@ -113,7 +129,7 @@ export function ServicesSection() {
                 "flex flex-col items-center text-center shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out group",
                 "bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20",
                 "initial-fade-in-up",
-                isSectionVisible && "is-visible"
+                isSectionVisible && "is-visible" // Animation for cards
               )}
               style={{ transitionDelay: isSectionVisible ? `${200 + index * 100}ms` : '0ms' }}
             >
