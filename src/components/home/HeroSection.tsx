@@ -9,16 +9,10 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import MuxPlayer from '@mux/mux-player-react';
 import type { MuxPlayerRefAttributes } from '@mux/mux-player-react';
 
-// Using the Mux Playback ID for both desktop and mobile for now.
-// If you have a different Mux ID for mobile, update MOBILE_MUX_PLAYBACK_ID.
 const DESKTOP_MUX_PLAYBACK_ID = "cbfCGJ7UGeVzI3SLW4xt2fEgTANh7uHd8C3E00QuAnDU";
-const MOBILE_MUX_PLAYBACK_ID = "cbfCGJ7UGeVzI3SLW4xt2fEgTANh7uHd8C3E00QuAnDU"; // Or your mobile-specific Mux ID
+const MOBILE_MUX_PLAYBACK_ID = "cbfCGJ7UGeVzI3SLW4xt2fEgTANh7uHd8C3E00QuAnDU"; // Using same Mux ID for mobile for now
 
 const PARALLAX_FACTOR = 0.4;
-const SCROLL_SPEED_TO_PLAYBACK_RATE_FACTOR = 0.02;
-const MIN_PLAYBACK_RATE = 0.5;
-const MAX_PLAYBACK_RATE = 1.5; // Adjusted for potentially smoother Mux experience
-const PAUSE_TIMEOUT_MS = 250; // Slightly longer timeout for Mux
 
 export function HeroSection() {
   const textRef = useRef<HTMLDivElement>(null);
@@ -28,65 +22,25 @@ export function HeroSection() {
 
   const [textVisible, setTextVisible] = useState(false);
   const isMobile = useIsMobile();
-  const lastScrollY = useRef(typeof window !== 'undefined' ? window.scrollY : 0);
-  const lastScrollTime = useRef(Date.now());
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleScrollPlayback = useCallback(() => {
-    const playerElement = playerRef.current?.mediaElement;
-    if (!playerElement || !sectionRef.current || !parallaxVideoWrapperRef.current) {
+  const handleParallaxScroll = useCallback(() => {
+    if (!sectionRef.current || !parallaxVideoWrapperRef.current) {
       return;
     }
 
-    const sectionRect = sectionRef.current.getBoundingClientRect();
     const scrollPosition = window.scrollY;
-    const sectionTop = sectionRef.current.offsetTop || 0; // Ensure offsetTop is defined
+    const sectionTop = sectionRef.current.offsetTop || 0;
     const translateY = (scrollPosition - sectionTop) * PARALLAX_FACTOR;
 
     if (parallaxVideoWrapperRef.current) {
       parallaxVideoWrapperRef.current.style.transform = `translateY(${translateY}px)`;
     }
 
-    const windowHeight = window.innerHeight;
-    const sectionCenterY = sectionRect.top + sectionRect.height / 2;
-    const viewportCenterFocusMin = windowHeight * 0.1; // Adjust focus area if needed
-    const viewportCenterFocusMax = windowHeight * 0.9;
-
-    const isInFocus = sectionCenterY > viewportCenterFocusMin && sectionCenterY < viewportCenterFocusMax &&
-                      sectionRect.bottom > 0 && sectionRect.top < windowHeight;
-
-    const currentTime = Date.now();
-    const currentScrollY = window.scrollY;
-    const timeDiff = currentTime - lastScrollTime.current;
-    const scrollDiff = currentScrollY - lastScrollY.current;
-
-    if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current);
+    // Optional: Ensure video is playing if somehow paused (though autoPlay and loop should handle it)
+    const playerElement = playerRef.current?.mediaElement;
+    if (playerElement && (playerElement.paused || playerElement.ended)) {
+        playerElement.play().catch(e => console.warn("Mux player play error during scroll (safeguard):", e));
     }
-
-    if (playerElement.paused || playerElement.ended) {
-      playerElement.play().catch(e => console.warn("Mux player play error:", e));
-    }
-
-    if (timeDiff > 20 && scrollDiff !== 0) {
-      const speed = Math.abs(scrollDiff) / timeDiff;
-      let newRate = 1 + (speed * SCROLL_SPEED_TO_PLAYBACK_RATE_FACTOR);
-      newRate = Math.max(MIN_PLAYBACK_RATE, Math.min(MAX_PLAYBACK_RATE, newRate));
-      if (Math.abs(playerElement.playbackRate - newRate) > 0.1) {
-        playerElement.playbackRate = newRate;
-      }
-    } else if (scrollDiff === 0 && !playerElement.paused) {
-      playerElement.playbackRate = 1; // Reset to normal speed
-    }
-
-    lastScrollY.current = currentScrollY;
-    lastScrollTime.current = currentTime;
-
-    scrollTimeoutRef.current = setTimeout(() => {
-      if (!playerElement.paused) {
-        playerElement.pause();
-      }
-    }, PAUSE_TIMEOUT_MS);
 
   }, []);
 
@@ -105,17 +59,14 @@ export function HeroSection() {
     const currentTextRef = textRef.current;
     if (currentTextRef) textObserver.observe(currentTextRef);
 
-    window.addEventListener('scroll', handleScrollPlayback);
-    handleScrollPlayback(); // Initial call
+    window.addEventListener('scroll', handleParallaxScroll);
+    handleParallaxScroll(); // Initial call for parallax positioning
 
     return () => {
       if (currentTextRef) textObserver.unobserve(currentTextRef);
-      window.removeEventListener('scroll', handleScrollPlayback);
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
+      window.removeEventListener('scroll', handleParallaxScroll);
     };
-  }, [handleScrollPlayback]);
+  }, [handleParallaxScroll]);
 
 
   const currentPlaybackId = isMobile ? MOBILE_MUX_PLAYBACK_ID : DESKTOP_MUX_PLAYBACK_ID;
@@ -132,10 +83,10 @@ export function HeroSection() {
             playbackId={currentPlaybackId}
             muted
             loop
-            autoPlay={false} // We control play/pause via scroll
+            autoPlay={true} // Changed to true for autoplay
             playsInline
             className="w-full h-full object-cover scale-[2.5] sm:scale-[2.0] md:scale-[1.8] lg:scale-150"
-            noControls // Hide Mux default controls
+            noControls
           />
         </div>
       </div>
