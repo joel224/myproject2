@@ -86,7 +86,7 @@ export function HeroSection() {
             autoPlay={true} // Changed to true for autoplay
             playsInline
             className="w-full h-full object-cover scale-[2.5] sm:scale-[2.0] md:scale-[1.8] lg:scale-150"
-            noControls
+            controls={false}
           />
         </div>
       </div>
