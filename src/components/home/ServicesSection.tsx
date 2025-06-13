@@ -19,19 +19,19 @@ const services = [
 ];
 
 const MUX_PLAYBACK_ID = "1BDuplVB02AJgtBfToI1kc3S4ITsqCI4b2H3uuTvpz00I";
-const PARALLAX_AMOUNT = 0.15;
+const PARALLAX_AMOUNT = 0.15; // How much the video background moves relative to scroll
 const MIN_PLAYBACK_RATE = 0.8;
-const MAX_PLAYBACK_RATE = 2.0; // Increased max speed slightly
-const PAUSE_TIMEOUT_MS = 200;
-const baseSpeedThreshold = 0.15; // Lowered for more sensitivity to speed up
-const maxSpeedForScaling = 3.0;  // Reach max speed sooner
+const MAX_PLAYBACK_RATE = 1.8; // Max speed for faster scrolls
+const PAUSE_TIMEOUT_MS = 200; // Pause after 200ms of no scrolling
+const baseSpeedThreshold = 0.1; // Scroll speed (px/ms) below which playback aims for 1.0x
+const maxSpeedForScaling = 2.5; // Scroll speed at which playback rate should reach MAX_PLAYBACK_RATE
 
 export function ServicesSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const videoPlayerRef = useRef<MuxPlayerRefAttributes>(null);
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
-  
+
   const lastScrollY = useRef(typeof window !== 'undefined' ? window.scrollY : 0);
   const lastScrollTime = useRef(Date.now());
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -43,7 +43,7 @@ export function ServicesSection() {
           setIsVisible(entry.isIntersecting);
         });
       },
-      { threshold: 0.1 } 
+      { threshold: 0.2 } // Trigger when 20% of the section is visible
     );
 
     const currentSectionRef = sectionRef.current;
@@ -63,7 +63,7 @@ export function ServicesSection() {
 
   const handleScroll = useCallback(() => {
     const player = videoPlayerRef.current?.mediaElement as HTMLVideoElement | undefined;
-    
+
     if (videoContainerRef.current && sectionRef.current) {
       const sectionTop = sectionRef.current.offsetTop || 0;
       const scrollAmountForParallax = window.scrollY - sectionTop;
@@ -71,14 +71,17 @@ export function ServicesSection() {
       videoContainerRef.current.style.transform = `translateY(${translateY}px)`;
     }
 
-    if (!player || !isVisible) { // Don't control playback if player not ready or section not visible
-      if (player && !player.paused) player.pause(); // Ensure paused if scrolled out of view
+    if (!player || !isVisible) {
+      if (player && !player.paused) {
+        // console.log('handleScroll: Pausing because !isVisible or no player');
+        player.playbackRate = 1.0;
+        player.pause();
+      }
       return;
     }
-    
+
     const currentTime = Date.now();
     const currentScrollY = window.scrollY;
-    
     const timeDiff = currentTime - lastScrollTime.current;
     const scrollDistance = currentScrollY - lastScrollY.current;
 
@@ -86,17 +89,18 @@ export function ServicesSection() {
       clearTimeout(scrollTimeoutRef.current);
     }
 
-    if (scrollDistance !== 0) { // If there's any scroll
+    // If there's any scroll, or if the player is paused and we are visible (e.g. initial trigger)
+    if (scrollDistance !== 0 || (player.paused && isVisible)) {
       if (player.paused) {
-        // console.log('Playing video due to scroll');
+        // console.log('Playing video due to scroll or initial visible state');
         player.play().catch((e: any) => console.warn("Video play on scroll failed:", e));
       }
-      
-      if (timeDiff > 16) { // Avoid division by zero or tiny time diffs
-        const scrollSpeed = scrollDistance / timeDiff; // signed speed
+
+      if (timeDiff > 16 && scrollDistance !== 0) { // Avoid division by zero or tiny time diffs for rate change
+        const scrollSpeed = scrollDistance / timeDiff;
         const absoluteScrollSpeed = Math.abs(scrollSpeed);
-        
         let newRate;
+
         if (absoluteScrollSpeed < baseSpeedThreshold) {
           newRate = 1.0;
         } else {
@@ -104,7 +108,7 @@ export function ServicesSection() {
           newRate = 1.0 + ((speedInRange - baseSpeedThreshold) / (maxSpeedForScaling - baseSpeedThreshold)) * (MAX_PLAYBACK_RATE - 1.0);
         }
         newRate = Math.max(MIN_PLAYBACK_RATE, Math.min(MAX_PLAYBACK_RATE, newRate));
-        
+
         if (Math.abs(player.playbackRate - newRate) > 0.05) {
           // console.log('Setting playbackRate to:', newRate, 'Scroll speed:', absoluteScrollSpeed.toFixed(2));
           player.playbackRate = newRate;
@@ -118,24 +122,25 @@ export function ServicesSection() {
     scrollTimeoutRef.current = setTimeout(() => {
       if (player && !player.paused) {
         // console.log('Pausing video due to scroll stop');
-        player.playbackRate = 1.0; 
+        player.playbackRate = 1.0;
         player.pause();
       }
     }, PAUSE_TIMEOUT_MS);
-
-  }, [isVisible]); 
+  }, [isVisible]); // isVisible is the main dependency here, refs are stable
 
   useEffect(() => {
     const player = videoPlayerRef.current?.mediaElement as HTMLVideoElement | undefined;
-    if (isVisible) {
+
+    if (isVisible && player) {
       window.addEventListener('scroll', handleScroll, { passive: true });
-      // Attempt initial play if scrolling and visible
-      if (player && player.paused && window.scrollY !== lastScrollY.current) {
-         player.play().catch((e:any) => console.warn("Initial play attempt failed",e));
-      }
+      // Call handleScroll once when the component becomes visible and player is ready
+      // This ensures that if the page loads with the section already in view and scrolled,
+      // the playback logic (including initial play if conditions met) is evaluated.
+      handleScroll();
     } else {
       window.removeEventListener('scroll', handleScroll);
       if (player && !player.paused) {
+        // console.log('Pausing video in useEffect due to !isVisible or no player');
         player.playbackRate = 1.0;
         player.pause();
       }
@@ -146,16 +151,23 @@ export function ServicesSection() {
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
       }
+      // Ensure player is paused and rate reset when component unmounts or isVisible changes to false
+      const cleanupPlayer = videoPlayerRef.current?.mediaElement as HTMLVideoElement | undefined;
+      if (cleanupPlayer && !cleanupPlayer.paused) {
+        // console.log('Pausing video in useEffect cleanup');
+        cleanupPlayer.playbackRate = 1.0;
+        cleanupPlayer.pause();
+      }
     };
   }, [isVisible, handleScroll]);
-  
+
   return (
     <section
       id="services"
       ref={sectionRef}
       className="relative w-full py-16 md:py-20 lg:py-24 overflow-hidden min-h-[70vh] md:min-h-[80vh]"
     >
-      <div 
+      <div
         ref={videoContainerRef}
         className="absolute top-[-25%] left-0 w-full h-[150%] z-[-10] pointer-events-none"
       >
@@ -172,12 +184,12 @@ export function ServicesSection() {
       <div className="absolute inset-0 w-full h-full bg-black/70 z-[-5]"></div>
 
       <div className="container relative px-4 md:px-6 z-10">
-        <div 
+        <div
             className={cn(
                 "text-center mb-10 md:mb-12",
-                "initial-fade-in-up", 
-                isVisible && "is-visible" // This is for the text animation
-            )} 
+                "initial-fade-in-up",
+                isVisible && "is-visible"
+            )}
             style={{ transitionDelay: isVisible ? `0ms` : '0ms' }}
         >
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">Our Services</h2>
@@ -191,15 +203,15 @@ export function ServicesSection() {
               key={service.title}
               className={cn(
                 "flex flex-col items-center text-center shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out group",
-                "bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20", 
-                "initial-fade-in-up", 
-                isVisible && "is-visible" // This is for the card animation
+                "bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20",
+                "initial-fade-in-up",
+                isVisible && "is-visible"
               )}
               style={{ transitionDelay: isVisible ? `${200 + index * 100}ms` : '0ms' }}
             >
               <CardHeader className="items-center pt-8 pb-4">
-                {React.cloneElement(service.icon, { 
-                    className: cn(service.icon.props.className, "mb-3 group-hover:scale-110 transition-transform")
+                {React.cloneElement(service.icon, {
+                    className: cn(service.icon.props.className, "h-10 w-10 mb-3 group-hover:scale-110 transition-transform")
                 })}
                 <CardTitle className="text-xl font-semibold">{service.title}</CardTitle>
               </CardHeader>
