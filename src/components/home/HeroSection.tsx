@@ -9,6 +9,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import MuxPlayer from '@mux/mux-player-react';
 import type { MuxPlayerRefAttributes } from '@mux/mux-player-react';
 
+
 const DESKTOP_MUX_PLAYBACK_ID = "cbfCGJ7UGeVzI3SLW4xt2fEgTANh7uHd8C3E00QuAnDU";
 const MOBILE_MUX_PLAYBACK_ID = "cbfCGJ7UGeVzI3SLW4xt2fEgTANh7uHd8C3E00QuAnDU"; // Using same Mux ID for mobile for now
 
@@ -36,13 +37,59 @@ export function HeroSection() {
       parallaxVideoWrapperRef.current.style.transform = `translateY(${translateY}px)`;
     }
 
-    // Optional: Ensure video is playing if somehow paused (though autoPlay and loop should handle it)
-    const playerElement = playerRef.current?.mediaElement;
-    if (playerElement && (playerElement.paused || playerElement.ended)) {
-        playerElement.play().catch(e => console.warn("Mux player play error during scroll (safeguard):", e));
-    }
-
   }, []);
+
+  // // --- Scroll-Driven Playback Logic ---
+  // const lastScrollY = useRef(0);
+  // const animationFrame = useRef(0);
+  // const scrollVelocity = useRef(0);
+
+  // // Calculate scroll velocity over time
+  // useEffect(() => {
+  //   const calculateScrollVelocity = () => {
+  //     const currentScrollY = window.scrollY;
+  //     const deltaTime = 100; // ms
+  //     const distance = currentScrollY - lastScrollY.current;
+
+  //     // Velocity in pixels per second
+  //     scrollVelocity.current = Math.abs(distance) / (deltaTime / 1000);
+
+  //     lastScrollY.current = currentScrollY;
+  //     animationFrame.current = requestAnimationFrame(calculateScrollVelocity);
+  //   };
+
+  //   calculateScrollVelocity();
+
+  //   return () => {
+  //     cancelAnimationFrame(animationFrame.current);
+  //   };
+  // }, []);
+
+  // // Handle scroll events to adjust playback speed
+  // const handleScrollPlayback = useCallback(() => {
+  //   if (!playerRef.current?.mediaElement) return;
+
+  //   // Map scroll velocity to playback rate (adjust sensitivity as needed)
+  //   const maxScrollSpeed = 500; // px/s - adjust based on your content
+  //   const baseRate = 1;
+  //   const rateMultiplier = 0.005; // Adjust sensitivity here
+
+  //   const normalizedVelocity = Math.min(scrollVelocity.current / maxScrollSpeed, 1);
+  //   const playbackRate = baseRate + normalizedVelocity * rateMultiplier;
+
+    // Clamp playback rate between 0.5x and 3x
+    // playerRef.current.mediaElement.playbackRate = Math.min(
+    //   Math.max(playbackRate, 0.5),
+    //   3
+    // );
+
+    // // Ensure video is playing if paused
+    // if (playerRef.current.mediaElement.paused) {
+    //   playerRef.current.mediaElement.play().catch(e => console.warn("Mux player play error on scroll:", e));
+    // }
+
+  // }, []);
+  // // --- End Scroll-Driven Playback Logic ---
 
 
   useEffect(() => {
@@ -59,10 +106,15 @@ export function HeroSection() {
     const currentTextRef = textRef.current;
     if (currentTextRef) textObserver.observe(currentTextRef);
 
-    window.addEventListener('scroll', handleParallaxScroll);
-    handleParallaxScroll(); // Initial call for parallax positioning
+    // Add scroll listeners for both parallax and playback control
+    window.addEventListener('scroll', handleParallaxScroll, { passive: true }); // Add passive for performance
+    // window.addEventListener('scroll', handleScrollPlayback, { passive: true }); // Use passive for performance
 
+    handleParallaxScroll(); // Initial call for parallax positioning
+    
     return () => {
+      // Clean up all scroll listeners
+      window.removeEventListener('scroll', handleScrollPlayback);
       if (currentTextRef) textObserver.unobserve(currentTextRef);
       window.removeEventListener('scroll', handleParallaxScroll);
     };
@@ -80,13 +132,21 @@ export function HeroSection() {
         <div ref={parallaxVideoWrapperRef} className="relative w-full h-[150%] top-[-25%]">
           <MuxPlayer
             ref={playerRef}
-            playbackId={currentPlaybackId}
+            playbackId={currentPlaybackId} // Use the dynamically determined playback ID
+            metadata={{
+              // Add appropriate metadata for your video
+              video_id: 'hero-section-video',
+              video_title: 'Dental Hub Hero Video',
+            }}
             muted
+            onPlay={() => console.log('Mux Player: Play event triggered')}
+ onPause={() => console.log('Mux Player: Pause event triggered')}
+            onError={(event) => console.error('Mux Player: Error occurred', event.detail)}
             loop
             autoPlay={true} // Changed to true for autoplay
             playsInline
             className="w-full h-full object-cover scale-[2.5] sm:scale-[2.0] md:scale-[1.8] lg:scale-150"
-            controls={false}
+            controls={true}
           />
         </div>
       </div>
