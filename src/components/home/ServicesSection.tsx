@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Zap, Gem, Settings, Users, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import MuxPlayer from '@mux/mux-player-react';
-import type { MuxPlayerRefAttributes } from '@mux/mux-player-react'; // Keep for potential ref usage
+import type { MuxPlayerRefAttributes } from '@mux/mux-player-react';
 
 const services = [
   { icon: <Zap className="h-10 w-10" />, title: 'General Dentistry' },
@@ -22,8 +22,6 @@ const MUX_PLAYBACK_ID = "1BDuplVB02AJgtBfToI1kc3S4ITsqCI4b2H3uuTvpz00I";
 
 export function ServicesSection() {
   const playerRef = React.useRef<MuxPlayerRefAttributes>(null);
-
-  // Basic IntersectionObserver to play/pause based on visibility
   const sectionRef = React.useRef<HTMLDivElement>(null);
   const [isSectionVisible, setIsSectionVisible] = React.useState(false);
 
@@ -31,8 +29,13 @@ export function ServicesSection() {
     const observer = new IntersectionObserver(
       ([entry]) => {
         setIsSectionVisible(entry.isIntersecting);
+        if (entry.isIntersecting) {
+          console.log("ServicesSection: Section is now VISIBLE.");
+        } else {
+          console.log("ServicesSection: Section is now HIDDEN.");
+        }
       },
-      { threshold: 0.1 } // Trigger when 10% of the section is visible
+      { threshold: 0.1 } 
     );
 
     const currentSectionRef = sectionRef.current;
@@ -47,15 +50,17 @@ export function ServicesSection() {
     };
   }, []);
 
+  // Simplified play/pause based on visibility for basic testing
   React.useEffect(() => {
     const player = playerRef.current;
     if (player) {
       if (isSectionVisible) {
-        console.log("ServicesSection: Attempting to play video as section is visible.");
+        console.log("ServicesSection (Visibility Effect): Attempting to play video as section is visible.");
         player.play()
-          .catch(e => console.error("ServicesSection: Error on initial play attempt:", e));
+          .then(() => console.log("ServicesSection (Visibility Effect): Play command successful."))
+          .catch(e => console.error("ServicesSection (Visibility Effect): Error on play attempt:", e));
       } else {
-        console.log("ServicesSection: Attempting to pause video as section is not visible.");
+        console.log("ServicesSection (Visibility Effect): Attempting to pause video as section is not visible.");
         player.pause();
       }
     }
@@ -76,19 +81,21 @@ export function ServicesSection() {
           playbackId={MUX_PLAYBACK_ID}
           muted={true}
           loop={true}
-          playsInline={true}
-          noControls={true} // We want our custom logic or simple autoplay
-          autoPlay={true}   // Let's try with explicit autoplay here along with visibility check
+          playsInline={true} 
+          autoPlay={true} // Explicitly set to true for basic autoplay test
+          noControls={true} // Hide default controls
           className="w-full h-full object-cover"
           onPlayerReady={() => console.log('Services MuxPlayer: Player is ready.')}
           onLoadedData={() => console.log('Services MuxPlayer: Video data has been loaded.')}
+          onLoadedMetadata={() => console.log('Services MuxPlayer: Video metadata has been loaded.')}
           onCanPlay={() => console.log('Services MuxPlayer: Browser reports it can play the video.')}
           onPlay={() => console.log('Services MuxPlayer: Play event triggered.')}
+          onPlaying={() => console.log('Services MuxPlayer: Playing event triggered (playback has started).')}
           onPause={() => console.log('Services MuxPlayer: Pause event triggered.')}
           onSeeking={() => console.log('Services MuxPlayer: Seeking event.')}
           onSeeked={() => console.log('Services MuxPlayer: Seeked event.')}
           onTimeUpdate={(evt) => {
-            // Avoid flooding console, log only occasionally or for specific checks
+            // Log only occasionally or for specific checks to avoid flooding console
             // if (evt.target.currentTime > 0 && evt.target.currentTime < 1) {
             //   console.log('Services MuxPlayer: TimeUpdate - ', evt.target.currentTime);
             // }
