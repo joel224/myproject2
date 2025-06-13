@@ -23,49 +23,9 @@ const MUX_PLAYBACK_ID = "1BDuplVB02AJgtBfToI1kc3S4ITsqCI4b2H3uuTvpz00I";
 export function ServicesSection() {
   const playerRef = React.useRef<MuxPlayerRefAttributes>(null);
   const sectionRef = React.useRef<HTMLDivElement>(null);
-  const [isSectionVisible, setIsSectionVisible] = React.useState(false);
+  // All state related to scroll, visibility, player readiness for custom control is removed for this diagnostic step.
 
-  React.useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsSectionVisible(entry.isIntersecting);
-        if (entry.isIntersecting) {
-          console.log("ServicesSection: Section is now VISIBLE.");
-        } else {
-          console.log("ServicesSection: Section is now HIDDEN.");
-        }
-      },
-      { threshold: 0.1 } 
-    );
-
-    const currentSectionRef = sectionRef.current;
-    if (currentSectionRef) {
-      observer.observe(currentSectionRef);
-    }
-
-    return () => {
-      if (currentSectionRef) {
-        observer.unobserve(currentSectionRef);
-      }
-    };
-  }, []);
-
-  // Simplified play/pause based on visibility for basic testing
-  React.useEffect(() => {
-    const player = playerRef.current;
-    if (player) {
-      if (isSectionVisible) {
-        console.log("ServicesSection (Visibility Effect): Attempting to play video as section is visible.");
-        player.play()
-          .then(() => console.log("ServicesSection (Visibility Effect): Play command successful."))
-          .catch(e => console.error("ServicesSection (Visibility Effect): Error on play attempt:", e));
-      } else {
-        console.log("ServicesSection (Visibility Effect): Attempting to pause video as section is not visible.");
-        player.pause();
-      }
-    }
-  }, [isSectionVisible]);
-
+  // All useEffects related to scroll handling and intersection observer are removed for this diagnostic step.
 
   return (
     <section
@@ -81,10 +41,11 @@ export function ServicesSection() {
           playbackId={MUX_PLAYBACK_ID}
           muted={true}
           loop={true}
-          playsInline={true} 
-          autoPlay={true} // Explicitly set to true for basic autoplay test
+          autoPlay={true} // Basic autoplay
+          playsInline={true}
           noControls={true} // Hide default controls
           className="w-full h-full object-cover"
+          // Extensive logging for diagnostics
           onPlayerReady={() => console.log('Services MuxPlayer: Player is ready.')}
           onLoadedData={() => console.log('Services MuxPlayer: Video data has been loaded.')}
           onLoadedMetadata={() => console.log('Services MuxPlayer: Video metadata has been loaded.')}
@@ -95,10 +56,9 @@ export function ServicesSection() {
           onSeeking={() => console.log('Services MuxPlayer: Seeking event.')}
           onSeeked={() => console.log('Services MuxPlayer: Seeked event.')}
           onTimeUpdate={(evt) => {
-            // Log only occasionally or for specific checks to avoid flooding console
-            // if (evt.target.currentTime > 0 && evt.target.currentTime < 1) {
-            //   console.log('Services MuxPlayer: TimeUpdate - ', evt.target.currentTime);
-            // }
+            if (evt.target.currentTime > 0 && evt.target.currentTime < 2) { // Log for first 2 seconds
+              console.log('Services MuxPlayer: TimeUpdate - ', evt.target.currentTime);
+            }
           }}
           onRateChange={() => console.log('Services MuxPlayer: RateChange event - new rate:', playerRef.current?.playbackRate)}
           onError={(e) => console.error('Services MuxPlayer: Error event:', e.detail)}
@@ -111,8 +71,7 @@ export function ServicesSection() {
         <div
           className={cn(
             "text-center mb-10 md:mb-12",
-            "initial-fade-in-up",
-            isSectionVisible && "is-visible"
+            "initial-fade-in-up is-visible" // Assume visible for this basic test
           )}
         >
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">Our Services</h2>
@@ -127,10 +86,9 @@ export function ServicesSection() {
               className={cn(
                 "flex flex-col items-center text-center shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out group",
                 "bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20",
-                "initial-fade-in-up",
-                isSectionVisible && "is-visible"
+                "initial-fade-in-up is-visible" // Assume visible for this basic test
               )}
-              style={{ transitionDelay: isSectionVisible ? `${200 + index * 100}ms` : '0ms' }}
+              style={{ transitionDelay: `${200 + index * 100}ms` }}
             >
               <CardHeader className="items-center pt-8 pb-4">
                 {React.cloneElement(service.icon, {
