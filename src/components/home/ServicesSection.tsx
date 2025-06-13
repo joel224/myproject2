@@ -21,10 +21,10 @@ const services = [
 const MUX_PLAYBACK_ID = "1BDuplVB02AJgtBfToI1kc3S4ITsqCI4b2H3uuTvpz00I";
 const PARALLAX_AMOUNT = 0.15; 
 const MIN_PLAYBACK_RATE = 0.8;
-const MAX_PLAYBACK_RATE = 2.0; // Increased max speed slightly
+const MAX_PLAYBACK_RATE = 1.8; 
+const baseSpeedThreshold = 0.15; 
+const maxSpeedForScaling = 3.0; 
 const PAUSE_TIMEOUT_MS = 200; 
-const baseSpeedThreshold = 0.15; // Scroll speed (px/ms) below which playback aims for 1.0x
-const maxSpeedForScaling = 3.0; // Scroll speed at which playback rate should reach MAX_PLAYBACK_RATE
 
 export function ServicesSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -35,15 +35,25 @@ export function ServicesSection() {
   const lastScrollY = useRef(typeof window !== 'undefined' ? window.scrollY : 0);
   const lastScrollTime = useRef(Date.now());
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasScrolledSinceVisible = useRef(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          setIsVisible(entry.isIntersecting);
+          const currentlyVisible = entry.isIntersecting;
+          setIsVisible(currentlyVisible);
+          if (!currentlyVisible) {
+            const player = videoPlayerRef.current?.mediaElement as HTMLVideoElement | undefined;
+            if (player && !player.paused) {
+              player.playbackRate = 1.0;
+              player.pause();
+            }
+            hasScrolledSinceVisible.current = false;
+          }
         });
       },
-      { threshold: 0.1 } // Trigger when 10% is visible to start/stop listeners sooner
+      { threshold: 0.1 } 
     );
 
     const currentSectionRef = sectionRef.current;
@@ -71,38 +81,35 @@ export function ServicesSection() {
       videoContainerRef.current.style.transform = `translateY(${translateY}px)`;
     }
     
-    if (!player) return;
-
-    if (!isVisible) {
-      if (!player.paused) {
-        player.playbackRate = 1.0;
-        player.pause();
-      }
+    if (!player || !isVisible) {
       return;
+    }
+
+    if (!hasScrolledSinceVisible.current) {
+        hasScrolledSinceVisible.current = true;
     }
 
     const currentTime = Date.now();
     const currentScrollY = window.scrollY;
     const timeDiff = currentTime - lastScrollTime.current;
-    const scrollDistance = Math.abs(currentScrollY - lastScrollY.current);
+    const absoluteScrollDistance = Math.abs(currentScrollY - lastScrollY.current);
 
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current);
     }
 
-    if (scrollDistance > 0 || (player.paused && isVisible)) { // If scrolling or if paused but should be visible
+    if (absoluteScrollDistance > 0 || (player.paused && isVisible)) { // If scrolling or if paused but should be visible
       if (player.paused) {
         player.play().catch((e: any) => console.warn("Video play on scroll failed:", e));
       }
 
-      if (timeDiff > 16 && scrollDistance > 0) { // Min time diff to avoid jerky calculations on tiny scrolls
-        const scrollSpeed = scrollDistance / timeDiff; // Absolute speed
+      if (timeDiff > 16 && absoluteScrollDistance > 0) { 
+        const scrollSpeed = absoluteScrollDistance / timeDiff; 
         let newRate;
 
         if (scrollSpeed < baseSpeedThreshold) {
           newRate = 1.0;
         } else {
-          // Scale rate between 1.0 and MAX_PLAYBACK_RATE based on speed
           const speedInRange = Math.min(Math.max(scrollSpeed, baseSpeedThreshold), maxSpeedForScaling);
           newRate = 1.0 + ((speedInRange - baseSpeedThreshold) / (maxSpeedForScaling - baseSpeedThreshold)) * (MAX_PLAYBACK_RATE - 1.0);
         }
@@ -119,24 +126,20 @@ export function ServicesSection() {
 
     scrollTimeoutRef.current = setTimeout(() => {
       if (player && !player.paused) {
-        player.playbackRate = 1.0;
+        player.playbackRate = 1.0; 
         player.pause();
       }
     }, PAUSE_TIMEOUT_MS);
-  }, [isVisible]);
+  }, [isVisible]); 
 
   useEffect(() => {
-    const player = videoPlayerRef.current?.mediaElement as HTMLVideoElement | undefined;
-    
-    if (isVisible && player) {
+    if (isVisible) {
       window.addEventListener('scroll', handleScroll, { passive: true });
-      // Initial check when section becomes visible
-      if (player.paused) { // If it was previously paused by scrolling out, or never started
-          // Optionally, could check if user is actively scrolling here too, or just play
-          // For now, we rely on the first scroll event *after* visibility to trigger play.
-      }
+      // Attempt to play if section becomes visible AND user scrolls.
+      // The first scroll event after becoming visible will trigger `handleScroll` and attempt play.
     } else {
       window.removeEventListener('scroll', handleScroll);
+      const player = videoPlayerRef.current?.mediaElement as HTMLVideoElement | undefined;
       if (player && !player.paused) {
         player.playbackRate = 1.0;
         player.pause();
@@ -147,11 +150,6 @@ export function ServicesSection() {
       window.removeEventListener('scroll', handleScroll);
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
-      }
-      const cleanupPlayer = videoPlayerRef.current?.mediaElement as HTMLVideoElement | undefined;
-      if (cleanupPlayer && !cleanupPlayer.paused) {
-        cleanupPlayer.playbackRate = 1.0;
-        cleanupPlayer.pause();
       }
     };
   }, [isVisible, handleScroll]);
@@ -174,6 +172,7 @@ export function ServicesSection() {
           loop={true} 
           autoPlay={false} 
           playsInline
+          noControls // Added to hide default player controls
           className="w-full h-full object-cover"
         />
       </div>
@@ -218,3 +217,4 @@ export function ServicesSection() {
     </section>
   );
 }
+
