@@ -189,19 +189,7 @@ export function HeroSection() {
       </div>
 
       {/* Overlay gradient to ensure text readability over the video and transition to background */}
-      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent via-transparent to-[hsl(var(--background))] z-[1]" />
-
-      {/* Decorative Circles */}
-      <div
-        className="absolute w-[150vw] h-[150vw] md:w-[100vw] md:h-[100vw] lg:w-[80vw] lg:h-[80vw]
-                   top-[-75vw] left-[-75vw] md:top-[-50vw] md:left-[-50vw] lg:top-[-40vw] lg:left-[-40vw]
-                   bg-accent/20 pointer-events-none z-[2] rounded-full"
-      />
-       <div
-        className="absolute w-[150vw] h-[150vw] md:w-[100vw] md:h-[100vw] lg:w-[80vw] lg:h-[80vw]
-                   top-[-75vw] right-[-75vw] md:top-[-50vw] md:right-[-50vw] lg:top-[-40vw] lg:right-[-40vw]
-                   border-2 border-accent/40 pointer-events-none z-[2] rounded-full"
-      />
+      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-black/20 via-transparent to-[hsl(var(--background))] z-[1]" />
 
 
       <div className="container relative px-4 md:px-6 z-[3] py-12 md:py-24 lg:py-32">
