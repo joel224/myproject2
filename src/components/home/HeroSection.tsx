@@ -14,7 +14,7 @@ declare global {
   }
 }
 
-const DESKTOP_VIDEO_ID = "Svcb6Pf8PL4";
+const DESKTOP_VIDEO_ID = "cbfCGJ7UGeVzI3SLW4xt2fEgTANh7uHd8C3E00QuAnDU";
 const MOBILE_VIDEO_ID = "U6oZFT5Omdk";
 
 
@@ -188,12 +188,12 @@ export function HeroSection() {
         </div>
       </div>
 
-      {/* Overlay gradient to ensure text readability over the video and transition to background */}
-      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-black/20 via-transparent to-[hsl(var(--background))] z-[1]" />
+      {/* Overlay for text readability and fade effect */}
+      <div className="absolute inset-0 w-full h-full bg-gradient-to-b from-black/20 via-transparent to-[hsl(var(--background))] z-[2]"></div>
 
 
       <div className="container relative px-4 md:px-6 z-[3] py-12 md:py-24 lg:py-32">
-        <div className="flex flex-col items-center justify-center">
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-12rem)]"> {/* Adjusted min-height */}
           <div
             ref={textRef}
             className={cn(
