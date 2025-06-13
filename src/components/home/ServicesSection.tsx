@@ -19,12 +19,12 @@ const services = [
 ];
 
 const MUX_PLAYBACK_ID = "1BDuplVB02AJgtBfToI1kc3S4ITsqCI4b2H3uuTvpz00I";
-const PARALLAX_AMOUNT = 0.2; // How much the video background moves relative to scroll
-const MIN_PLAYBACK_RATE = 0.75;
-const MAX_PLAYBACK_RATE = 2.0; // Max speed for faster scrolls
-const BASE_SCROLL_SPEED_THRESHOLD = 0.1; // px/ms: scrolls slower than this target 1x speed
-const MAX_SCROLL_SPEED_FOR_SCALING = 2.5; // px/ms: scroll speed at which max playback rate is achieved
-const PAUSE_TIMEOUT_MS = 150; // Pause video if no scroll for this duration
+const PARALLAX_AMOUNT = 0.15; // How much the video background moves relative to scroll
+const MIN_PLAYBACK_RATE = 0.8;
+const MAX_PLAYBACK_RATE = 1.8; // Max speed for faster scrolls
+const BASE_SPEED_THRESHOLD = 0.15; // px/ms: scrolls slower than this target 1x speed
+const MAX_SPEED_FOR_SCALING = 3.0; // px/ms: scroll speed at which max playback rate is achieved
+const PAUSE_TIMEOUT_MS = 200; // Pause video if no scroll for this duration
 
 export function ServicesSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -38,6 +38,11 @@ export function ServicesSection() {
   const lastScrollTime = useRef(Date.now());
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const handlePlayerReady = useCallback(() => {
+    setIsPlayerReady(true);
+    // console.log('Mux Player is ready.');
+  }, []);
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -48,11 +53,12 @@ export function ServicesSection() {
             if (player && !player.paused) {
               player.pause();
               player.playbackRate = 1.0;
+              // console.log('Section not visible, pausing video.');
             }
           }
         });
       },
-      { threshold: 0.1 } // Adjust threshold as needed (0.1 means 10% visible)
+      { threshold: 0.25 } // Trigger when 25% of the section is visible
     );
 
     const currentSectionRef = sectionRef.current;
@@ -74,39 +80,48 @@ export function ServicesSection() {
     const player = videoPlayerRef.current?.mediaElement;
 
     if (videoContainerRef.current && sectionRef.current) {
-      const sectionTop = sectionRef.current.offsetTop || 0;
-      const scrollAmountForParallax = window.scrollY - sectionTop;
+      const sectionRect = sectionRef.current.getBoundingClientRect();
+      const scrollAmountForParallax = window.scrollY - (sectionRef.current.offsetTop || 0);
       const translateY = scrollAmountForParallax * PARALLAX_AMOUNT;
       videoContainerRef.current.style.transform = `translateY(${translateY}px)`;
     }
-
-    if (!player || !isSectionVisible || !isPlayerReady) {
+    
+    if (!player || !isPlayerReady) {
+      // console.log('Player not ready or no player element.');
       return;
     }
 
+    if (!isSectionVisible) {
+      if (!player.paused) {
+        player.pause();
+        player.playbackRate = 1.0;
+        // console.log('Section no longer visible during scroll, pausing.');
+      }
+      return;
+    }
+    
     const currentTime = Date.now();
     const currentScrollY = window.scrollY;
     const timeDiff = currentTime - lastScrollTime.current;
-    const scrollDistance = Math.abs(currentScrollY - lastScrollY.current);
+    const scrollDistance = currentScrollY - lastScrollY.current; // Positive for down, negative for up
+    const absoluteScrollSpeed = Math.abs(scrollDistance) / timeDiff;
 
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current);
     }
 
-    if (timeDiff > 10 && scrollDistance > 1) { // Actively scrolling
+    if (timeDiff > 10 && Math.abs(scrollDistance) > 2) { // Actively scrolling
       if (player.paused) {
         player.play().catch(e => console.warn("Mux player play error on scroll:", e));
+        // console.log('Playing video due to scroll');
       }
 
-      const scrollSpeed = scrollDistance / timeDiff; // pixels per millisecond
-
       let newRate;
-      if (scrollSpeed < BASE_SCROLL_SPEED_THRESHOLD) {
+      if (absoluteScrollSpeed < BASE_SPEED_THRESHOLD) {
         newRate = 1.0;
       } else {
-        // Scale speed: map scrollSpeed from [BASE_SCROLL_SPEED_THRESHOLD, MAX_SCROLL_SPEED_FOR_SCALING] to [1.0, MAX_PLAYBACK_RATE]
-        const speedInRange = Math.min(Math.max(scrollSpeed, BASE_SCROLL_SPEED_THRESHOLD), MAX_SCROLL_SPEED_FOR_SCALING);
-        const normalizedSpeed = (speedInRange - BASE_SCROLL_SPEED_THRESHOLD) / (MAX_SCROLL_SPEED_FOR_SCALING - BASE_SCROLL_SPEED_THRESHOLD);
+        const speedInRange = Math.min(Math.max(absoluteScrollSpeed, BASE_SPEED_THRESHOLD), MAX_SPEED_FOR_SCALING);
+        const normalizedSpeed = (speedInRange - BASE_SPEED_THRESHOLD) / (MAX_SPEED_FOR_SCALING - BASE_SPEED_THRESHOLD);
         newRate = 1.0 + normalizedSpeed * (MAX_PLAYBACK_RATE - 1.0);
       }
       
@@ -114,6 +129,7 @@ export function ServicesSection() {
       
       if (Math.abs(player.playbackRate - newRate) > 0.05) {
         player.playbackRate = newRate;
+        // console.log('Setting playbackRate to:', newRate, 'Scroll speed:', absoluteScrollSpeed.toFixed(2));
       }
     } else {
       // Very slow scroll or stationary, aim for normal speed before potential pause
@@ -127,8 +143,9 @@ export function ServicesSection() {
 
     scrollTimeoutRef.current = setTimeout(() => {
       if (player && !player.paused && isSectionVisible) {
-        player.playbackRate = 1.0;
+        player.playbackRate = 1.0; // Reset rate before pausing
         player.pause();
+        // console.log('Pausing video due to scroll stop');
       }
     }, PAUSE_TIMEOUT_MS);
 
@@ -137,8 +154,9 @@ export function ServicesSection() {
   useEffect(() => {
     if (isSectionVisible && isPlayerReady) {
       window.addEventListener('scroll', handleScroll, { passive: true });
-      // Initial scroll check in case page loads scrolled into view
-      handleScroll();
+      // Attempt initial play on scroll if section is already visible and ready
+      // This helps if page loads scrolled to the section
+      handleScroll(); 
     } else {
       window.removeEventListener('scroll', handleScroll);
       const player = videoPlayerRef.current?.mediaElement;
@@ -155,10 +173,6 @@ export function ServicesSection() {
     };
   }, [isSectionVisible, isPlayerReady, handleScroll]);
 
-  const handlePlayerReady = () => {
-    setIsPlayerReady(true);
-  };
-
   return (
     <section
       id="services"
@@ -167,17 +181,17 @@ export function ServicesSection() {
     >
       <div
         ref={videoContainerRef}
-        className="absolute top-[-15%] left-0 w-full h-[130%] z-[-10] pointer-events-none" // Adjusted for parallax
+        className="absolute top-[-15%] left-0 w-full h-[130%] z-[-10] pointer-events-none"
       >
         <MuxPlayer
           ref={videoPlayerRef}
           playbackId={MUX_PLAYBACK_ID}
           muted
           loop={true}
-          autoPlay={false} // Playback controlled by scroll
+          autoPlay={false} 
           playsInline
           noControls
-          onLoadedMetadata={handlePlayerReady}
+          onLoadedData={handlePlayerReady} // Changed from onLoadedMetadata for potentially better timing
           className="w-full h-full object-cover"
         />
       </div>
@@ -203,7 +217,7 @@ export function ServicesSection() {
               key={service.title}
               className={cn(
                 "flex flex-col items-center text-center shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out group",
-                "bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20",
+                "bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20", // Frosted glass effect
                 "initial-fade-in-up",
                 isSectionVisible && "is-visible"
               )}
@@ -211,7 +225,7 @@ export function ServicesSection() {
             >
               <CardHeader className="items-center pt-8 pb-4">
                 {React.cloneElement(service.icon, {
-                  className: cn(service.icon.props.className, "mb-3 group-hover:scale-110 transition-transform text-white") // Ensure icon is white
+                  className: cn(service.icon.props.className, "mb-3 group-hover:scale-110 transition-transform text-white")
                 })}
                 <CardTitle className="text-xl font-semibold">{service.title}</CardTitle>
               </CardHeader>
