@@ -5,56 +5,48 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import type MuxPlayerElement from '@mux/mux-player';
-import dynamic from 'next/dynamic';
+// MuxPlayer and its dynamic import are removed for this diagnostic step.
+// import type MuxPlayerElement from '@mux/mux-player';
+// import dynamic from 'next/dynamic';
 
-// Dynamically import MuxPlayer with SSR turned off
-const MuxPlayer = dynamic(() => import('@mux/mux-player-react').then(mod => mod.default), {
-  ssr: false,
-  loading: () => <div className="absolute top-0 left-0 w-full h-full bg-black/50" />,
-});
+// const MuxPlayer = dynamic(() => import('@mux/mux-player-react').then(mod => mod.default), {
+//   ssr: false,
+//   loading: () => <div className="absolute top-0 left-0 w-full h-full bg-black/50" />,
+// });
 
-
-const HERO_VIDEO_PLAYBACK_ID = "VA2YqY01Og02W3Gk01N5zB2NMYX00eF00zjcLJeBhtFksU";
+const HERO_VIDEO_PLAYBACK_ID = "VA2YqY01Og02W3Gk01N5zB2NMYX00eF00zjcLJeBhtFksU"; // Kept for reference if we re-add
 
 export function HeroSection() {
-  const videoRef = useRef<MuxPlayerElement>(null);
-  const playerContainerRef = useRef<HTMLDivElement>(null); // Ref for the direct parent of MuxPlayer
+  // const videoRef = useRef<MuxPlayerElement>(null);
+  // const playerContainerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
   const [textVisible, setTextVisible] = useState(false);
-  const [isPlayerReady, setIsPlayerReady] = useState(false);
+  // const [isPlayerReady, setIsPlayerReady] = useState(false); // Not needed without player
 
-  const handleScroll = useCallback(() => {
-    if (playerContainerRef.current && sectionRef.current && isPlayerReady) {
-      const sectionTop = sectionRef.current.offsetTop;
-      const sectionHeight = sectionRef.current.offsetHeight;
-      const scrollPosition = window.scrollY;
-      const windowHeight = window.innerHeight;
+  // Parallax scroll handler (commented out as it's for the video player)
+  // const handleScroll = useCallback(() => {
+  //   if (playerContainerRef.current && sectionRef.current && isPlayerReady) {
+  //     const sectionTop = sectionRef.current.offsetTop;
+  //     const sectionHeight = sectionRef.current.offsetHeight;
+  //     const scrollPosition = window.scrollY;
+  //     const windowHeight = window.innerHeight;
+  //     const scrollMidpoint = sectionTop + sectionHeight / 2 - windowHeight / 2;
+  //     const parallaxOffset = (scrollPosition - scrollMidpoint) * 0.2;
+  //     // playerContainerRef.current.style.transform = `translateY(${parallaxOffset}px)`; // Parallax disabled for now
+  //   }
+  // }, [isPlayerReady]);
 
-      const scrollMidpoint = sectionTop + sectionHeight / 2 - windowHeight / 2;
-      const parallaxOffset = (scrollPosition - scrollMidpoint) * 0.2;
-
-      // Temporarily disable parallax transform for debugging
-      // playerContainerRef.current.style.transform = `translateY(${parallaxOffset}px)`;
-    }
-  }, [isPlayerReady]);
-
-
-  useEffect(() => {
-    if (isPlayerReady) {
-      window.addEventListener('scroll', handleScroll);
-      handleScroll(); 
-      return () => {
-        window.removeEventListener('scroll', handleScroll);
-        // Reset transform if it was applied
-        // if (playerContainerRef.current) {
-        //   playerContainerRef.current.style.transform = 'translateY(0px)';
-        // }
-      };
-    }
-  }, [handleScroll, isPlayerReady]);
-
+  // Effect for parallax scroll (commented out)
+  // useEffect(() => {
+  //   if (isPlayerReady) {
+  //     window.addEventListener('scroll', handleScroll);
+  //     handleScroll(); 
+  //     return () => {
+  //       window.removeEventListener('scroll', handleScroll);
+  //     };
+  //   }
+  // }, [handleScroll, isPlayerReady]);
 
   useEffect(() => {
     const observerOptions = { threshold: 0.1 };
@@ -78,11 +70,11 @@ export function HeroSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] flex items-center justify-center"
+      className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] flex items-center justify-center bg-neutral-800" // Added a fallback background
     >
-      {/* Video Container: Increased height (120%) and negative top offset (-10%) for parallax effect */}
+      {/* Video Container: Temporarily removed */}
+      {/*
       <div className={cn("absolute top-0 left-0 w-full h-[120%] z-0 pointer-events-none")}>
-        {/* Inner div for the player to ensure transform is applied correctly relative to this container */}
         <div ref={playerContainerRef} className="absolute -top-[10%] left-0 w-full h-full">
           <MuxPlayer
             ref={videoRef as React.Ref<MuxPlayerElement>}
@@ -106,16 +98,17 @@ export function HeroSection() {
             onPause={() => console.log("Hero MuxPlayer: Pause event triggered.")}
             onEnded={() => console.log("Hero MuxPlayer: Ended event triggered.")}
             onError={(evt) => {
-              console.error("Hero MuxPlayer encountered an error:", evt);
+              console.error("Hero MuxPlayer raw error event:", evt);
             }}
             onLoadedData={() => console.log("Hero MuxPlayer: Video data has been loaded.")}
             onCanPlay={() => console.log("Hero MuxPlayer: Browser reports it can play the video.")}
           />
         </div>
       </div>
+      */}
 
-      {/* Gradient Overlay */}
-      <div className="absolute inset-0 w-full h-full bg-gradient-to-b from-black/40 via-black/20 to-[hsl(var(--background))] z-[2]"></div>
+      {/* Gradient Overlay - adjusted for no video */}
+      <div className="absolute inset-0 w-full h-full bg-gradient-to-b from-black/60 via-black/40 to-transparent z-[2]"></div>
 
       {/* Text Content */}
       <div className="container relative px-4 md:px-6 z-[3] py-12 md:py-24 lg:py-32">
