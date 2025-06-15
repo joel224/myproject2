@@ -42,12 +42,10 @@ export default function StaffAppointmentsPage() {
   const [isLoadingUpcomingAppointments, setIsLoadingUpcomingAppointments] = useState(true);
   const [upcomingAppointmentsError, setUpcomingAppointmentsError] = useState<string | null>(null);
 
-  // State for Edit/Cancel Modals
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [cancellingAppointmentId, setCancellingAppointmentId] = useState<string | null>(null);
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
-  // State for Reschedule Modal
   const [reschedulingAppointment, setReschedulingAppointment] = useState<Appointment | null>(null);
   const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false);
 
@@ -187,7 +185,7 @@ export default function StaffAppointmentsPage() {
   };
 
   const handleEditAppointmentSubmit = async (updatedAppointmentData: Partial<Appointment>) => {
-    if (!editingAppointment) return;
+    if (!editingAppointment) return false;
     try {
       const response = await fetch(`/api/appointments/${editingAppointment.id}`, {
         method: 'PUT',
@@ -208,6 +206,29 @@ export default function StaffAppointmentsPage() {
       return false;
     }
   };
+
+  const handleRescheduleAppointmentSubmit = async (appointmentId: string, rescheduleData: { date: string; time: string; status: 'Rescheduled' }) => {
+    try {
+      const response = await fetch(`/api/appointments/${appointmentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(rescheduleData),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || (result.errors ? JSON.stringify(result.errors) : "Failed to reschedule appointment"));
+      }
+      toast({ title: "Appointment Rescheduled!", description: "The appointment has been successfully rescheduled." });
+      fetchUpcomingAppointments();
+      setIsRescheduleModalOpen(false);
+      setReschedulingAppointment(null);
+      return true;
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Reschedule Error", description: err.message });
+      return false;
+    }
+  };
+
 
   const handleConfirmCancelAppointment = async () => {
     if (!cancellingAppointmentId) return;
@@ -415,6 +436,7 @@ export default function StaffAppointmentsPage() {
             appointment={reschedulingAppointment}
             isOpen={isRescheduleModalOpen}
             onOpenChange={setIsRescheduleModalOpen}
+            onSave={handleRescheduleAppointmentSubmit}
         />
       )}
     </div>
@@ -426,7 +448,7 @@ interface EditAppointmentDialogProps {
   appointment: Appointment;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (updatedData: Partial<Appointment>) => Promise<boolean>; // Returns true on success
+  onSave: (updatedData: Partial<Appointment>) => Promise<boolean>; 
   patients: Patient[];
   doctors: StaffMember[];
 }
@@ -438,7 +460,6 @@ function EditAppointmentDialog({ appointment, isOpen, onOpenChange, onSave, pati
 
   useEffect(() => {
     if (appointment && isOpen) {
-      // Format date correctly for input type="date"
       const formattedDate = appointment.date ? new Date(appointment.date).toISOString().split('T')[0] : '';
       setFormData({ ...appointment, date: formattedDate });
     }
@@ -451,7 +472,6 @@ function EditAppointmentDialog({ appointment, isOpen, onOpenChange, onSave, pati
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    // Basic validation
     if (!formData.patientId || !formData.doctorId || !formData.date || !formData.time || !formData.type || !formData.status) {
       toast({ variant: "destructive", title: "Validation Error", description: "All fields are required to update an appointment." });
       setIsSaving(false);
@@ -459,7 +479,7 @@ function EditAppointmentDialog({ appointment, isOpen, onOpenChange, onSave, pati
     }
     const success = await onSave(formData);
     if (success) {
-        onOpenChange(false); // Close dialog on successful save
+        onOpenChange(false); 
     }
     setIsSaving(false);
   };
@@ -568,41 +588,44 @@ interface RescheduleAppointmentDialogProps {
   appointment: Appointment;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  // onSave: (reason: string) => Promise<boolean>; // Placeholder for future logic
+  onSave: (appointmentId: string, rescheduleData: { date: string; time: string; status: 'Rescheduled' }) => Promise<boolean>;
 }
 
-function RescheduleAppointmentDialog({ appointment, isOpen, onOpenChange }: RescheduleAppointmentDialogProps) {
+function RescheduleAppointmentDialog({ appointment, isOpen, onOpenChange, onSave }: RescheduleAppointmentDialogProps) {
   const { toast } = useToast();
-  const [newDateTimeOrReason, setNewDateTimeOrReason] = useState('');
+  const [newDate, setNewDate] = useState('');
+  const [newTime, setNewTime] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
-      setNewDateTimeOrReason(''); // Reset input when dialog opens
+    if (isOpen && appointment) {
+      setNewDate(new Date(appointment.date).toISOString().split('T')[0]);
+      setNewTime(appointment.time);
+    } else if (!isOpen) {
+        // Reset when dialog closes
+        setNewDate('');
+        setNewTime('');
     }
-  }, [isOpen]);
+  }, [isOpen, appointment]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!newDateTimeOrReason.trim()) {
-      toast({ variant: "destructive", title: "Input Required", description: "Please enter a new date/time or reason for rescheduling." });
+    if (!newDate || !newTime.trim()) {
+      toast({ variant: "destructive", title: "Input Required", description: "Please enter a new date and time." });
       return;
     }
+    // Basic time format validation (HH:MM AM/PM)
+    if (!/^(0?[1-9]|1[0-2]):[0-5][0-9] (AM|PM)$/i.test(newTime.trim())) {
+        toast({ variant: "destructive", title: "Invalid Time Format", description: "Please use HH:MM AM/PM format for time (e.g., 02:30 PM)." });
+        return;
+    }
+
     setIsSubmitting(true);
-    // TODO: Implement actual rescheduling API call here.
-    // For now, we'll just log it and show a success toast.
-    console.log(`Reschedule requested for appointment ${appointment.id}. New info: ${newDateTimeOrReason}`);
-    toast({ 
-        title: "Reschedule Request Sent", 
-        description: `The request to reschedule appointment for ${appointment.patientName} has been noted.` 
-    });
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000)); 
-    
+    const success = await onSave(appointment.id, { date: newDate, time: newTime.trim(), status: 'Rescheduled' });
+    if (success) {
+        onOpenChange(false); 
+    }
     setIsSubmitting(false);
-    onOpenChange(false); // Close dialog
-    // Potentially call a prop like onSave if actual update happens, then refresh list
   };
 
   if (!appointment) return null;
@@ -615,18 +638,34 @@ function RescheduleAppointmentDialog({ appointment, isOpen, onOpenChange }: Resc
             <DialogTitle>Reschedule Appointment</DialogTitle>
             <DialogDescription>
               Patient: {appointment.patientName} <br />
-              Current: {new Date(appointment.date).toLocaleDateString()} at {appointment.time} ({appointment.type})
+              Current: {new Date(appointment.date).toLocaleDateString()} at <span className="text-primary font-medium">{appointment.time}</span> ({appointment.type})
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="reschedule-info">New Preferred Date/Time or Reason</Label>
-            <Input
-              id="reschedule-info"
-              value={newDateTimeOrReason}
-              onChange={(e) => setNewDateTimeOrReason(e.target.value)}
-              placeholder="e.g., 'Any time next Tuesday' or 'Patient emergency'"
-              className="mt-1"
-            />
+          <div className="py-4 space-y-3">
+            <div>
+                <Label htmlFor="reschedule-date">New Date</Label>
+                <Input
+                id="reschedule-date"
+                type="date"
+                value={newDate}
+                onChange={(e) => setNewDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]} 
+                required
+                className="mt-1"
+                />
+            </div>
+            <div>
+                <Label htmlFor="reschedule-time">New Time</Label>
+                <Input
+                id="reschedule-time"
+                type="text"
+                value={newTime}
+                onChange={(e) => setNewTime(e.target.value)}
+                placeholder="HH:MM AM/PM (e.g., 02:30 PM)"
+                required
+                className="mt-1"
+                />
+            </div>
           </div>
           <DialogFooter className="pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
@@ -634,7 +673,7 @@ function RescheduleAppointmentDialog({ appointment, isOpen, onOpenChange }: Resc
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Request Reschedule
+              Confirm Reschedule
             </Button>
           </DialogFooter>
         </form>
