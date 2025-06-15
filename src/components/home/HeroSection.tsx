@@ -3,8 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useEffect, useRef, useState, useCallback }
-from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import type MuxPlayerElement from '@mux/mux-player';
 import dynamic from 'next/dynamic';
@@ -12,7 +11,7 @@ import dynamic from 'next/dynamic';
 // Dynamically import MuxPlayer with SSR turned off
 const MuxPlayer = dynamic(() => import('@mux/mux-player-react').then(mod => mod.default), {
   ssr: false,
-  loading: () => <div className="absolute top-0 left-0 w-full h-full bg-black/50" />, // Updated loading placeholder
+  loading: () => <div className="absolute top-0 left-0 w-full h-full bg-black/50" />,
 });
 
 
@@ -20,13 +19,14 @@ const HERO_VIDEO_PLAYBACK_ID = "VA2YqY01Og02W3Gk01N5zB2NMYX00eF00zjcLJeBhtFksU";
 
 export function HeroSection() {
   const videoRef = useRef<MuxPlayerElement>(null);
+  const playerContainerRef = useRef<HTMLDivElement>(null); // Ref for the direct parent of MuxPlayer
   const textRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
   const [textVisible, setTextVisible] = useState(false);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
 
   const handleScroll = useCallback(() => {
-    if (videoRef.current && sectionRef.current && isPlayerReady) {
+    if (playerContainerRef.current && sectionRef.current && isPlayerReady) {
       const sectionTop = sectionRef.current.offsetTop;
       const sectionHeight = sectionRef.current.offsetHeight;
       const scrollPosition = window.scrollY;
@@ -35,10 +35,8 @@ export function HeroSection() {
       const scrollMidpoint = sectionTop + sectionHeight / 2 - windowHeight / 2;
       const parallaxOffset = (scrollPosition - scrollMidpoint) * 0.2;
 
-      const playerElement = videoRef.current;
-      if (playerElement) {
-         (playerElement as HTMLElement).style.transform = `translateY(${parallaxOffset}px)`;
-      }
+      // Temporarily disable parallax transform for debugging
+      // playerContainerRef.current.style.transform = `translateY(${parallaxOffset}px)`;
     }
   }, [isPlayerReady]);
 
@@ -46,9 +44,13 @@ export function HeroSection() {
   useEffect(() => {
     if (isPlayerReady) {
       window.addEventListener('scroll', handleScroll);
-      handleScroll();
+      handleScroll(); 
       return () => {
         window.removeEventListener('scroll', handleScroll);
+        // Reset transform if it was applied
+        // if (playerContainerRef.current) {
+        //   playerContainerRef.current.style.transform = 'translateY(0px)';
+        // }
       };
     }
   }, [handleScroll, isPlayerReady]);
@@ -81,7 +83,7 @@ export function HeroSection() {
       {/* Video Container: Increased height (120%) and negative top offset (-10%) for parallax effect */}
       <div className={cn("absolute top-0 left-0 w-full h-[120%] z-0 pointer-events-none")}>
         {/* Inner div for the player to ensure transform is applied correctly relative to this container */}
-        <div className="absolute -top-[10%] left-0 w-full h-full">
+        <div ref={playerContainerRef} className="absolute -top-[10%] left-0 w-full h-full">
           <MuxPlayer
             ref={videoRef as React.Ref<MuxPlayerElement>}
             playbackId={HERO_VIDEO_PLAYBACK_ID}
@@ -97,30 +99,14 @@ export function HeroSection() {
             }}
             onPlayerReady={() => {
               console.log("Hero MuxPlayer: Player is ready");
-              setIsPlayerReady(true); // Ensure isPlayerReady is set here too
+              setIsPlayerReady(true); 
             }}
             onPlay={() => console.log("Hero MuxPlayer: Play event triggered.")}
             onPlaying={() => console.log("Hero MuxPlayer: Playing event triggered (playback has started).")}
             onPause={() => console.log("Hero MuxPlayer: Pause event triggered.")}
             onEnded={() => console.log("Hero MuxPlayer: Ended event triggered.")}
             onError={(evt) => {
-              console.error("Hero MuxPlayer Error Event Received. Type:", evt?.type);
-              // MuxPlayer error events often have a 'data' property with more details
-              if (evt && typeof evt === 'object' && 'data' in evt) {
-                const errorData = (evt as any).data;
-                console.error("Hero MuxPlayer Error Data:", errorData);
-                if (errorData && typeof errorData === 'object' && 'type' in errorData && 'details' in errorData && 'fatal' in errorData) {
-                  console.error(`HLS Error: Type: ${errorData.type}, Details: ${errorData.details}, Fatal: ${errorData.fatal}`);
-                  if (errorData.error instanceof Error) {
-                    console.error("HLS Native Error Message:", errorData.error.message);
-                    // Avoid logging full stack trace to keep console cleaner unless specifically needed for deep debugging
-                    // console.error("HLS Native Error Stack:", errorData.error.stack);
-                  }
-                }
-              } else {
-                // Fallback for other types of errors
-                console.error("Hero MuxPlayer Raw Error Object:", evt);
-              }
+              console.error("Hero MuxPlayer encountered an error:", evt);
             }}
             onLoadedData={() => console.log("Hero MuxPlayer: Video data has been loaded.")}
             onCanPlay={() => console.log("Hero MuxPlayer: Browser reports it can play the video.")}
@@ -140,7 +126,7 @@ export function HeroSection() {
               "space-y-6",
               "initial-fade-in-up",
               textVisible && "is-visible",
-              "text-neutral-100", // Ensuring text is light against potentially dark video
+              "text-neutral-100", 
               "max-w-2xl"
             )}
           >
