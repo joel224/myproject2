@@ -6,7 +6,7 @@ import {
   mockTreatmentPlans as initialTreatmentPlans,
   mockProgressNotes as initialProgressNotes,
   mockInvoices as initialInvoices,
-  mockStaff as initialStaff,
+  mockStaff as initialStaffCollection, // Renamed to avoid conflict
   mockPatients as initialPatients
 } from './mockData';
 import type { NextRequest } from 'next/server';
@@ -16,7 +16,7 @@ export interface UserAuth {
   id: string;
   name: string;
   email: string;
-  passwordHash?: string; 
+  passwordHash?: string;
   role: 'patient' | 'doctor' | 'staff' | 'hygienist' | 'admin' | 'assistant';
   resetToken?: string;
   resetTokenExpiry?: Date;
@@ -32,8 +32,8 @@ export interface UserAuth {
   hasAllergy?: boolean;
   allergySpecifics?: string;
   hasAsthma?: boolean;
-  createdAt?: string; 
-  updatedAt?: string; 
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export function generateId(prefix: string = 'id_') {
@@ -42,7 +42,7 @@ export function generateId(prefix: string = 'id_') {
 
 let users: UserAuth[] = [];
 
-initialStaff.forEach(staffMember => {
+initialStaffCollection.forEach(staffMember => {
   let userAuthRole: UserAuth['role'] = 'staff';
   if (staffMember.role === 'Dentist') userAuthRole = 'doctor';
   else if (staffMember.role === 'Hygienist') userAuthRole = 'hygienist';
@@ -78,7 +78,7 @@ let appointments: Appointment[] = JSON.parse(JSON.stringify(initialAppointments)
 let treatmentPlans: TreatmentPlan[] = JSON.parse(JSON.stringify(initialTreatmentPlans));
 let progressNotes: ProgressNote[] = JSON.parse(JSON.stringify(initialProgressNotes));
 let invoices: Invoice[] = JSON.parse(JSON.stringify(initialInvoices));
-let staff: StaffMember[] = JSON.parse(JSON.stringify(initialStaff));
+// Removed: let staff: StaffMember[] = JSON.parse(JSON.stringify(initialStaff));
 let paymentTransactions: PaymentTransaction[] = [];
 let clinicWaitTime = { text: "<10 mins", updatedAt: new Date().toISOString() };
 
@@ -87,11 +87,11 @@ let conversations: Conversation[] = [
   {
     id: 'convo1',
     patientId: 'pat1',
-    staffId: 'staff1', // Assuming Sarah Miller is handling
+    staffId: 'staff1', 
     patientName: initialPatients.find(p => p.id === 'pat1')?.name,
     patientAvatarUrl: `https://placehold.co/40x40.png?text=${initialPatients.find(p => p.id === 'pat1')?.name?.charAt(0)}`,
     lastMessageText: "Hi, can I reschedule my appointment?",
-    lastMessageTimestamp: new Date(Date.now() - 3600000 * 2).toISOString(), // 2 hours ago
+    lastMessageTimestamp: new Date(Date.now() - 3600000 * 2).toISOString(), 
     unreadCountForStaff: 1,
   },
   {
@@ -101,7 +101,7 @@ let conversations: Conversation[] = [
     patientName: initialPatients.find(p => p.id === 'pat2')?.name,
     patientAvatarUrl: `https://placehold.co/40x40.png?text=${initialPatients.find(p => p.id === 'pat2')?.name?.charAt(0)}`,
     lastMessageText: "Thank you for the reminder!",
-    lastMessageTimestamp: new Date(Date.now() - 86400000).toISOString(), // Yesterday
+    lastMessageTimestamp: new Date(Date.now() - 86400000).toISOString(), 
     unreadCountForStaff: 0,
   },
   {
@@ -111,7 +111,7 @@ let conversations: Conversation[] = [
     patientName: initialPatients.find(p => p.id === 'pat3')?.name,
     patientAvatarUrl: `https://placehold.co/40x40.png?text=${initialPatients.find(p => p.id === 'pat3')?.name?.charAt(0)}`,
     lastMessageText: "Is parking available at the clinic?",
-    lastMessageTimestamp: new Date(Date.now() - 86400000 * 2).toISOString(), // 2 days ago
+    lastMessageTimestamp: new Date(Date.now() - 86400000 * 2).toISOString(), 
     unreadCountForStaff: 1,
   }
 ];
@@ -123,15 +123,15 @@ let messages: Message[] = [
     senderId: 'pat1',
     senderRole: 'patient',
     text: "Hi, can I reschedule my appointment scheduled for tomorrow?",
-    timestamp: new Date(Date.now() - 3600000 * 2 - 60000).toISOString(), // 2h 1m ago
+    timestamp: new Date(Date.now() - 3600000 * 2 - 60000).toISOString(), 
   },
   {
     id: generateId('msg_'),
     conversationId: 'convo1',
-    senderId: 'staff1', // Staff reply
+    senderId: 'staff1', 
     senderRole: 'staff',
     text: "Hello Alice, certainly! Which day and time would work best for you?",
-    timestamp: new Date(Date.now() - 3600000 * 2).toISOString(), // 2h ago (this becomes lastMessageText)
+    timestamp: new Date(Date.now() - 3600000 * 2).toISOString(), 
   },
   {
     id: generateId('msg_'),
@@ -139,7 +139,7 @@ let messages: Message[] = [
     senderId: 'staff1',
     senderRole: 'staff',
     text: "Hi Bob, just a friendly reminder about your appointment tomorrow at 2:30 PM.",
-    timestamp: new Date(Date.now() - 86400000 - 3600000).toISOString(), // Yesterday + 1h
+    timestamp: new Date(Date.now() - 86400000 - 3600000).toISOString(), 
   },
   {
     id: generateId('msg_'),
@@ -147,7 +147,7 @@ let messages: Message[] = [
     senderId: 'pat2',
     senderRole: 'patient',
     text: "Thank you for the reminder!",
-    timestamp: new Date(Date.now() - 86400000).toISOString(), // Yesterday (this becomes lastMessageText)
+    timestamp: new Date(Date.now() - 86400000).toISOString(), 
   },
    {
     id: generateId('msg_'),
@@ -155,7 +155,7 @@ let messages: Message[] = [
     senderId: 'pat3',
     senderRole: 'patient',
     text: "Is parking available at the clinic?",
-    timestamp: new Date(Date.now() - 86400000 * 2).toISOString(), // 2 days ago
+    timestamp: new Date(Date.now() - 86400000 * 2).toISOString(), 
   }
 ];
 
@@ -167,7 +167,7 @@ export const db = {
   progressNotes,
   invoices,
   clinicWaitTime,
-  staff,
+  // staff, // Removed staff from here
   paymentTransactions,
   conversations,
   messages,
