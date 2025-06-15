@@ -5,13 +5,13 @@ import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import type { Appointment } from "@/lib/types"; 
+import type { Appointment } from "@/lib/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, PlusCircle, Search, Loader2, AlertTriangle, CalendarDays, ListChecks } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useToast } from '@/hooks/use-toast'; 
-import { mockPatients } from "@/lib/mockData"; 
+import { useToast } from '@/hooks/use-toast';
+import { mockPatients } from "@/lib/mockData";
 
 const MOCK_DOCTOR_ID = "doc1";
 
@@ -20,16 +20,24 @@ export default function DoctorDashboardPage() {
   const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([]);
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(true);
   const [appointmentsError, setAppointmentsError] = useState<string | null>(null);
-  
+
   const [pendingTasksCount, setPendingTasksCount] = useState(0);
   const [isLoadingPendingTasks, setIsLoadingPendingTasks] = useState(true);
   const [pendingTasksError, setPendingTasksError] = useState<string | null>(null);
+  
+  const [upcomingAppointmentsSummaryCount, setUpcomingAppointmentsSummaryCount] = useState(0);
+  const [isLoadingUpcomingSummary, setIsLoadingUpcomingSummary] = useState(true);
+  const [upcomingSummaryError, setUpcomingSummaryError] = useState<string | null>(null);
 
-  const recentPatients = mockPatients.slice(0,3); 
 
-  const fetchUpcomingAppointments = useCallback(async () => {
+  const recentPatients = mockPatients.slice(0,3);
+
+  const fetchDashboardAppointmentsData = useCallback(async () => {
     setIsLoadingAppointments(true);
     setAppointmentsError(null);
+    setIsLoadingUpcomingSummary(true);
+    setUpcomingSummaryError(null);
+
     try {
       const response = await fetch(`/api/appointments?doctorId=${MOCK_DOCTOR_ID}`);
       if (!response.ok) {
@@ -37,11 +45,20 @@ export default function DoctorDashboardPage() {
         throw new Error(errorData.message || 'Failed to fetch appointments');
       }
       let data: Appointment[] = await response.json();
-      
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      const filteredAndSorted = data
+      const parseTime = (timeStr: string) => {
+        const [time, modifier] = timeStr.split(' ');
+        if (!time || !modifier) return 0;
+        let [hours, minutes] = time.split(':').map(Number);
+        if (modifier.toUpperCase() === 'PM' && hours < 12) hours += 12;
+        if (modifier.toUpperCase() === 'AM' && hours === 12) hours = 0;
+        return hours * 60 + minutes;
+      };
+      
+      const upcomingForTable = data
         .filter(apt => {
           const aptDate = new Date(apt.date);
           aptDate.setHours(0,0,0,0);
@@ -51,24 +68,27 @@ export default function DoctorDashboardPage() {
           const dateA = new Date(a.date).getTime();
           const dateB = new Date(b.date).getTime();
           if (dateA !== dateB) return dateA - dateB;
-          const parseTime = (timeStr: string) => {
-            const [time, modifier] = timeStr.split(' ');
-            if (!time || !modifier) return 0;
-            let [hours, minutes] = time.split(':').map(Number);
-            if (modifier.toUpperCase() === 'PM' && hours < 12) hours += 12;
-            if (modifier.toUpperCase() === 'AM' && hours === 12) hours = 0; 
-            return hours * 60 + minutes;
-          };
           return parseTime(a.time) - parseTime(b.time);
         })
-        .slice(0, 5); 
+        .slice(0, 5);
+      setUpcomingAppointments(upcomingForTable);
+      
+      // For summary card: count all upcoming (not completed/cancelled) from today onwards
+      const allUpcomingSummary = data.filter(apt => {
+         const aptDate = new Date(apt.date);
+         aptDate.setHours(0,0,0,0);
+         return aptDate >= today && apt.status !== 'Completed' && apt.status !== 'Cancelled';
+      });
+      setUpcomingAppointmentsSummaryCount(allUpcomingSummary.length);
 
-      setUpcomingAppointments(filteredAndSorted);
     } catch (error: any) {
-      setAppointmentsError(error.message || "Could not load upcoming appointments.");
-      toast({ variant: "destructive", title: "Error", description: error.message || "Could not load upcoming appointments." });
+      const errorMsg = error.message || "Could not load appointments data.";
+      setAppointmentsError(errorMsg);
+      setUpcomingSummaryError(errorMsg);
+      toast({ variant: "destructive", title: "Error", description: errorMsg });
     } finally {
       setIsLoadingAppointments(false);
+      setIsLoadingUpcomingSummary(false);
     }
   }, [toast]);
 
@@ -76,7 +96,6 @@ export default function DoctorDashboardPage() {
     setIsLoadingPendingTasks(true);
     setPendingTasksError(null);
     try {
-      // Fetch appointments specifically with status 'Scheduled' for the doctor
       const response = await fetch(`/api/appointments?doctorId=${MOCK_DOCTOR_ID}&status=Scheduled`);
       if (!response.ok) {
         const errorData = await response.json();
@@ -93,22 +112,62 @@ export default function DoctorDashboardPage() {
   }, [toast]);
 
   useEffect(() => {
-    fetchUpcomingAppointments();
+    fetchDashboardAppointmentsData();
     fetchPendingTasks();
-  }, [fetchUpcomingAppointments, fetchPendingTasks]);
+  }, [fetchDashboardAppointmentsData, fetchPendingTasks]);
+
+   const renderCardContent = (isLoading: boolean, error: string | null, value: number | string, unit: string) => {
+    if (isLoading) {
+      return (
+        <div className="flex justify-center items-center h-10">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      );
+    }
+    if (error) {
+       return <div className="text-destructive text-xs text-center py-2" title={error}>Error loading</div>;
+    }
+    return (
+      <>
+        <div className="text-2xl font-bold">{value}</div>
+        <p className="text-xs text-muted-foreground">{unit}</p>
+      </>
+    );
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl sm:text-3xl font-bold">Doctor Dashboard</h1>
-        <Link href="/doctor/patients/new"> 
+        <Link href="/doctor/patients/new">
           <Button><PlusCircle className="mr-2 h-4 w-4" /> Add New Patient</Button>
         </Link>
+      </div>
+      
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Upcoming Appointments</CardTitle>
+            <CalendarDays className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {renderCardContent(isLoadingUpcomingSummary, upcomingSummaryError, upcomingAppointmentsSummaryCount, "In the next few days")}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Tasks</CardTitle>
+            <ListChecks className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {renderCardContent(isLoadingPendingTasks, pendingTasksError, pendingTasksCount, "Appointments to Confirm or Review")}
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Upcoming Appointments</CardTitle>
+          <CardTitle>Upcoming Appointments (Detailed)</CardTitle>
           <CardDescription>A quick look at your next few appointments.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -181,46 +240,6 @@ export default function DoctorDashboardPage() {
           </div>
         </CardContent>
       </Card>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Upcoming Appointments</CardTitle>
-            <CalendarDays className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {isLoadingAppointments ? (
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            ) : appointmentsError ? (
-                <span className="text-destructive text-sm">Error</span>
-            ) : (
-                <p className="text-4xl font-bold">{upcomingAppointments.length}</p>
-            )}
-             <p className="text-xs text-muted-foreground">
-                In the next few days
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Tasks</CardTitle>
-            <ListChecks className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {isLoadingPendingTasks ? (
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            ) : pendingTasksError ? (
-              <span className="text-destructive text-sm" title={pendingTasksError}>Error</span>
-            ) : (
-              <p className="text-4xl font-bold">{pendingTasksCount}</p>
-            )}
-             <p className="text-xs text-muted-foreground">
-                Appointments to Confirm or Review
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-      
     </div>
   );
 }
