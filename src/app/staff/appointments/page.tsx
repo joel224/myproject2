@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Patient, StaffMember, Appointment } from '@/lib/types';
-import { PlusCircle, Loader2, Edit, Trash2, AlertTriangle } from "lucide-react";
+import { PlusCircle, Loader2, Edit, Trash2, AlertTriangle, CalendarClock } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -47,6 +47,9 @@ export default function StaffAppointmentsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [cancellingAppointmentId, setCancellingAppointmentId] = useState<string | null>(null);
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
+  // State for Reschedule Modal
+  const [reschedulingAppointment, setReschedulingAppointment] = useState<Appointment | null>(null);
+  const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false);
 
 
   const parseTime = (timeStr: string): Date => {
@@ -353,7 +356,9 @@ export default function StaffAppointmentsPage() {
                         {upcomingAppointments.slice(0, 10).map(apt => ( 
                             <li key={apt.id} className="p-3 border rounded-md bg-muted/20">
                             <p className="font-semibold">{apt.patientName} with {apt.doctorName}</p>
-                            <p className="text-sm text-muted-foreground">{new Date(apt.date).toLocaleDateString()} at {apt.time} - {apt.type} ({apt.status})</p>
+                            <p className="text-sm text-muted-foreground">
+                                {new Date(apt.date).toLocaleDateString()} at <span className="text-primary font-medium">{apt.time}</span> - {apt.type} ({apt.status})
+                            </p>
                             <div className="mt-2 space-x-2">
                                 <Button 
                                   variant="outline" 
@@ -362,6 +367,14 @@ export default function StaffAppointmentsPage() {
                                   disabled={apt.status === 'Completed' || apt.status === 'Cancelled'}
                                 >
                                     <Edit className="mr-1 h-3 w-3" />Edit
+                                </Button>
+                                <Button 
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => { setReschedulingAppointment(apt); setIsRescheduleModalOpen(true); }}
+                                  disabled={apt.status === 'Completed' || apt.status === 'Cancelled'}
+                                >
+                                    <CalendarClock className="mr-1 h-3 w-3" />Reschedule
                                 </Button>
                                 <Button 
                                   variant="destructive" 
@@ -397,6 +410,13 @@ export default function StaffAppointmentsPage() {
         onOpenChange={setIsCancelConfirmOpen}
         onConfirm={handleConfirmCancelAppointment}
       />
+      {reschedulingAppointment && (
+        <RescheduleAppointmentDialog
+            appointment={reschedulingAppointment}
+            isOpen={isRescheduleModalOpen}
+            onOpenChange={setIsRescheduleModalOpen}
+        />
+      )}
     </div>
   );
 }
@@ -417,7 +437,7 @@ function EditAppointmentDialog({ appointment, isOpen, onOpenChange, onSave, pati
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (appointment) {
+    if (appointment && isOpen) {
       // Format date correctly for input type="date"
       const formattedDate = appointment.date ? new Date(appointment.date).toISOString().split('T')[0] : '';
       setFormData({ ...appointment, date: formattedDate });
@@ -543,3 +563,82 @@ function CancelAppointmentDialog({ isOpen, onOpenChange, onConfirm }: CancelAppo
   );
 }
 
+// Reschedule Appointment Dialog Component
+interface RescheduleAppointmentDialogProps {
+  appointment: Appointment;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  // onSave: (reason: string) => Promise<boolean>; // Placeholder for future logic
+}
+
+function RescheduleAppointmentDialog({ appointment, isOpen, onOpenChange }: RescheduleAppointmentDialogProps) {
+  const { toast } = useToast();
+  const [newDateTimeOrReason, setNewDateTimeOrReason] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setNewDateTimeOrReason(''); // Reset input when dialog opens
+    }
+  }, [isOpen]);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!newDateTimeOrReason.trim()) {
+      toast({ variant: "destructive", title: "Input Required", description: "Please enter a new date/time or reason for rescheduling." });
+      return;
+    }
+    setIsSubmitting(true);
+    // TODO: Implement actual rescheduling API call here.
+    // For now, we'll just log it and show a success toast.
+    console.log(`Reschedule requested for appointment ${appointment.id}. New info: ${newDateTimeOrReason}`);
+    toast({ 
+        title: "Reschedule Request Sent", 
+        description: `The request to reschedule appointment for ${appointment.patientName} has been noted.` 
+    });
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000)); 
+    
+    setIsSubmitting(false);
+    onOpenChange(false); // Close dialog
+    // Potentially call a prop like onSave if actual update happens, then refresh list
+  };
+
+  if (!appointment) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>Reschedule Appointment</DialogTitle>
+            <DialogDescription>
+              Patient: {appointment.patientName} <br />
+              Current: {new Date(appointment.date).toLocaleDateString()} at {appointment.time} ({appointment.type})
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="reschedule-info">New Preferred Date/Time or Reason</Label>
+            <Input
+              id="reschedule-info"
+              value={newDateTimeOrReason}
+              onChange={(e) => setNewDateTimeOrReason(e.target.value)}
+              placeholder="e.g., 'Any time next Tuesday' or 'Patient emergency'"
+              className="mt-1"
+            />
+          </div>
+          <DialogFooter className="pt-4">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Request Reschedule
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
