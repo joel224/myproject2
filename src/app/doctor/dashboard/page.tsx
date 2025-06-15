@@ -5,15 +5,14 @@ import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import type { Appointment } from "@/lib/types"; // Import Appointment type
+import type { Appointment } from "@/lib/types"; 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, PlusCircle, Search, Loader2, AlertTriangle, CalendarDays } from "lucide-react";
+import { ArrowRight, PlusCircle, Search, Loader2, AlertTriangle, CalendarDays, ListChecks } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useToast } from '@/hooks/use-toast'; // Assuming toast might be needed for errors
-import { mockPatients } from "@/lib/mockData"; // Keep for recent patients static mock
+import { useToast } from '@/hooks/use-toast'; 
+import { mockPatients } from "@/lib/mockData"; 
 
-// Mock current doctor ID - in a real app, this would come from auth context
 const MOCK_DOCTOR_ID = "doc1";
 
 export default function DoctorDashboardPage() {
@@ -22,13 +21,16 @@ export default function DoctorDashboardPage() {
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(true);
   const [appointmentsError, setAppointmentsError] = useState<string | null>(null);
   
-  const recentPatients = mockPatients.slice(0,3); // Keep recent patients static for now
+  const [pendingTasksCount, setPendingTasksCount] = useState(0);
+  const [isLoadingPendingTasks, setIsLoadingPendingTasks] = useState(true);
+  const [pendingTasksError, setPendingTasksError] = useState<string | null>(null);
+
+  const recentPatients = mockPatients.slice(0,3); 
 
   const fetchUpcomingAppointments = useCallback(async () => {
     setIsLoadingAppointments(true);
     setAppointmentsError(null);
     try {
-      // Fetch all appointments and filter client-side for this doctor
       const response = await fetch(`/api/appointments?doctorId=${MOCK_DOCTOR_ID}`);
       if (!response.ok) {
         const errorData = await response.json();
@@ -36,7 +38,6 @@ export default function DoctorDashboardPage() {
       }
       let data: Appointment[] = await response.json();
       
-      // Further client-side filtering for upcoming status
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
@@ -50,18 +51,17 @@ export default function DoctorDashboardPage() {
           const dateA = new Date(a.date).getTime();
           const dateB = new Date(b.date).getTime();
           if (dateA !== dateB) return dateA - dateB;
-          // Helper to parse time string like "02:30 PM" to a comparable number
           const parseTime = (timeStr: string) => {
             const [time, modifier] = timeStr.split(' ');
             if (!time || !modifier) return 0;
             let [hours, minutes] = time.split(':').map(Number);
             if (modifier.toUpperCase() === 'PM' && hours < 12) hours += 12;
-            if (modifier.toUpperCase() === 'AM' && hours === 12) hours = 0; // Midnight case
+            if (modifier.toUpperCase() === 'AM' && hours === 12) hours = 0; 
             return hours * 60 + minutes;
           };
           return parseTime(a.time) - parseTime(b.time);
         })
-        .slice(0, 5); // Take top 5 upcoming
+        .slice(0, 5); 
 
       setUpcomingAppointments(filteredAndSorted);
     } catch (error: any) {
@@ -72,15 +72,35 @@ export default function DoctorDashboardPage() {
     }
   }, [toast]);
 
+  const fetchPendingTasks = useCallback(async () => {
+    setIsLoadingPendingTasks(true);
+    setPendingTasksError(null);
+    try {
+      const response = await fetch(`/api/appointments?doctorId=${MOCK_DOCTOR_ID}&status=Scheduled`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch pending tasks');
+      }
+      const data: Appointment[] = await response.json();
+      setPendingTasksCount(data.length);
+    } catch (error: any) {
+      setPendingTasksError(error.message || "Could not load pending tasks.");
+      toast({ variant: "destructive", title: "Error", description: error.message || "Could not load pending tasks count." });
+    } finally {
+      setIsLoadingPendingTasks(false);
+    }
+  }, [toast]);
+
   useEffect(() => {
     fetchUpcomingAppointments();
-  }, [fetchUpcomingAppointments]);
+    fetchPendingTasks();
+  }, [fetchUpcomingAppointments, fetchPendingTasks]);
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl sm:text-3xl font-bold">Doctor Dashboard</h1>
-        <Link href="/doctor/patients/new"> {/* Assuming /doctor/patients/new exists or will exist */}
+        <Link href="/doctor/patients/new"> 
           <Button><PlusCircle className="mr-2 h-4 w-4" /> Add New Patient</Button>
         </Link>
       </div>
@@ -183,12 +203,18 @@ export default function DoctorDashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pending Tasks</CardTitle>
-            <PlusCircle className="h-4 w-4 text-muted-foreground" />
+            <ListChecks className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold">3</p> {/* Placeholder */}
+            {isLoadingPendingTasks ? (
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            ) : pendingTasksError ? (
+              <span className="text-destructive text-sm">Error</span>
+            ) : (
+              <p className="text-4xl font-bold">{pendingTasksCount}</p>
+            )}
              <p className="text-xs text-muted-foreground">
-                Notes or follow-ups needed
+                Appointments to Confirm or Review
             </p>
           </CardContent>
         </Card>
