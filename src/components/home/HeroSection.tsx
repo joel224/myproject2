@@ -3,18 +3,48 @@
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
+import MuxPlayer from '@mux/mux-player-react';
 
-const GOOGLE_DRIVE_IMAGE_URL = "https://drive.google.com/file/d/18aD-AVHaGk9vR5OhDtS15IwSVPwDGmUF/view?usp=drive_link";
+const HERO_VIDEO_PLAYBACK_ID = "VA2YqY01Og02W3Gk01N5zB2NMYX00eF00zjcLJeBhtFksU";
 
 export function HeroSection() {
+  const videoRef = useRef<HTMLVideoElement | MuxPlayer>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
   const [textVisible, setTextVisible] = useState(false);
-  const isMobile = useIsMobile(); // This can be kept if needed for other responsive logic
+  const [isPlayerReady, setIsPlayerReady] = useState(false);
+
+  const handleScroll = useCallback(() => {
+    if (videoRef.current && sectionRef.current) {
+      const sectionTop = sectionRef.current.offsetTop;
+      const sectionHeight = sectionRef.current.offsetHeight;
+      const scrollPosition = window.scrollY;
+      const windowHeight = window.innerHeight;
+
+      // Calculate when the middle of the section is at the middle of the viewport
+      const scrollMidpoint = sectionTop + sectionHeight / 2 - windowHeight / 2;
+      const parallaxOffset = (scrollPosition - scrollMidpoint) * 0.2; // Adjust 0.2 for more/less parallax
+
+      // Apply transform to the video player's direct parent for parallax
+      const playerElement = (videoRef.current as any)?.getInternalPlayer?.() || videoRef.current;
+      if (playerElement && playerElement.parentElement) {
+         playerElement.parentElement.style.transform = `translateY(${parallaxOffset}px)`;
+      }
+    }
+  }, []);
+
+
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); 
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [handleScroll]);
+
 
   useEffect(() => {
     const observerOptions = { threshold: 0.1 };
@@ -40,16 +70,27 @@ export function HeroSection() {
       ref={sectionRef}
       className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] flex items-center justify-center"
     >
-      <div className={cn("absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none")}>
-        <Image
-          src={GOOGLE_DRIVE_IMAGE_URL}
-          alt="Hero background image"
-          layout="fill"
-          objectFit="cover"
-          priority
-          className="w-full h-full"
-          data-ai-hint="clinic background"
-        />
+      <div className={cn("absolute top-0 left-0 w-full h-[120%] z-0 pointer-events-none")}>
+        {/* The MuxPlayer needs a wrapper that can be transformed for parallax */}
+        {/* The extra 20% height and slight negative top offset helps ensure no gaps during parallax */}
+        <div className="absolute -top-[10%] left-0 w-full h-full">
+          <MuxPlayer
+            ref={videoRef as React.Ref<MuxPlayer>}
+            playbackId={HERO_VIDEO_PLAYBACK_ID}
+            autoPlay
+            loop
+            muted
+            playsInline
+            noControls
+            className="absolute top-0 left-0 w-full h-full object-cover"
+            onLoadedMetadata={() => setIsPlayerReady(true)}
+            onPlayerReady={() => {
+              setIsPlayerReady(true);
+              console.log("Hero MuxPlayer: Player is ready");
+            }}
+            onError={(error) => console.error("Hero MuxPlayer Error:", error)}
+          />
+        </div>
       </div>
 
       <div className="absolute inset-0 w-full h-full bg-gradient-to-b from-black/40 via-black/20 to-[hsl(var(--background))] z-[2]"></div>
