@@ -54,7 +54,7 @@ export function AppShell({ children, navItems, userRole, userName, userEmail }: 
                 <Link href={item.href} passHref legacyBehavior>
                   <SidebarMenuButton tooltip={item.label}>
                     {item.icon}
-                    <span>{item.label}</span>
+                    <span data-sidebar="menu-label">{item.label}</span>
                     {item.badge && <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>}
                   </SidebarMenuButton>
                 </Link>
