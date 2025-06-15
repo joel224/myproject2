@@ -76,6 +76,7 @@ export default function DoctorDashboardPage() {
     setIsLoadingPendingTasks(true);
     setPendingTasksError(null);
     try {
+      // Fetch appointments specifically with status 'Scheduled' for the doctor
       const response = await fetch(`/api/appointments?doctorId=${MOCK_DOCTOR_ID}&status=Scheduled`);
       if (!response.ok) {
         const errorData = await response.json();
@@ -209,7 +210,7 @@ export default function DoctorDashboardPage() {
             {isLoadingPendingTasks ? (
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             ) : pendingTasksError ? (
-              <span className="text-destructive text-sm">Error</span>
+              <span className="text-destructive text-sm" title={pendingTasksError}>Error</span>
             ) : (
               <p className="text-4xl font-bold">{pendingTasksCount}</p>
             )}
