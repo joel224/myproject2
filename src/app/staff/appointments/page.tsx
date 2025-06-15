@@ -143,8 +143,25 @@ export default function StaffAppointmentsPage() {
     event.preventDefault();
     setIsBookingLoading(true);
 
-    if (!selectedPatientId || !selectedDoctorId || !appointmentType || !appointmentDate || !appointmentTime) {
-      toast({ variant: "destructive", title: "Missing Fields", description: "Please fill in all required fields." });
+    const missingFields = [];
+    if (!selectedPatientId) missingFields.push("Patient");
+    if (!selectedDoctorId) missingFields.push("Doctor/Hygienist");
+    if (!appointmentType) missingFields.push("Appointment Type");
+    if (!appointmentDate) missingFields.push("Date");
+    if (!appointmentTime.trim()) missingFields.push("Time");
+    
+    // Basic time format validation (HH:MM AM/PM)
+    if (appointmentTime.trim() && !/^(0?[1-9]|1[0-2]):[0-5][0-9] (AM|PM)$/i.test(appointmentTime.trim())) {
+        missingFields.push("Time (must be HH:MM AM/PM format)");
+    }
+
+
+    if (missingFields.length > 0) {
+      toast({
+        variant: "destructive",
+        title: "Missing or Invalid Information",
+        description: `Please provide the following: ${missingFields.join(', ')}.`,
+      });
       setIsBookingLoading(false);
       return;
     }
@@ -153,7 +170,7 @@ export default function StaffAppointmentsPage() {
       patientId: selectedPatientId,
       doctorId: selectedDoctorId,
       date: appointmentDate,
-      time: appointmentTime, 
+      time: appointmentTime.trim(), 
       type: appointmentType,
     };
 
@@ -269,7 +286,7 @@ export default function StaffAppointmentsPage() {
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="patient">Patient</Label>
-                <Select value={selectedPatientId} onValueChange={setSelectedPatientId} required>
+                <Select value={selectedPatientId} onValueChange={setSelectedPatientId} >
                   <SelectTrigger id="patient" disabled={isLoadingPatients}>
                     <SelectValue placeholder={isLoadingPatients ? "Loading patients..." : "Select patient"} />
                   </SelectTrigger>
@@ -289,7 +306,7 @@ export default function StaffAppointmentsPage() {
               </div>
               <div>
                 <Label htmlFor="doctor">Doctor / Hygienist</Label>
-                <Select value={selectedDoctorId} onValueChange={setSelectedDoctorId} required>
+                <Select value={selectedDoctorId} onValueChange={setSelectedDoctorId} >
                   <SelectTrigger id="doctor" disabled={isLoadingDoctors}>
                     <SelectValue placeholder={isLoadingDoctors ? "Loading doctors..." : "Select doctor/hygienist"} />
                   </SelectTrigger>
@@ -309,7 +326,7 @@ export default function StaffAppointmentsPage() {
               </div>
               <div>
                 <Label htmlFor="appointment-type">Appointment Type</Label>
-                <Select value={appointmentType} onValueChange={setAppointmentType} required>
+                <Select value={appointmentType} onValueChange={setAppointmentType} >
                   <SelectTrigger id="appointment-type">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
@@ -320,7 +337,7 @@ export default function StaffAppointmentsPage() {
               </div>
               <div>
                 <Label htmlFor="date">Date</Label>
-                <Input type="date" id="date" value={appointmentDate} onChange={e => setAppointmentDate(e.target.value)} min={new Date().toISOString().split('T')[0]} required />
+                <Input type="date" id="date" value={appointmentDate} onChange={e => setAppointmentDate(e.target.value)} min={new Date().toISOString().split('T')[0]}  />
               </div>
               <div>
                 <Label htmlFor="time">Time (e.g., 02:30 PM)</Label>
@@ -330,7 +347,7 @@ export default function StaffAppointmentsPage() {
                   value={appointmentTime} 
                   onChange={e => setAppointmentTime(e.target.value)} 
                   placeholder="HH:MM AM/PM" 
-                  required 
+                  
                 />
               </div>
               <Button type="submit" className="w-full" disabled={isBookingLoading || isLoadingPatients || isLoadingDoctors}>
@@ -477,7 +494,14 @@ function EditAppointmentDialog({ appointment, isOpen, onOpenChange, onSave, pati
       setIsSaving(false);
       return;
     }
-    const success = await onSave(formData);
+    // Basic time format validation (HH:MM AM/PM)
+    if (formData.time && !/^(0?[1-9]|1[0-2]):[0-5][0-9] (AM|PM)$/i.test(formData.time.trim())) {
+        toast({ variant: "destructive", title: "Invalid Time Format", description: "Please use HH:MM AM/PM format for time (e.g., 02:30 PM)." });
+        setIsSaving(false);
+        return;
+    }
+
+    const success = await onSave({...formData, time: formData.time?.trim() });
     if (success) {
         onOpenChange(false); 
     }
@@ -602,7 +626,6 @@ function RescheduleAppointmentDialog({ appointment, isOpen, onOpenChange, onSave
       setNewDate(new Date(appointment.date).toISOString().split('T')[0]);
       setNewTime(appointment.time);
     } else if (!isOpen) {
-        // Reset when dialog closes
         setNewDate('');
         setNewTime('');
     }
@@ -614,7 +637,7 @@ function RescheduleAppointmentDialog({ appointment, isOpen, onOpenChange, onSave
       toast({ variant: "destructive", title: "Input Required", description: "Please enter a new date and time." });
       return;
     }
-    // Basic time format validation (HH:MM AM/PM)
+    
     if (!/^(0?[1-9]|1[0-2]):[0-5][0-9] (AM|PM)$/i.test(newTime.trim())) {
         toast({ variant: "destructive", title: "Invalid Time Format", description: "Please use HH:MM AM/PM format for time (e.g., 02:30 PM)." });
         return;
@@ -681,3 +704,5 @@ function RescheduleAppointmentDialog({ appointment, isOpen, onOpenChange, onSave
     </Dialog>
   );
 }
+
+    
