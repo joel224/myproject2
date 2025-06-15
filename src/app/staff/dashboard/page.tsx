@@ -1,12 +1,11 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import type { Appointment } from "@/lib/types"; // Import Appointment type
-import { mockInvoices, mockPatients } from "@/lib/mockData"; // mockPatients might still be needed for names if not in apt object
+import type { Appointment, Invoice, Conversation } from "@/lib/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { CalendarPlus, Users, DollarSign, MessageSquare, AlertCircle, CheckCircle, Clock, Edit, Loader2, AlertTriangle } from "lucide-react";
@@ -21,21 +20,111 @@ interface ClinicWaitTime {
 
 export default function StaffDashboardPage() {
   const { toast } = useToast();
+
+  // Wait Time State
   const [waitTimeText, setWaitTimeText] = useState('');
   const [isUpdatingWaitTime, setIsUpdatingWaitTime] = useState(false);
 
+  // Appointments State
   const [todaysAppointments, setTodaysAppointments] = useState<Appointment[]>([]);
   const [isLoadingTodaysAppointments, setIsLoadingTodaysAppointments] = useState(true);
   const [todaysAppointmentsError, setTodaysAppointmentsError] = useState<string | null>(null);
-  
-  // const today = new Date().toISOString().split('T')[0]; // Defined inside useEffect now
-  // const todaysAppointments = mockAppointments.filter(apt => apt.date === today && apt.status !== 'Completed' && apt.status !== 'Cancelled');
-  const pendingRequests = 2; // Placeholder
-  const unreadMessages = 3; // Placeholder
-  const outstandingPayments = mockInvoices.filter(inv => inv.status === 'Pending' || inv.status === 'Overdue' || inv.status === 'Partial').length;
+
+  // Pending Requests (Scheduled Appointments) State
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+  const [isLoadingPendingRequests, setIsLoadingPendingRequests] = useState(true);
+  const [pendingRequestsError, setPendingRequestsError] = useState<string | null>(null);
+
+  // Outstanding Payments State
+  const [outstandingPaymentsCount, setOutstandingPaymentsCount] = useState(0);
+  const [isLoadingOutstandingPayments, setIsLoadingOutstandingPayments] = useState(true);
+  const [outstandingPaymentsError, setOutstandingPaymentsError] = useState<string | null>(null);
+
+  // Unread Messages State
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [isLoadingUnreadMessages, setIsLoadingUnreadMessages] = useState(true);
+  const [unreadMessagesError, setUnreadMessagesError] = useState<string | null>(null);
+
+
+  const fetchDashboardData = useCallback(async () => {
+    setIsLoadingTodaysAppointments(true);
+    setTodaysAppointmentsError(null);
+    setIsLoadingPendingRequests(true);
+    setPendingRequestsError(null);
+    setIsLoadingOutstandingPayments(true);
+    setOutstandingPaymentsError(null);
+    setIsLoadingUnreadMessages(true);
+    setUnreadMessagesError(null);
+
+    try {
+      const [appointmentsRes, invoicesRes, conversationsRes] = await Promise.all([
+        fetch('/api/appointments'),
+        fetch('/api/invoices'),
+        fetch('/api/conversations')
+      ]);
+
+      // Process Appointments
+      if (!appointmentsRes.ok) {
+        const errorData = await appointmentsRes.json();
+        const errorMsg = errorData.message || 'Failed to fetch appointments';
+        setTodaysAppointmentsError(errorMsg);
+        setPendingRequestsError(errorMsg);
+      } else {
+        const allAppointments: Appointment[] = await appointmentsRes.json();
+        const todayISO = new Date().toISOString().split('T')[0];
+        
+        const filteredTodays = allAppointments.filter(apt => 
+          apt.date === todayISO && 
+          apt.status !== 'Completed' && 
+          apt.status !== 'Cancelled'
+        );
+        setTodaysAppointments(filteredTodays);
+
+        const scheduledAppointments = allAppointments.filter(apt => apt.status === 'Scheduled');
+        setPendingRequestsCount(scheduledAppointments.length);
+      }
+
+      // Process Invoices
+      if (!invoicesRes.ok) {
+        const errorData = await invoicesRes.json();
+        setOutstandingPaymentsError(errorData.message || 'Failed to fetch invoices');
+      } else {
+        const allInvoices: Invoice[] = await invoicesRes.json();
+        const outstanding = allInvoices.filter(inv => 
+            inv.status === 'Pending' || inv.status === 'Overdue' || inv.status === 'Partial'
+        ).length;
+        setOutstandingPaymentsCount(outstanding);
+      }
+
+      // Process Conversations
+      if (!conversationsRes.ok) {
+        const errorData = await conversationsRes.json();
+        setUnreadMessagesError(errorData.message || 'Failed to fetch conversations');
+      } else {
+        const allConversations: Conversation[] = await conversationsRes.json();
+        const unread = allConversations.reduce((sum, convo) => sum + (convo.unreadCountForStaff || 0), 0);
+        setUnreadMessagesCount(unread);
+      }
+
+    } catch (error: any) {
+      const generalErrorMsg = "Could not load some dashboard data.";
+      if (!todaysAppointmentsError) setTodaysAppointmentsError(generalErrorMsg);
+      if (!pendingRequestsError) setPendingRequestsError(generalErrorMsg);
+      if (!outstandingPaymentsError) setOutstandingPaymentsError(generalErrorMsg);
+      if (!unreadMessagesError) setUnreadMessagesError(generalErrorMsg);
+      toast({ variant: "destructive", title: "Dashboard Error", description: error.message || generalErrorMsg });
+    } finally {
+      setIsLoadingTodaysAppointments(false);
+      setIsLoadingPendingRequests(false);
+      setIsLoadingOutstandingPayments(false);
+      setIsLoadingUnreadMessages(false);
+    }
+  }, [toast, todaysAppointmentsError, pendingRequestsError, outstandingPaymentsError, unreadMessagesError]);
+
 
   useEffect(() => {
     const fetchWaitTime = async () => {
+      // This can remain separate as it's a simple, single fetch
       try {
         const response = await fetch('/api/clinic/wait-time');
         if (!response.ok) {
@@ -53,36 +142,9 @@ export default function StaffDashboardPage() {
       }
     };
     fetchWaitTime();
-  }, [toast]);
+    fetchDashboardData();
+  }, [toast, fetchDashboardData]);
 
-  useEffect(() => {
-    const fetchTodaysAppointments = async () => {
-      setIsLoadingTodaysAppointments(true);
-      setTodaysAppointmentsError(null);
-      try {
-        const response = await fetch('/api/appointments');
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to fetch appointments');
-        }
-        const allAppointments: Appointment[] = await response.json();
-        const todayISO = new Date().toISOString().split('T')[0];
-        const filtered = allAppointments.filter(apt => 
-          apt.date === todayISO && 
-          apt.status !== 'Completed' && 
-          apt.status !== 'Cancelled'
-        );
-        setTodaysAppointments(filtered);
-      } catch (error: any) {
-        setTodaysAppointmentsError(error.message || "Could not load today's appointments.");
-        // Toast is optional here as error is displayed in UI
-        // toast({ variant: "destructive", title: "Error", description: error.message || "Could not load today's appointments." });
-      } finally {
-        setIsLoadingTodaysAppointments(false);
-      }
-    };
-    fetchTodaysAppointments();
-  }, []); // Removed toast from dependency array to avoid re-fetch on toast change
 
   const handleUpdateWaitTime = async () => {
     if (!waitTimeText.trim()) {
@@ -105,7 +167,7 @@ export default function StaffDashboardPage() {
         throw new Error(errorData.message || 'Failed to update wait time');
       }
       const updatedData: ClinicWaitTime = await response.json();
-      setWaitTimeText(updatedData.text); // Update state with confirmed new time
+      setWaitTimeText(updatedData.text);
       toast({
         title: "Success!",
         description: `Wait time updated to: ${updatedData.text}`,
@@ -129,6 +191,26 @@ export default function StaffDashboardPage() {
     { label: "Send Message", href: "/staff/communication", icon: <MessageSquare className="h-5 w-5" /> },
   ];
 
+  const renderCardContent = (isLoading: boolean, error: string | null, value: number | string, unit: string) => {
+    if (isLoading) {
+      return (
+        <div className="flex justify-center items-center h-10">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      );
+    }
+    if (error) {
+      return <div className="text-destructive text-xs text-center py-2" title={error}>{error.length > 25 ? "Error" : error}</div>;
+    }
+    return (
+      <>
+        <div className="text-2xl font-bold">{value}</div>
+        <p className="text-xs text-muted-foreground">{unit}</p>
+      </>
+    );
+  };
+
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl sm:text-3xl font-bold">Staff Dashboard</h1>
@@ -140,18 +222,7 @@ export default function StaffDashboardPage() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {isLoadingTodaysAppointments ? (
-              <div className="flex justify-center items-center h-10">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : todaysAppointmentsError ? (
-               <div className="text-destructive text-xs text-center py-2">{todaysAppointmentsError.length > 50 ? "Error loading" : todaysAppointmentsError}</div>
-            ) : (
-              <>
-                <div className="text-2xl font-bold">{todaysAppointments.length}</div>
-                <p className="text-xs text-muted-foreground">Scheduled for today</p>
-              </>
-            )}
+            {renderCardContent(isLoadingTodaysAppointments, todaysAppointmentsError, todaysAppointments.length, "Scheduled for today")}
           </CardContent>
         </Card>
         <Card>
@@ -160,8 +231,7 @@ export default function StaffDashboardPage() {
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{pendingRequests}</div>
-            <p className="text-xs text-muted-foreground">Awaiting action</p>
+            {renderCardContent(isLoadingPendingRequests, pendingRequestsError, pendingRequestsCount, "Appointments awaiting action")}
           </CardContent>
         </Card>
         <Card>
@@ -170,8 +240,7 @@ export default function StaffDashboardPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{outstandingPayments}</div>
-            <p className="text-xs text-muted-foreground">Invoices needing payment</p>
+            {renderCardContent(isLoadingOutstandingPayments, outstandingPaymentsError, outstandingPaymentsCount, "Invoices needing payment")}
           </CardContent>
         </Card>
          <Card>
@@ -180,8 +249,7 @@ export default function StaffDashboardPage() {
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{unreadMessages}</div>
-            <p className="text-xs text-muted-foreground">From patients</p>
+            {renderCardContent(isLoadingUnreadMessages, unreadMessagesError, unreadMessagesCount, "From patients")}
           </CardContent>
         </Card>
       </div>
@@ -218,7 +286,7 @@ export default function StaffDashboardPage() {
                   {todaysAppointments.map(apt => (
                     <TableRow key={apt.id}>
                       <TableCell>{apt.time}</TableCell>
-                      <TableCell>{apt.patientName || mockPatients.find(p=>p.id === apt.patientId)?.name || 'N/A'}</TableCell>
+                      <TableCell>{apt.patientName || 'N/A'}</TableCell>
                       <TableCell>{apt.type}</TableCell>
                       <TableCell>{apt.doctorName || 'N/A'}</TableCell>
                       <TableCell><Badge variant={apt.status === 'Confirmed' ? 'default' : 'secondary'}>{apt.status}</Badge></TableCell>
@@ -305,7 +373,6 @@ export default function StaffDashboardPage() {
             </div>
         </CardContent>
       </Card>
-
     </div>
   );
 }
