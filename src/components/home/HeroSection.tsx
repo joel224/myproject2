@@ -5,48 +5,61 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-// MuxPlayer and its dynamic import are removed for this diagnostic step.
-// import type MuxPlayerElement from '@mux/mux-player';
-// import dynamic from 'next/dynamic';
+import dynamic from 'next/dynamic';
+import type { MuxPlayerProps } from '@mux/mux-player-react';
+import { gsap } from 'gsap';
+import { useGSAP } from '@gsap/react';
 
-// const MuxPlayer = dynamic(() => import('@mux/mux-player-react').then(mod => mod.default), {
-//   ssr: false,
-//   loading: () => <div className="absolute top-0 left-0 w-full h-full bg-black/50" />,
-// });
+const MuxPlayer = dynamic<MuxPlayerProps>(
+  () => import('@mux/mux-player-react').then((mod) => mod.default),
+  { ssr: false, loading: () => <div className="absolute top-0 left-0 w-full h-full bg-black/50" /> }
+);
 
-const HERO_VIDEO_PLAYBACK_ID = "VA2YqY01Og02W3Gk01N5zB2NMYX00eF00zjcLJeBhtFksU"; // Kept for reference if we re-add
+const HERO_VIDEO_PLAYBACK_ID = "VA2YqY01Og02W3Gk01N5zB2NMYX00eF00zjcLJeBhtFksU";
 
 export function HeroSection() {
-  // const videoRef = useRef<MuxPlayerElement>(null);
-  // const playerContainerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null); // Changed to HTMLVideoElement for MuxPlayer type
+  const playerContainerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
+  const smileRef = useRef<HTMLSpanElement>(null); // Ref for the "Smile" span
   const [textVisible, setTextVisible] = useState(false);
-  // const [isPlayerReady, setIsPlayerReady] = useState(false); // Not needed without player
+  const [isPlayerReady, setIsPlayerReady] = useState(false);
 
-  // Parallax scroll handler (commented out as it's for the video player)
-  // const handleScroll = useCallback(() => {
-  //   if (playerContainerRef.current && sectionRef.current && isPlayerReady) {
-  //     const sectionTop = sectionRef.current.offsetTop;
-  //     const sectionHeight = sectionRef.current.offsetHeight;
-  //     const scrollPosition = window.scrollY;
-  //     const windowHeight = window.innerHeight;
-  //     const scrollMidpoint = sectionTop + sectionHeight / 2 - windowHeight / 2;
-  //     const parallaxOffset = (scrollPosition - scrollMidpoint) * 0.2;
-  //     // playerContainerRef.current.style.transform = `translateY(${parallaxOffset}px)`; // Parallax disabled for now
-  //   }
-  // }, [isPlayerReady]);
+  useGSAP(() => {
+    if (smileRef.current) {
+      gsap.to(smileRef.current, {
+        scale: 1.05, // Slightly larger
+        duration: 1.5, // Duration of one pulse (grow or shrink)
+        repeat: -1,    // Repeat indefinitely
+        yoyo: true,      // Reverse the animation on repeat (grow then shrink)
+        ease: "power1.inOut", // Smooth easing
+        repeatDelay: 0.3 // Small delay between pulse cycles
+      });
+    }
+  }, { scope: sectionRef }); // Scope to the section, will run when sectionRef.current is available
 
-  // Effect for parallax scroll (commented out)
-  // useEffect(() => {
-  //   if (isPlayerReady) {
-  //     window.addEventListener('scroll', handleScroll);
-  //     handleScroll(); 
-  //     return () => {
-  //       window.removeEventListener('scroll', handleScroll);
-  //     };
-  //   }
-  // }, [handleScroll, isPlayerReady]);
+  const handleScroll = useCallback(() => {
+    if (playerContainerRef.current && sectionRef.current && isPlayerReady) {
+      const sectionTop = sectionRef.current.offsetTop;
+      const sectionHeight = sectionRef.current.offsetHeight;
+      const scrollPosition = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const scrollMidpoint = sectionTop + sectionHeight / 2 - windowHeight / 2;
+      // const parallaxOffset = (scrollPosition - scrollMidpoint) * 0.2; // Parallax temporarily disabled
+      // playerContainerRef.current.style.transform = `translateY(${parallaxOffset}px)`;
+    }
+  }, [isPlayerReady]);
+
+  useEffect(() => {
+    if (isPlayerReady) {
+      window.addEventListener('scroll', handleScroll);
+      handleScroll(); 
+      return () => {
+        window.removeEventListener('scroll', handleScroll);
+      };
+    }
+  }, [handleScroll, isPlayerReady]);
 
   useEffect(() => {
     const observerOptions = { threshold: 0.1 };
@@ -70,14 +83,12 @@ export function HeroSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] flex items-center justify-center bg-neutral-800" // Added a fallback background
+      className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] flex items-center justify-center bg-neutral-800"
     >
-      {/* Video Container: Temporarily removed */}
-      {/*
       <div className={cn("absolute top-0 left-0 w-full h-[120%] z-0 pointer-events-none")}>
         <div ref={playerContainerRef} className="absolute -top-[10%] left-0 w-full h-full">
           <MuxPlayer
-            ref={videoRef as React.Ref<MuxPlayerElement>}
+            ref={videoRef as React.Ref<any>} // Using 'any' due to MuxPlayerElement type issues sometimes
             playbackId={HERO_VIDEO_PLAYBACK_ID}
             autoPlay
             loop
@@ -86,31 +97,28 @@ export function HeroSection() {
             noControls
             className="absolute top-0 left-0 w-full h-full object-cover"
             onLoadedMetadata={() => {
-              console.log("Hero MuxPlayer: Video metadata has been loaded.");
+              // console.log("Hero MuxPlayer: Video metadata has been loaded.");
               setIsPlayerReady(true);
             }}
             onPlayerReady={() => {
-              console.log("Hero MuxPlayer: Player is ready");
+              // console.log("Hero MuxPlayer: Player is ready");
               setIsPlayerReady(true); 
             }}
-            onPlay={() => console.log("Hero MuxPlayer: Play event triggered.")}
-            onPlaying={() => console.log("Hero MuxPlayer: Playing event triggered (playback has started).")}
-            onPause={() => console.log("Hero MuxPlayer: Pause event triggered.")}
-            onEnded={() => console.log("Hero MuxPlayer: Ended event triggered.")}
+            // onPlay={() => console.log("Hero MuxPlayer: Play event triggered.")}
+            // onPlaying={() => console.log("Hero MuxPlayer: Playing event triggered (playback has started).")}
+            // onPause={() => console.log("Hero MuxPlayer: Pause event triggered.")}
+            // onEnded={() => console.log("Hero MuxPlayer: Ended event triggered.")}
             onError={(evt) => {
-              console.error("Hero MuxPlayer raw error event:", evt);
+              console.error("Hero MuxPlayer Raw Error Event:", evt);
             }}
-            onLoadedData={() => console.log("Hero MuxPlayer: Video data has been loaded.")}
-            onCanPlay={() => console.log("Hero MuxPlayer: Browser reports it can play the video.")}
+            // onLoadedData={() => console.log("Hero MuxPlayer: Video data has been loaded.")}
+            // onCanPlay={() => console.log("Hero MuxPlayer: Browser reports it can play the video.")}
           />
         </div>
       </div>
-      */}
-
-      {/* Gradient Overlay - adjusted for no video */}
+      
       <div className="absolute inset-0 w-full h-full bg-gradient-to-b from-black/60 via-black/40 to-transparent z-[2]"></div>
 
-      {/* Text Content */}
       <div className="container relative px-4 md:px-6 z-[3] py-12 md:py-24 lg:py-32">
         <div className="flex flex-col items-center justify-center min-h-[calc(100vh-12rem)] text-center">
           <div
@@ -124,7 +132,7 @@ export function HeroSection() {
             )}
           >
             <h1 className="font-manrope text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-              Your Smile, Our Passion!
+              Your <span ref={smileRef} className="inline-block">Smile</span>, Our Passion!
             </h1>
             <p className="max-w-[600px] text-neutral-200 md:text-xl mx-auto">
               Experience exceptional dental care at Dr. Loji's Dental Hub. We're dedicated to creating healthy, beautiful smiles for life.
