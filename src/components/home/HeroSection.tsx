@@ -5,45 +5,59 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import MuxPlayer from '@mux/mux-player-react';
+import type MuxPlayerElement from '@mux/mux-player'; // Import the type
+import dynamic from 'next/dynamic';
+
+// Dynamically import MuxPlayer with SSR turned off
+const MuxPlayer = dynamic(() => import('@mux/mux-player-react').then(mod => mod.default), {
+  ssr: false,
+  loading: () => <div className="absolute top-0 left-0 w-full h-full bg-black" />, // Optional loading placeholder
+});
+
 
 const HERO_VIDEO_PLAYBACK_ID = "VA2YqY01Og02W3Gk01N5zB2NMYX00eF00zjcLJeBhtFksU";
 
 export function HeroSection() {
-  const videoRef = useRef<HTMLVideoElement | MuxPlayer>(null);
+  const videoRef = useRef<MuxPlayerElement>(null); // Use MuxPlayerElement type
   const textRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
   const [textVisible, setTextVisible] = useState(false);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
 
   const handleScroll = useCallback(() => {
-    if (videoRef.current && sectionRef.current) {
+    if (videoRef.current && sectionRef.current && isPlayerReady) {
       const sectionTop = sectionRef.current.offsetTop;
       const sectionHeight = sectionRef.current.offsetHeight;
       const scrollPosition = window.scrollY;
       const windowHeight = window.innerHeight;
 
-      // Calculate when the middle of the section is at the middle of the viewport
       const scrollMidpoint = sectionTop + sectionHeight / 2 - windowHeight / 2;
-      const parallaxOffset = (scrollPosition - scrollMidpoint) * 0.2; // Adjust 0.2 for more/less parallax
+      const parallaxOffset = (scrollPosition - scrollMidpoint) * 0.2; 
 
-      // Apply transform to the video player's direct parent for parallax
-      const playerElement = (videoRef.current as any)?.getInternalPlayer?.() || videoRef.current;
-      if (playerElement && playerElement.parentElement) {
-         playerElement.parentElement.style.transform = `translateY(${parallaxOffset}px)`;
+      const playerElement = videoRef.current;
+      if (playerElement && playerElement.shadowRoot) {
+        // MuxPlayer often encapsulates its video element in a shadow DOM
+        const videoHTMLElement = playerElement.shadowRoot.querySelector('video');
+        if (videoHTMLElement && videoHTMLElement.parentElement) {
+            // Apply transform to the video's direct parent or the player itself if no shadow DOM.
+             (playerElement as HTMLElement).style.transform = `translateY(${parallaxOffset}px)`;
+        }
+      } else if (playerElement) {
+         (playerElement as HTMLElement).style.transform = `translateY(${parallaxOffset}px)`;
       }
     }
-  }, []);
+  }, [isPlayerReady]);
 
 
   useEffect(() => {
-    window.addEventListener('scroll', handleScroll);
-    handleScroll(); 
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [handleScroll]);
+    if (isPlayerReady) { // Only attach scroll listener if player is ready
+      window.addEventListener('scroll', handleScroll);
+      handleScroll(); 
+      return () => {
+        window.removeEventListener('scroll', handleScroll);
+      };
+    }
+  }, [handleScroll, isPlayerReady]);
 
 
   useEffect(() => {
@@ -71,24 +85,31 @@ export function HeroSection() {
       className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] flex items-center justify-center"
     >
       <div className={cn("absolute top-0 left-0 w-full h-[120%] z-0 pointer-events-none")}>
-        {/* The MuxPlayer needs a wrapper that can be transformed for parallax */}
-        {/* The extra 20% height and slight negative top offset helps ensure no gaps during parallax */}
         <div className="absolute -top-[10%] left-0 w-full h-full">
           <MuxPlayer
-            ref={videoRef as React.Ref<MuxPlayer>}
+            ref={videoRef}
             playbackId={HERO_VIDEO_PLAYBACK_ID}
             autoPlay
             loop
             muted
-            playsInline
-            noControls
+            playsInline // Ensure this attribute is lowercase if it maps to HTML
+            noControls // Ensure this attribute is lowercase
             className="absolute top-0 left-0 w-full h-full object-cover"
-            onLoadedMetadata={() => setIsPlayerReady(true)}
-            onPlayerReady={() => {
+            onLoadedMetadata={() => {
+              console.log("Hero MuxPlayer: Video metadata has been loaded.");
               setIsPlayerReady(true);
-              console.log("Hero MuxPlayer: Player is ready");
             }}
+            onPlayerReady={() => {
+              console.log("Hero MuxPlayer: Player is ready");
+              setIsPlayerReady(true);
+            }}
+            onPlay={() => console.log("Hero MuxPlayer: Play event triggered.")}
+            onPlaying={() => console.log("Hero MuxPlayer: Playing event triggered (playback has started).")}
+            onPause={() => console.log("Hero MuxPlayer: Pause event triggered.")}
+            onEnded={() => console.log("Hero MuxPlayer: Ended event triggered.")}
             onError={(error) => console.error("Hero MuxPlayer Error:", error)}
+            onLoadedData={() => console.log("Hero MuxPlayer: Video data has been loaded.")}
+            onCanPlay={() => console.log("Hero MuxPlayer: Browser reports it can play the video.")}
           />
         </div>
       </div>
