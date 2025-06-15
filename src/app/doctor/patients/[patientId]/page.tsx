@@ -1,19 +1,18 @@
 
 'use client'
 
-import { mockPatients, mockAppointments, mockTreatmentPlans, mockProgressNotes, mockStaff } from '@/lib/mockData';
-import type { TreatmentPlan, ProgressNote, Procedure, Appointment } from '@/lib/types';
+import type { TreatmentPlan, ProgressNote, Procedure, Appointment, Patient, StaffMember } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CalendarIcon, FileTextIcon, ClipboardListIcon, Edit3, PlusCircle, Image as ImageIcon, Trash2, DollarSign, Clock } from 'lucide-react'; // Renamed Image to ImageIcon
-import Image from 'next/image'; // Next.js Image component
+import { CalendarIcon, FileTextIcon, ClipboardListIcon, Edit3, PlusCircle, Image as ImageIcon, Trash2, DollarSign, Clock, AlertTriangle, ArrowLeft } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
-import { useSearchParams, useParams } from 'next/navigation'; // Added useParams
-import { useEffect, useState, type FormEvent, ChangeEvent } from 'react';
+import { useSearchParams, useParams, useRouter } from 'next/navigation';
+import { useEffect, useState, type FormEvent, ChangeEvent, useCallback } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -22,44 +21,152 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
-// PatientPageProps interface is no longer needed here for params
-// interface PatientPageProps {
-//   params: { patientId: string };
-// }
-
-export default function PatientDetailPage() { // Removed params from props
-  const params = useParams(); // Use the hook
-  const patientId = params.patientId as string; // Get patientId from the hook's result
-
+export default function PatientDetailPage() {
+  const params = useParams();
+  const patientId = params.patientId as string;
   const searchParams = useSearchParams();
+  const router = useRouter();
   const routerAppointmentId = searchParams.get('appointment');
   const { toast } = useToast();
 
-  const [patient, setPatient] = useState<typeof mockPatients[0] | undefined>(undefined);
+  const [patient, setPatient] = useState<Patient | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [treatmentPlans, setTreatmentPlans] = useState<TreatmentPlan[]>([]);
   const [progressNotes, setProgressNotes] = useState<ProgressNote[]>([]);
+  const [staffList, setStaffList] = useState<StaffMember[]>([]);
   
   const [activeTab, setActiveTab] = useState('treatment-plans');
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Fetch patient data
+      const patientRes = await fetch(`/api/patients/${patientId}`);
+      if (!patientRes.ok) {
+        const errData = await patientRes.json();
+        throw new Error(errData.message || `Failed to fetch patient (status: ${patientRes.status})`);
+      }
+      const patientData: Patient = await patientRes.json();
+      setPatient(patientData);
+
+      // Fetch related data
+      const [appointmentsRes, treatmentPlansRes, progressNotesRes, staffRes] = await Promise.all([
+        fetch(`/api/appointments?patientId=${patientId}`),
+        fetch(`/api/patients/${patientId}/treatment-plans`),
+        fetch(`/api/patients/${patientId}/progress-notes`),
+        fetch(`/api/staff?role=Dentist&role=Hygienist`) // Fetch doctors/hygienists
+      ]);
+
+      if (!appointmentsRes.ok) throw new Error('Failed to fetch appointments');
+      setAppointments(await appointmentsRes.json());
+
+      if (!treatmentPlansRes.ok) throw new Error('Failed to fetch treatment plans');
+      setTreatmentPlans(await treatmentPlansRes.json());
+
+      if (!progressNotesRes.ok) throw new Error('Failed to fetch progress notes');
+      setProgressNotes(await progressNotesRes.json());
+
+      if (!staffRes.ok) throw new Error('Failed to fetch staff list');
+      setStaffList(await staffRes.json());
+
+
+      if (routerAppointmentId) {
+        setActiveTab('appointments');
+      }
+
+    } catch (err: any) {
+      console.error("Error fetching patient data:", err);
+      setError(err.message || "An unexpected error occurred.");
+      toast({ variant: "destructive", title: "Error", description: err.message });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [patientId, toast, routerAppointmentId]);
 
   useEffect(() => {
-    // Simulate fetching data
-    // In a real app, you'd fetch this data from your API
-    const foundPatient = mockPatients.find(p => p.id === patientId);
-    setPatient(foundPatient);
-    setAppointments(mockAppointments.filter(a => a.patientId === patientId));
-    setTreatmentPlans(mockTreatmentPlans.filter(tp => tp.patientId === patientId));
-    setProgressNotes(mockProgressNotes.filter(pn => pn.patientId === patientId));
-    setIsLoading(false);
+    fetchData();
+  }, [fetchData]);
 
-    if (routerAppointmentId) {
-      setActiveTab('appointments');
-      // You could add logic here to scroll to the specific appointment if the list is long
-      // console.log("Navigated with appointment ID:", routerAppointmentId);
+
+  // CRUD Handlers - Call fetchData() on success to refresh
+  const handleAddOrUpdateTreatmentPlan = async (planData: Omit<TreatmentPlan, 'id' | 'patientId'>, planIdToUpdate?: string) => {
+    const url = planIdToUpdate ? `/api/treatment-plans/${planIdToUpdate}` : `/api/patients/${patientId}/treatment-plans`;
+    const method = planIdToUpdate ? 'PUT' : 'POST';
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(planIdToUpdate ? planData : { ...planData, patientId }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || 'Failed to save treatment plan');
+      toast({ title: planIdToUpdate ? "Plan Updated" : "Plan Added", description: result.title });
+      fetchData(); // Refresh all data
+      return true;
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Error", description: err.message });
+      return false;
     }
-  }, [patientId, routerAppointmentId]);
+  };
+
+  const handleDeleteTreatmentPlan = async (planId: string) => {
+    try {
+      const response = await fetch(`/api/treatment-plans/${planId}`, { method: 'DELETE' });
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.message || 'Failed to delete treatment plan');
+      }
+      toast({ title: "Plan Deleted", variant: "default" });
+      fetchData(); // Refresh
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Error", description: err.message });
+    }
+  };
+
+  const handleAddOrUpdateProgressNote = async (noteData: Omit<ProgressNote, 'id' | 'patientId'>, noteIdToUpdate?: string) => {
+    const url = noteIdToUpdate ? `/api/progress-notes/${noteIdToUpdate}` : `/api/patients/${patientId}/progress-notes`;
+    const method = noteIdToUpdate ? 'PUT' : 'POST';
+
+    // Mock image upload for now if files are present
+    if (noteData.images && Array.isArray(noteData.images)) {
+        // In a real app, upload images first, then use returned URLs
+        // For mock, we'll assume URLs are already provided if they exist or handled by API directly
+    }
+    
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(noteIdToUpdate ? noteData : { ...noteData, patientId }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || 'Failed to save progress note');
+      toast({ title: noteIdToUpdate ? "Note Updated" : "Note Added", description: `Note from ${result.date}` });
+      fetchData(); // Refresh
+      return true;
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Error", description: err.message });
+      return false;
+    }
+  };
+
+  const handleDeleteProgressNote = async (noteId: string) => {
+     try {
+      const response = await fetch(`/api/progress-notes/${noteId}`, { method: 'DELETE' });
+      if (!response.ok) {
+         const result = await response.json();
+        throw new Error(result.message || 'Failed to delete progress note');
+      }
+      toast({ title: "Note Deleted", variant: "default"});
+      fetchData(); // Refresh
+    } catch (err: any)
+      {
+      toast({ variant: "destructive", title: "Error", description: err.message });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -70,44 +177,31 @@ export default function PatientDetailPage() { // Removed params from props
     );
   }
 
-  if (!patient) {
-    return <div className="container mx-auto p-4 text-center text-destructive">Patient not found.</div>;
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-destructive">
+        <AlertTriangle className="h-12 w-12 mb-2" />
+        <p className="text-lg">{error}</p>
+        <Button onClick={() => router.push('/doctor/patients')} className="mt-4">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Patient List
+        </Button>
+      </div>
+    );
   }
-
-  // Handlers for CRUD operations - to be implemented with API calls
-  const handleAddOrUpdateTreatmentPlan = async (planData: Omit<TreatmentPlan, 'id' | 'patientId'>, planIdToUpdate?: string) => {
-    // Mock implementation - replace with API call
-    toast({ title: planIdToUpdate ? "Plan Updated (Mock)" : "Plan Added (Mock)", description: "This is a mock action."});
-    if (planIdToUpdate) {
-        setTreatmentPlans(prev => prev.map(p => p.id === planIdToUpdate ? { ...p, ...planData, id: planIdToUpdate, patientId } : p));
-    } else {
-        const newPlan = { ...planData, id: `tp_mock_${Date.now()}`, patientId };
-        setTreatmentPlans(prev => [...prev, newPlan]);
-    }
-  };
-
-  const handleDeleteTreatmentPlan = async (planId: string) => {
-    // Mock implementation
-    toast({ title: "Plan Deleted (Mock)", variant: "destructive" });
-    setTreatmentPlans(prev => prev.filter(p => p.id !== planId));
-  };
-
-  const handleAddOrUpdateProgressNote = async (noteData: Omit<ProgressNote, 'id' | 'patientId' | 'images'> & { images?: ProgressNote['images'] }, noteIdToUpdate?: string) => {
-    // Mock implementation
-     toast({ title: noteIdToUpdate ? "Note Updated (Mock)" : "Note Added (Mock)", description: "This is a mock action."});
-    if (noteIdToUpdate) {
-        setProgressNotes(prev => prev.map(n => n.id === noteIdToUpdate ? { ...n, ...noteData, id: noteIdToUpdate, patientId, images: noteData.images || n.images } : n));
-    } else {
-        const newNote = { ...noteData, id: `pn_mock_${Date.now()}`, patientId, images: noteData.images || [] };
-        setProgressNotes(prev => [...prev, newNote]);
-    }
-  };
-
-  const handleDeleteProgressNote = async (noteId: string) => {
-    // Mock implementation
-    toast({ title: "Note Deleted (Mock)", variant: "destructive"});
-    setProgressNotes(prev => prev.filter(n => n.id !== noteId));
-  };
+  
+  if (!patient) {
+    // This case should ideally be covered by the error state if fetch fails.
+    // If fetch succeeds but patient is null (e.g., API returns 200 with null for some reason), handle it.
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <AlertTriangle className="h-12 w-12 mb-2 text-muted-foreground" />
+        <p className="text-lg text-muted-foreground">Patient data could not be loaded.</p>
+         <Button onClick={() => router.push('/doctor/patients')} className="mt-4">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Patient List
+        </Button>
+      </div>
+    );
+  }
 
 
   return (
@@ -115,7 +209,7 @@ export default function PatientDetailPage() { // Removed params from props
       <Card className="overflow-hidden shadow-lg">
         <CardHeader className="bg-muted/30 p-6 flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
           <Avatar className="h-20 w-20 border-2 border-primary">
-            <AvatarImage src={`https://placehold.co/100x100.png?text=${patient.name.charAt(0)}`} alt={patient.name} data-ai-hint="avatar person" />
+            <AvatarImage src={`https://placehold.co/100x100.png?text=${patient.name.charAt(0)}`} alt={patient.name} data-ai-hint="avatar person"/>
             <AvatarFallback className="text-2xl">{patient.name.charAt(0).toUpperCase()}</AvatarFallback>
           </Avatar>
           <div className="flex-grow">
@@ -147,7 +241,7 @@ export default function PatientDetailPage() { // Removed params from props
               <DialogAddEditTreatmentPlan 
                 patientId={patientId} 
                 onSave={handleAddOrUpdateTreatmentPlan}
-                doctors={mockStaff.filter(s => s.role === 'Dentist' || s.role === 'Hygienist')}
+                doctors={staffList} // Use fetched staff list
               />
             </CardHeader>
             <CardContent>
@@ -166,13 +260,13 @@ export default function PatientDetailPage() { // Removed params from props
                             plan={plan} 
                             patientId={patientId} 
                             onSave={handleAddOrUpdateTreatmentPlan}
-                            doctors={mockStaff.filter(s => s.role === 'Dentist' || s.role === 'Hygienist')}
+                            doctors={staffList} // Use fetched staff list
                            />
                           <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteTreatmentPlan(plan.id)}><Trash2 className="h-4 w-4"/></Button>
                         </div>
                       </div>
                       <CardDescription>
-                        Start: {new Date(plan.startDate).toLocaleDateString()} | By: Dr. {mockStaff.find(s => s.id === plan.doctorId)?.name || 'N/A'} | Cost: ${plan.totalCost?.toFixed(2) || 'N/A'}
+                        Start: {new Date(plan.startDate).toLocaleDateString()} | By: {staffList.find(s => s.id === plan.doctorId)?.name || 'N/A'} | Cost: ${plan.totalCost?.toFixed(2) || 'N/A'}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -202,7 +296,7 @@ export default function PatientDetailPage() { // Removed params from props
               <DialogAddEditProgressNote 
                 patientId={patientId} 
                 onSave={handleAddOrUpdateProgressNote}
-                doctors={mockStaff.filter(s => s.role === 'Dentist' || s.role === 'Hygienist')}
+                doctors={staffList} // Use fetched staff list
                 treatmentPlans={treatmentPlans}
               />
             </CardHeader>
@@ -222,13 +316,13 @@ export default function PatientDetailPage() { // Removed params from props
                             note={note} 
                             patientId={patientId} 
                             onSave={handleAddOrUpdateProgressNote}
-                            doctors={mockStaff.filter(s => s.role === 'Dentist' || s.role === 'Hygienist')}
+                            doctors={staffList} // Use fetched staff list
                             treatmentPlans={treatmentPlans}
                           />
                            <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteProgressNote(note.id)}><Trash2 className="h-4 w-4"/></Button>
                         </div>
                       </div>
-                     <CardDescription>By: Dr. {mockStaff.find(s => s.id === note.doctorId)?.name || 'Unknown'} {note.treatmentPlanId ? `(Plan: ${treatmentPlans.find(tp=>tp.id === note.treatmentPlanId)?.title || 'N/A'})` : ''}</CardDescription>
+                     <CardDescription>By: {staffList.find(s => s.id === note.doctorId)?.name || 'Unknown'} {note.treatmentPlanId ? `(Plan: ${treatmentPlans.find(tp=>tp.id === note.treatmentPlanId)?.title || 'N/A'})` : ''}</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <p className="text-sm whitespace-pre-wrap">{note.note}</p>
@@ -238,7 +332,7 @@ export default function PatientDetailPage() { // Removed params from props
                           <div className="flex space-x-2 overflow-x-auto pb-2">
                             {note.images.map(img => (
                               <div key={img.id} className="flex-shrink-0 group relative">
-                                <Image src={img.url} alt={img.caption || 'Progress image'} width={100} height={100} className="rounded object-cover border" data-ai-hint="medical x-ray"/>
+                                <Image src={img.url} alt={img.caption || 'Progress image'} width={100} height={100} className="rounded object-cover border" data-ai-hint="medical scan"/>
                                 {img.caption && <p className="text-xs text-center mt-1 max-w-[100px] truncate">{img.caption}</p>}
                               </div>
                             ))}
@@ -279,7 +373,7 @@ export default function PatientDetailPage() { // Removed params from props
                         <TableCell>{new Date(apt.date).toLocaleDateString()}</TableCell>
                         <TableCell>{apt.time}</TableCell>
                         <TableCell>{apt.type}</TableCell>
-                        <TableCell>{apt.doctorName || mockStaff.find(s => s.id === apt.doctorId)?.name}</TableCell>
+                        <TableCell>{apt.doctorName || staffList.find(s => s.id === apt.doctorId)?.name || 'N/A'}</TableCell>
                         <TableCell><Badge variant={apt.status === 'Completed' || apt.status === 'Confirmed' ? 'default' : 'secondary'}>{apt.status}</Badge></TableCell>
                         <TableCell className="text-right space-x-1">
                           {apt.status === 'Scheduled' && <Button variant="outline" size="sm">Confirm</Button>}
@@ -302,8 +396,8 @@ export default function PatientDetailPage() { // Removed params from props
 interface DialogAddEditTreatmentPlanProps {
   plan?: TreatmentPlan;
   patientId: string;
-  onSave: (data: Omit<TreatmentPlan, 'id' | 'patientId'>, planIdToUpdate?: string) => Promise<void>;
-  doctors: { id: string; name: string }[];
+  onSave: (data: Omit<TreatmentPlan, 'id' | 'patientId'>, planIdToUpdate?: string) => Promise<boolean>;
+  doctors: StaffMember[]; // Changed from simple object to StaffMember type
 }
 
 function DialogAddEditTreatmentPlan({ plan, patientId, onSave, doctors }: DialogAddEditTreatmentPlanProps) {
@@ -322,19 +416,20 @@ function DialogAddEditTreatmentPlan({ plan, patientId, onSave, doctors }: Dialog
   const [totalCostStr, setTotalCostStr] = useState(plan?.totalCost?.toString() || '');
 
   useEffect(() => {
-    if (plan) {
-      setTitle(plan.title);
-      setDoctorId(plan.doctorId);
-      setStartDate(plan.startDate);
-      setEndDate(plan.endDate || '');
-      setStatus(plan.status);
-      setProceduresStr(plan.procedures.map(p => `${p.name} - $${p.cost || 0}`).join('\n'));
-      setNotes(plan.notes || '');
-      setTotalCostStr(plan.totalCost?.toString() || '');
-    } else {
-      // Reset for new plan
-      setTitle(''); setDoctorId(''); setStartDate(new Date().toISOString().split('T')[0]); setEndDate('');
-      setStatus('Active'); setProceduresStr(''); setNotes(''); setTotalCostStr('');
+    if (isOpen) { // Reset form when dialog opens
+        if (plan) {
+            setTitle(plan.title);
+            setDoctorId(plan.doctorId);
+            setStartDate(plan.startDate);
+            setEndDate(plan.endDate || '');
+            setStatus(plan.status);
+            setProceduresStr(plan.procedures.map(p => `${p.name} - $${p.cost || 0}`).join('\n'));
+            setNotes(plan.notes || '');
+            setTotalCostStr(plan.totalCost?.toString() || '');
+        } else {
+            setTitle(''); setDoctorId(''); setStartDate(new Date().toISOString().split('T')[0]); setEndDate('');
+            setStatus('Active'); setProceduresStr(''); setNotes(''); setTotalCostStr('');
+        }
     }
   }, [plan, isOpen]);
 
@@ -348,8 +443,8 @@ function DialogAddEditTreatmentPlan({ plan, patientId, onSave, doctors }: Dialog
       .map((line, index) => {
         const parts = line.split(' - $');
         return {
-          id: `proc_temp_${index}`, // Temporary ID
-          name: parts[0]?.trim(),
+          id: plan?.procedures?.[index]?.id || `proc_temp_${Date.now()}_${index}`, // Keep existing ID if editing
+          name: parts[0]?.trim() || `Unnamed Procedure ${index + 1}`,
           cost: parseFloat(parts[1]) || 0,
         };
       });
@@ -361,14 +456,11 @@ function DialogAddEditTreatmentPlan({ plan, patientId, onSave, doctors }: Dialog
       title, doctorId, startDate, endDate: endDate || undefined, status, procedures, notes, totalCost: finalTotalCost,
     };
 
-    try {
-      await onSave(planData, plan?.id);
-      setIsOpen(false);
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: error.message });
-    } finally {
-      setIsSubmitting(false);
+    const success = await onSave(planData, plan?.id);
+    if (success) {
+        setIsOpen(false);
     }
+    setIsSubmitting(false);
   };
 
   return (
@@ -396,7 +488,7 @@ function DialogAddEditTreatmentPlan({ plan, patientId, onSave, doctors }: Dialog
               <Select value={doctorId} onValueChange={setDoctorId} required>
                 <SelectTrigger id="tp-doctor"><SelectValue placeholder="Select doctor" /></SelectTrigger>
                 <SelectContent>
-                  {doctors.map(doc => <SelectItem key={doc.id} value={doc.id}>{doc.name}</SelectItem>)}
+                  {doctors.map(doc => <SelectItem key={doc.id} value={doc.id}>{doc.name} ({doc.role})</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -453,9 +545,9 @@ function DialogAddEditTreatmentPlan({ plan, patientId, onSave, doctors }: Dialog
 interface DialogAddEditProgressNoteProps {
   note?: ProgressNote;
   patientId: string;
-  onSave: (data: Omit<ProgressNote, 'id' | 'patientId' | 'images'> & { images?: ProgressNote['images'] }, noteIdToUpdate?: string) => Promise<void>;
-  doctors: { id: string; name: string }[];
-  treatmentPlans: TreatmentPlan[]; // To link note to a plan
+  onSave: (data: Omit<ProgressNote, 'id' | 'patientId'>, noteIdToUpdate?: string) => Promise<boolean>;
+  doctors: StaffMember[];
+  treatmentPlans: TreatmentPlan[];
 }
 
 function DialogAddEditProgressNote({ note, patientId, onSave, doctors, treatmentPlans }: DialogAddEditProgressNoteProps) {
@@ -463,6 +555,7 @@ function DialogAddEditProgressNote({ note, patientId, onSave, doctors, treatment
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const [doctorId, setDoctorId] = useState(note?.doctorId || '');
   const [treatmentPlanId, setTreatmentPlanId] = useState(note?.treatmentPlanId || '');
@@ -470,79 +563,87 @@ function DialogAddEditProgressNote({ note, patientId, onSave, doctors, treatment
   const [time, setTime] = useState(note?.time || new Date().toTimeString().split(' ')[0].substring(0,5));
   const [noteContent, setNoteContent] = useState(note?.note || '');
   const [progressStage, setProgressStage] = useState(note?.progressStage || '');
-  const [currentImages, setCurrentImages] = useState<ProgressNote['images']>(note?.images || []);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  
+  const [existingImages, setExistingImages] = useState<ProgressNote['images']>([]);
+  const [newFiles, setNewFiles] = useState<File[]>([]);
 
 
   useEffect(() => {
-    if (note) {
-        setDoctorId(note.doctorId);
-        setTreatmentPlanId(note.treatmentPlanId || '');
-        setDate(note.date);
-        setTime(note.time);
-        setNoteContent(note.note);
-        setProgressStage(note.progressStage || '');
-        setCurrentImages(note.images || []);
-    } else {
-        // Reset for new note
-        setDoctorId(''); setTreatmentPlanId(''); setDate(new Date().toISOString().split('T')[0]);
-        setTime(new Date().toTimeString().split(' ')[0].substring(0,5));
-        setNoteContent(''); setProgressStage(''); setCurrentImages([]);
+    if (isOpen) { // Reset form state when dialog opens
+        if (note) {
+            setDoctorId(note.doctorId);
+            setTreatmentPlanId(note.treatmentPlanId || '');
+            setDate(note.date);
+            setTime(note.time);
+            setNoteContent(note.note);
+            setProgressStage(note.progressStage || '');
+            setExistingImages(note.images || []);
+        } else {
+            setDoctorId(''); setTreatmentPlanId(''); setDate(new Date().toISOString().split('T')[0]);
+            setTime(new Date().toTimeString().split(' ')[0].substring(0,5));
+            setNoteContent(''); setProgressStage(''); setExistingImages([]);
+        }
+        setNewFiles([]); // Clear any previously selected new files
+        if (imageInputRef.current) imageInputRef.current.value = ''; // Reset file input
     }
-    setSelectedFiles([]); // Always clear file input on open/re-render
   }, [note, isOpen]);
-
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setSelectedFiles(Array.from(e.target.files));
+      setNewFiles(Array.from(e.target.files));
     }
   };
 
-  const handleImageUploadAndPrepare = async (): Promise<ProgressNote['images']> => {
-    if (selectedFiles.length === 0) return currentImages; // No new files to upload
+  const removeExistingImage = (imageToRemove: ProgressNoteImage) => {
+    setExistingImages(prev => prev.filter(img => img.id !== imageToRemove.id));
+  };
 
-    const uploadedUrls: { id: string, url: string, caption?: string }[] = [];
-    // Mock upload
-    for (const file of selectedFiles) {
-        // In a real app, upload to GCS or similar and get URL
-        // For mock, create a blob URL or use a placeholder
-        const mockUrl = URL.createObjectURL(file); // Temporary URL for preview
-        uploadedUrls.push({ id: `img_mock_${Date.now()}_${file.name}`, url: mockUrl, caption: file.name });
-         toast({ title: "Mock Upload", description: `Simulated upload of ${file.name}` });
-    }
-    return [...currentImages, ...uploadedUrls];
+  const removeNewFile = (fileToRemove: File) => {
+    setNewFiles(prev => prev.filter(file => file !== fileToRemove));
+    if (imageInputRef.current) imageInputRef.current.value = '';
   };
   
-  const removeSelectedImage = (urlToRemove: string) => {
-    // This would remove from currentImages if it's an existing one,
-    // or from a temporary list of newly staged images if UI allows.
-    // For simplicity, if URL is a blob, revoke it.
-    if(urlToRemove.startsWith('blob:')) URL.revokeObjectURL(urlToRemove);
-    setCurrentImages(prev => prev.filter(img => img.url !== urlToRemove));
-  };
-
-
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    const finalImages = await handleImageUploadAndPrepare();
+    let uploadedImageUrls: ProgressNote['images'] = [...existingImages];
 
-    const noteData: Omit<ProgressNote, 'id' | 'patientId' | 'images'> & { images?: ProgressNote['images'] } = {
-      doctorId, treatmentPlanId: treatmentPlanId || undefined, date, time, note: noteContent, progressStage: progressStage || undefined,
-      images: finalImages,
+    if (newFiles.length > 0) {
+        // Simulate file upload: In a real app, upload files to GCS or similar, then get URLs
+        for (const file of newFiles) {
+            const formData = new FormData();
+            formData.append('imageFile', file);
+            try {
+                const res = await fetch('/api/upload/image', { method: 'POST', body: formData });
+                const uploadResult = await res.json();
+                if (!res.ok) throw new Error(uploadResult.message || `Upload failed for ${file.name}`);
+                uploadedImageUrls.push({ id: uploadResult.fileName, url: uploadResult.imageUrl, caption: file.name });
+            } catch (uploadError: any) {
+                toast({ variant: "destructive", title: "Image Upload Error", description: uploadError.message });
+                setIsSubmitting(false);
+                return;
+            }
+        }
+    }
+    
+    const noteData = {
+      doctorId, 
+      treatmentPlanId: treatmentPlanId || undefined, 
+      date, 
+      time, 
+      note: noteContent, 
+      progressStage: progressStage || undefined,
+      images: uploadedImageUrls,
     };
 
-    try {
-      await onSave(noteData, note?.id);
-      setIsOpen(false); // Close dialog on success
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: error.message });
-    } finally {
-      setIsSubmitting(false);
+    const success = await onSave(noteData, note?.id);
+    if (success) {
+        setIsOpen(false);
     }
+    setIsSubmitting(false);
   };
+
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -564,7 +665,7 @@ function DialogAddEditProgressNote({ note, patientId, onSave, doctors, treatment
                 <Label htmlFor="pn-doctor">Doctor</Label>
                 <Select value={doctorId} onValueChange={setDoctorId} required>
                     <SelectTrigger id="pn-doctor"><SelectValue placeholder="Select doctor" /></SelectTrigger>
-                    <SelectContent>{doctors.map(doc => <SelectItem key={doc.id} value={doc.id}>{doc.name}</SelectItem>)}</SelectContent>
+                    <SelectContent>{doctors.map(doc => <SelectItem key={doc.id} value={doc.id}>{doc.name} ({doc.role})</SelectItem>)}</SelectContent>
                 </Select>
             </div>
             <div className="space-y-1">
@@ -595,26 +696,27 @@ function DialogAddEditProgressNote({ note, patientId, onSave, doctors, treatment
                 <Label htmlFor="pn-stage">Progress Stage (Optional)</Label>
                 <Input id="pn-stage" value={progressStage} onChange={e => setProgressStage(e.target.value)} placeholder="e.g., Post-Op Day 3, Phase 1 Complete" />
             </div>
-            <div className="space-y-1">
-                <Label htmlFor="pn-images">Attach Images</Label>
-                <Input id="pn-images" type="file" multiple onChange={handleFileChange} accept="image/*" />
+            <div className="space-y-2">
+                <Label htmlFor="pn-images-upload">Attach New Images/PDFs</Label>
+                <Input id="pn-images-upload" type="file" multiple onChange={handleFileChange} accept="image/*,application/pdf" ref={imageInputRef} />
             </div>
-            {(currentImages.length > 0 || selectedFiles.length > 0) && (
-                <div className="col-span-4">
-                    <Label className="text-sm font-medium">Images:</Label>
-                    <div className="flex flex-wrap gap-2 mt-1 overflow-x-auto pb-2">
-                    {currentImages.map(img => (
-                        <div key={img.id || img.url} className="relative group w-20 h-20 flex-shrink-0">
-                        <Image src={img.url} alt={img.caption || 'Progress image'} width={80} height={80} className="rounded object-cover border" data-ai-hint="medical scan"/>
-                        <Button type="button" variant="destructive" size="icon" className="absolute -top-2 -right-2 h-5 w-5 opacity-0 group-hover:opacity-100 z-10" onClick={() => removeSelectedImage(img.url)}><Trash2 className="h-3 w-3"/></Button>
-                        </div>
-                    ))}
-                    {selectedFiles.map((file, index) => ( // Preview newly selected files
-                        <div key={index} className="relative group w-20 h-20 flex-shrink-0">
-                         <Image src={URL.createObjectURL(file)} alt={file.name} width={80} height={80} className="rounded object-cover border" data-ai-hint="medical scan"/>
-                         {/* Add a way to remove newly selected files before upload if needed */}
-                        </div>
-                    ))}
+            
+            { (existingImages.length > 0 || newFiles.length > 0) && (
+                <div>
+                    <Label className="text-sm font-medium">Attachments:</Label>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                        {existingImages.map(img => (
+                            <div key={img.id} className="relative group w-20 h-20">
+                                {img.url.toLowerCase().endsWith('.pdf') ? <FileText className="h-16 w-16 text-destructive"/> : <Image src={img.url} alt={img.caption || 'Existing image'} width={80} height={80} className="rounded object-cover border" data-ai-hint="medical scan"/>}
+                                <Button type="button" variant="destructive" size="icon" className="absolute -top-2 -right-2 h-5 w-5 opacity-0 group-hover:opacity-100" onClick={() => removeExistingImage(img)}><Trash2 className="h-3 w-3"/></Button>
+                            </div>
+                        ))}
+                        {newFiles.map((file, index) => (
+                            <div key={index} className="relative group w-20 h-20">
+                                {file.type.startsWith('image/') ? <Image src={URL.createObjectURL(file)} alt={file.name} width={80} height={80} className="rounded object-cover border" data-ai-hint="medical scan"/> : <FileText className="h-16 w-16 text-muted-foreground"/>}
+                                <Button type="button" variant="destructive" size="icon" className="absolute -top-2 -right-2 h-5 w-5 opacity-0 group-hover:opacity-100" onClick={() => removeNewFile(file)}><Trash2 className="h-3 w-3"/></Button>
+                            </div>
+                        ))}
                     </div>
                 </div>
             )}
@@ -631,4 +733,3 @@ function DialogAddEditProgressNote({ note, patientId, onSave, doctors, treatment
     </Dialog>
   )
 }
-
