@@ -25,9 +25,9 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'drive.google.com', // Added Google Drive for images
+        hostname: 'drive.google.com',
         port: '',
-        pathname: '/uc', // Specific path for user content / direct downloads
+        pathname: '/**', // Allow any path on Google Drive
       },
     ],
   },
