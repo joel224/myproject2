@@ -10,6 +10,7 @@ import type { MuxPlayerProps } from '@mux/mux-player-react';
 import { gsap } from 'gsap';
 import { useGSAP } from '@gsap/react';
 
+// Dynamically import MuxPlayer with SSR disabled to prevent hydration issues
 const MuxPlayer = dynamic<MuxPlayerProps>(
   () => import('@mux/mux-player-react').then((mod) => mod.default),
   { ssr: false, loading: () => <div className="absolute top-0 left-0 w-full h-full bg-black/50" /> }
@@ -18,7 +19,7 @@ const MuxPlayer = dynamic<MuxPlayerProps>(
 const HERO_VIDEO_PLAYBACK_ID = "VA2YqY01Og02W3Gk01N5zB2NMYX00eF00zjcLJeBhtFksU";
 
 export function HeroSection() {
-  const videoRef = useRef<HTMLVideoElement>(null); // Changed to HTMLVideoElement for MuxPlayer type
+  const videoRef = useRef<HTMLVideoElement>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -26,29 +27,32 @@ export function HeroSection() {
   const [textVisible, setTextVisible] = useState(false);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
 
+
   useGSAP(() => {
     if (smileRef.current) {
       gsap.to(smileRef.current, {
-        scale: 1.05, // Slightly larger
-        duration: 1.5, // Duration of one pulse (grow or shrink)
-        repeat: -1,    // Repeat indefinitely
-        yoyo: true,      // Reverse the animation on repeat (grow then shrink)
-        ease: "power1.inOut", // Smooth easing
-        repeatDelay: 0.3 // Small delay between pulse cycles
+        scale: 1.05,
+        duration: 1.5,
+        repeat: -1,
+        yoyo: true,
+        ease: "power1.inOut",
+        repeatDelay: 0.3
       });
     }
-  }, { scope: sectionRef }); // Scope to the section, will run when sectionRef.current is available
+  }, { scope: sectionRef });
+
 
   const handleScroll = useCallback(() => {
-    if (playerContainerRef.current && sectionRef.current && isPlayerReady) {
-      const sectionTop = sectionRef.current.offsetTop;
-      const sectionHeight = sectionRef.current.offsetHeight;
-      const scrollPosition = window.scrollY;
-      const windowHeight = window.innerHeight;
-      const scrollMidpoint = sectionTop + sectionHeight / 2 - windowHeight / 2;
-      // const parallaxOffset = (scrollPosition - scrollMidpoint) * 0.2; // Parallax temporarily disabled
-      // playerContainerRef.current.style.transform = `translateY(${parallaxOffset}px)`;
-    }
+    // Parallax effect temporarily disabled to debug potential MuxPlayer issues
+    // if (playerContainerRef.current && sectionRef.current && isPlayerReady) {
+    //   const sectionTop = sectionRef.current.offsetTop;
+    //   const sectionHeight = sectionRef.current.offsetHeight;
+    //   const scrollPosition = window.scrollY;
+    //   const windowHeight = window.innerHeight;
+    //   const scrollMidpoint = sectionTop + sectionHeight / 2 - windowHeight / 2;
+    //   const parallaxOffset = (scrollPosition - scrollMidpoint) * 0.2;
+    //   playerContainerRef.current.style.transform = `translateY(${parallaxOffset}px)`;
+    // }
   }, [isPlayerReady]);
 
   useEffect(() => {
@@ -85,10 +89,15 @@ export function HeroSection() {
       ref={sectionRef}
       className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] flex items-center justify-center bg-neutral-800"
     >
+      {/* Fallback background for when MuxPlayer is not loaded or removed for testing */}
+      {/* <div className="absolute top-0 left-0 w-full h-full bg-neutral-900 z-0"></div> */}
+
+      {/* Temporarily removed MuxPlayer for debugging */}
       <div className={cn("absolute top-0 left-0 w-full h-[120%] z-0 pointer-events-none")}>
-        <div ref={playerContainerRef} className="absolute -top-[10%] left-0 w-full h-full">
-          <MuxPlayer
-            ref={videoRef as React.Ref<any>} // Using 'any' due to MuxPlayerElement type issues sometimes
+         <div ref={playerContainerRef} className="absolute -top-[10%] left-0 w-full h-full">
+           <MuxPlayer
+            // Using 'any' for ref due to potential type mismatches with specific MuxPlayerElement
+            ref={videoRef as React.Ref<any>} 
             playbackId={HERO_VIDEO_PLAYBACK_ID}
             autoPlay
             loop
@@ -96,23 +105,11 @@ export function HeroSection() {
             playsInline
             noControls
             className="absolute top-0 left-0 w-full h-full object-cover"
-            onLoadedMetadata={() => {
-              // console.log("Hero MuxPlayer: Video metadata has been loaded.");
-              setIsPlayerReady(true);
-            }}
-            onPlayerReady={() => {
-              // console.log("Hero MuxPlayer: Player is ready");
-              setIsPlayerReady(true); 
-            }}
-            // onPlay={() => console.log("Hero MuxPlayer: Play event triggered.")}
-            // onPlaying={() => console.log("Hero MuxPlayer: Playing event triggered (playback has started).")}
-            // onPause={() => console.log("Hero MuxPlayer: Pause event triggered.")}
-            // onEnded={() => console.log("Hero MuxPlayer: Ended event triggered.")}
+            onLoadedMetadata={() => setIsPlayerReady(true)}
+            onPlayerReady={() => setIsPlayerReady(true)}
             onError={(evt) => {
               console.error("Hero MuxPlayer Raw Error Event:", evt);
             }}
-            // onLoadedData={() => console.log("Hero MuxPlayer: Video data has been loaded.")}
-            // onCanPlay={() => console.log("Hero MuxPlayer: Browser reports it can play the video.")}
           />
         </div>
       </div>
