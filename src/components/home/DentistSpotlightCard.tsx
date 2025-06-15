@@ -110,7 +110,7 @@ export function DentistSpotlightCard() {
         >
           <CardHeader className="p-0">
             <Image
-              src="https://placehold.co/600x400.png"
+              src="https://drive.google.com/uc?id=18aD-AVHaGk9vR5OhDtS15IwSVPwDGmUF"
               alt="Dr. Loji"
               width={600}
               height={400}

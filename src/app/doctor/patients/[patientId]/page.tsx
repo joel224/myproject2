@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CalendarIcon, FileTextIcon, ClipboardListIcon, Edit3, PlusCircle, Image as ImageIcon, Trash2, DollarSign, Clock } from 'lucide-react'; // Renamed Image to ImageIcon
 import Image from 'next/image'; // Next.js Image component
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useParams } from 'next/navigation'; // Added useParams
 import { useEffect, useState, type FormEvent, ChangeEvent } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -22,11 +22,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
-interface PatientPageProps {
-  params: { patientId: string };
-}
+// PatientPageProps interface is no longer needed here for params
+// interface PatientPageProps {
+//   params: { patientId: string };
+// }
 
-export default function PatientDetailPage({ params: { patientId } }: PatientPageProps) {
+export default function PatientDetailPage() { // Removed params from props
+  const params = useParams(); // Use the hook
+  const patientId = params.patientId as string; // Get patientId from the hook's result
+
   const searchParams = useSearchParams();
   const routerAppointmentId = searchParams.get('appointment');
   const { toast } = useToast();
