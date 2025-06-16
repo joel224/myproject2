@@ -73,7 +73,6 @@ export default function DoctorDashboardPage() {
         .slice(0, 5);
       setUpcomingAppointments(upcomingForTable);
       
-      // For summary card: count all upcoming (not completed/cancelled) from today onwards
       const allUpcomingSummary = data.filter(apt => {
          const aptDate = new Date(apt.date);
          aptDate.setHours(0,0,0,0);
@@ -96,16 +95,20 @@ export default function DoctorDashboardPage() {
     setIsLoadingPendingTasks(true);
     setPendingTasksError(null);
     try {
-      const response = await fetch(`/api/appointments?doctorId=${MOCK_DOCTOR_ID}&status=Scheduled`);
+      // Fetch all appointments for the doctor, then filter by status 'Scheduled'
+      const response = await fetch(`/api/appointments?doctorId=${MOCK_DOCTOR_ID}`);
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch pending tasks');
+        throw new Error(errorData.message || 'Failed to fetch pending tasks (all appointments)');
       }
-      const data: Appointment[] = await response.json();
-      setPendingTasksCount(data.length);
+      const allDoctorAppointments: Appointment[] = await response.json();
+      const scheduledAppointments = allDoctorAppointments.filter(apt => apt.status === 'Scheduled');
+      setPendingTasksCount(scheduledAppointments.length);
+
     } catch (error: any) {
-      setPendingTasksError(error.message || "Could not load pending tasks.");
-      toast({ variant: "destructive", title: "Error", description: error.message || "Could not load pending tasks count." });
+      const errorMsg = error.message || "Could not load pending tasks count.";
+      setPendingTasksError(errorMsg);
+      toast({ variant: "destructive", title: "Error", description: errorMsg });
     } finally {
       setIsLoadingPendingTasks(false);
     }
@@ -195,9 +198,9 @@ export default function DoctorDashboardPage() {
               <TableBody>
                 {upcomingAppointments.map(apt => (
                   <TableRow key={apt.id}>
-                    <TableCell>{apt.patientName || 'N/A'}</TableCell>
-                    <TableCell>{new Date(apt.date).toLocaleDateString()} - {apt.time}</TableCell>
-                    <TableCell>{apt.type}</TableCell>
+                    <TableCell className="font-medium whitespace-nowrap">{apt.patientName || 'N/A'}</TableCell>
+                    <TableCell className="whitespace-nowrap">{new Date(apt.date).toLocaleDateString()} - {apt.time}</TableCell>
+                    <TableCell className="whitespace-nowrap">{apt.type}</TableCell>
                     <TableCell><Badge variant={apt.status === 'Confirmed' ? 'default' : 'secondary'}>{apt.status}</Badge></TableCell>
                     <TableCell className="text-right">
                       <Link href={`/doctor/patients/${apt.patientId}?appointment=${apt.id}`}>
