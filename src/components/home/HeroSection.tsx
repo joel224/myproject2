@@ -7,8 +7,6 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import type { MuxPlayerProps } from '@mux/mux-player-react';
-import { gsap } from 'gsap';
-import { useGSAP } from '@gsap/react';
 
 // Dynamically import MuxPlayer with SSR disabled to prevent hydration issues
 const MuxPlayer = dynamic<MuxPlayerProps>(
@@ -23,47 +21,32 @@ export function HeroSection() {
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
-  const smileRef = useRef<HTMLSpanElement>(null); // Ref for the "Smile" span
   const [textVisible, setTextVisible] = useState(false);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
 
 
-  useGSAP(() => {
-    if (smileRef.current) {
-      gsap.to(smileRef.current, {
-        scale: 1.05,
-        duration: 1.5,
-        repeat: -1,
-        yoyo: true,
-        ease: "power1.inOut",
-        repeatDelay: 0.3
-      });
-    }
-  }, { scope: sectionRef });
+  // const handleScroll = useCallback(() => {
+  //   // Parallax effect temporarily disabled
+  //   // if (playerContainerRef.current && sectionRef.current && isPlayerReady) {
+  //   //   const sectionTop = sectionRef.current.offsetTop;
+  //   //   const sectionHeight = sectionRef.current.offsetHeight;
+  //   //   const scrollPosition = window.scrollY;
+  //   //   const windowHeight = window.innerHeight;
+  //   //   const scrollMidpoint = sectionTop + sectionHeight / 2 - windowHeight / 2;
+  //   //   const parallaxOffset = (scrollPosition - scrollMidpoint) * 0.2;
+  //   //   playerContainerRef.current.style.transform = `translateY(${parallaxOffset}px)`;
+  //   // }
+  // }, [isPlayerReady]);
 
-
-  const handleScroll = useCallback(() => {
-    // Parallax effect temporarily disabled to debug potential MuxPlayer issues
-    // if (playerContainerRef.current && sectionRef.current && isPlayerReady) {
-    //   const sectionTop = sectionRef.current.offsetTop;
-    //   const sectionHeight = sectionRef.current.offsetHeight;
-    //   const scrollPosition = window.scrollY;
-    //   const windowHeight = window.innerHeight;
-    //   const scrollMidpoint = sectionTop + sectionHeight / 2 - windowHeight / 2;
-    //   const parallaxOffset = (scrollPosition - scrollMidpoint) * 0.2;
-    //   playerContainerRef.current.style.transform = `translateY(${parallaxOffset}px)`;
-    // }
-  }, [isPlayerReady]);
-
-  useEffect(() => {
-    if (isPlayerReady) {
-      window.addEventListener('scroll', handleScroll);
-      handleScroll(); 
-      return () => {
-        window.removeEventListener('scroll', handleScroll);
-      };
-    }
-  }, [handleScroll, isPlayerReady]);
+  // useEffect(() => {
+  //   if (isPlayerReady) {
+  //     window.addEventListener('scroll', handleScroll);
+  //     handleScroll(); 
+  //     return () => {
+  //       window.removeEventListener('scroll', handleScroll);
+  //     };
+  //   }
+  // }, [handleScroll, isPlayerReady]);
 
   useEffect(() => {
     const observerOptions = { threshold: 0.1 };
@@ -89,14 +72,9 @@ export function HeroSection() {
       ref={sectionRef}
       className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] flex items-center justify-center bg-neutral-800"
     >
-      {/* Fallback background for when MuxPlayer is not loaded or removed for testing */}
-      {/* <div className="absolute top-0 left-0 w-full h-full bg-neutral-900 z-0"></div> */}
-
-      {/* Temporarily removed MuxPlayer for debugging */}
       <div className={cn("absolute top-0 left-0 w-full h-[120%] z-0 pointer-events-none")}>
          <div ref={playerContainerRef} className="absolute -top-[10%] left-0 w-full h-full">
            <MuxPlayer
-            // Using 'any' for ref due to potential type mismatches with specific MuxPlayerElement
             ref={videoRef as React.Ref<any>} 
             playbackId={HERO_VIDEO_PLAYBACK_ID}
             autoPlay
@@ -129,7 +107,7 @@ export function HeroSection() {
             )}
           >
             <h1 className="font-manrope text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-              Your <span ref={smileRef} className="inline-block">Smile</span>, Our Passion!
+              Your <span className="inline-block scale-[1.02] [text-shadow:0_0_6px_hsl(var(--primary)/0.6)]">Smile</span>, Our Passion!
             </h1>
             <p className="max-w-[600px] text-neutral-200 md:text-xl mx-auto">
               Experience exceptional dental care at Dr. Loji's Dental Hub. We're dedicated to creating healthy, beautiful smiles for life.
