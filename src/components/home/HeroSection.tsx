@@ -22,37 +22,38 @@ export function HeroSection() {
   const textRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
   const [textVisible, setTextVisible] = useState(false);
-  const [isPlayerReady, setIsPlayerReady] = useState(false); // Added state for player readiness
+  const [isPlayerReady, setIsPlayerReady] = useState(false);
 
 
   const handleScroll = useCallback(() => {
-    if (playerContainerRef.current && sectionRef.current) {
+    if (playerContainerRef.current && sectionRef.current && sectionRef.current.clientHeight > 0) {
       const sectionRect = sectionRef.current.getBoundingClientRect();
-      const scrollY = window.scrollY; // Use window.scrollY for consistency
+      const scrollY = window.scrollY;
       const windowHeight = window.innerHeight;
 
-      // Calculate the scroll position relative to the center of the section
-      // The parallax offset is based on how far the viewport center is from the section center
+      // Initial shift to center the 150% tall video container within the 100% section height.
+      // This means shifting it up by 25% of the section's actual clientHeight.
+      const initialCenteringShift = -(sectionRef.current.clientHeight * 0.25);
+
       const sectionCenterY = sectionRect.top + sectionRect.height / 2 + scrollY;
       const viewportCenterY = scrollY + windowHeight / 2;
-      const parallaxOffset = (viewportCenterY - sectionCenterY) * 0.2; // Adjust 0.2 to control intensity
+      const parallaxDelta = (viewportCenterY - sectionCenterY) * 0.2; // Parallax movement amount
 
-
-      // Apply transform to the player container
-      // The -50% for translateY is to initially center the video vertically if its height matches the section
-      // Then add the parallaxOffset.
-      playerContainerRef.current.style.transform = `translateY(calc(-0% + ${parallaxOffset}px))`;
+      playerContainerRef.current.style.transform = `translateY(${initialCenteringShift + parallaxDelta}px)`;
     }
   }, []);
 
 
   useEffect(() => {
-    window.addEventListener('scroll', handleScroll);
-    handleScroll(); // Initial call
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    // Call handleScroll after a short delay to allow layout to stabilize, especially if isPlayerReady causes re-renders
+    const timer = setTimeout(() => handleScroll(), 100); 
+
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      clearTimeout(timer);
     };
-  }, [handleScroll]);
+  }, [handleScroll, isPlayerReady]); // Rerun on isPlayerReady if it affects layout
 
   useEffect(() => {
     const observerOptions = { threshold: 0.1 };
@@ -77,7 +78,7 @@ export function HeroSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-neutral-900"
+      className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-neutral-800"
     >
       <div
         ref={playerContainerRef}
@@ -93,8 +94,14 @@ export function HeroSection() {
             playsInline
             noControls
             className="absolute top-0 left-0 w-full h-full object-cover"
-            onLoadedMetadata={() => setIsPlayerReady(true)}
-            onPlayerReady={() => setIsPlayerReady(true)}
+            onLoadedMetadata={() => {
+              setIsPlayerReady(true);
+              handleScroll(); // Recalculate scroll on metadata load
+            }}
+            onPlayerReady={() => {
+              setIsPlayerReady(true);
+              handleScroll(); // Recalculate scroll on player ready
+            }}
             onError={(evt) => {
               console.error("Hero MuxPlayer Raw Error Event:", evt);
             }}
