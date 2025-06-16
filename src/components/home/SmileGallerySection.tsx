@@ -45,122 +45,169 @@ const gallerySlidesContent = [
 export function SmileGallerySection() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const firstSlideParentRef = useRef<HTMLDivElement>(null); // Ref for the first slide's container
+  const firstSlideRef = useRef<HTMLDivElement>(null); // Ref for the first slide
 
-  const [isSectionVisible, setIsSectionVisible] = useState(false); // For overall section fade-in
-  const [isFirstSlideIntersecting, setIsFirstSlideIntersecting] = useState(false); // For heading animation
+  const [isSectionVisible, setIsSectionVisible] = useState(false);
+  const [isFirstSlideVisible, setIsFirstSlideVisible] = useState(false); // For the first slide's content animation
 
-  // Refs for individual slide content fade-in (excluding the special first slide heading)
+  // Refs for individual slide content wrappers for staggered animation
   const slideContentRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const [visibleSlideContents, setVisibleSlideContents] = useState<boolean[]>(new Array(gallerySlidesContent.length).fill(false));
+  const [visibleSlideContents, setVisibleSlideContents] = useState<boolean[]>(
+    new Array(gallerySlidesContent.length).fill(false)
+  );
+
 
   useEffect(() => {
-    const sectionObserver = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => { if (entry.isIntersecting) { setIsSectionVisible(true); sectionObserver.unobserve(entry.target); } });
-    }, { threshold: 0.05 }); // Trigger when a tiny bit is visible
+    const sectionObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsSectionVisible(true);
+            sectionObserver.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.05 } // Trigger when 5% of the section is visible
+    );
 
     const currentSectionRef = sectionRef.current;
-    if (currentSectionRef) sectionObserver.observe(currentSectionRef);
+    if (currentSectionRef) {
+      sectionObserver.observe(currentSectionRef);
+    }
 
-    // Observer for the first slide parent to trigger heading animation
+    // Observer for the first slide itself (the one with "Transform Your Smile")
     const firstSlideObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          setIsFirstSlideIntersecting(entry.isIntersecting);
+          setIsFirstSlideVisible(entry.isIntersecting);
         });
       },
-      { threshold: 0.1 } // Trigger when 10% of the first slide is visible
+      { threshold: 0.1 } // Adjust threshold as needed for when the "peeking" animation should start
     );
 
-    const currentFirstSlideParentRef = firstSlideParentRef.current;
-    if (currentFirstSlideParentRef) {
-      firstSlideObserver.observe(currentFirstSlideParentRef);
+    const currentFirstSlideRef = firstSlideRef.current;
+    if (currentFirstSlideRef) {
+      firstSlideObserver.observe(currentFirstSlideRef);
     }
 
     // Observer for individual slide contents (images, CTA)
-    const slideContentObserver = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        const index = slideContentRefs.current.indexOf(entry.target as HTMLDivElement);
-        if (index !== -1 && entry.isIntersecting) {
-          setVisibleSlideContents((prev) => { const newVisible = [...prev]; newVisible[index] = true; return newVisible; });
-          // Optionally unobserve if you want the fade-in to happen only once per slide content
-          // slideContentObserver.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.5 }); // Trigger when 50% of the slide content area is visible
+    const slideContentObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const index = slideContentRefs.current.indexOf(entry.target as HTMLDivElement);
+          if (index !== -1 && entry.isIntersecting) {
+            setVisibleSlideContents((prev) => {
+              const newVisible = [...prev];
+              newVisible[index] = true;
+              return newVisible;
+            });
+            // Optionally unobserve after first intersection if animation is once-off
+            // slideContentObserver.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.5 } // Trigger when 50% of the slide content is visible
+    );
 
-    slideContentRefs.current.forEach((slideEl) => { if (slideEl) slideContentObserver.observe(slideEl); });
+    slideContentRefs.current.forEach((slideEl) => {
+      if (slideEl) {
+        slideContentObserver.observe(slideEl);
+      }
+    });
+
 
     return () => {
-      if (currentSectionRef) sectionObserver.unobserve(currentSectionRef);
-      if (currentFirstSlideParentRef) firstSlideObserver.unobserve(currentFirstSlideParentRef);
-      slideContentRefs.current.forEach((slideEl) => { if (slideEl) slideContentObserver.unobserve(slideEl); });
+      if (currentSectionRef) {
+        sectionObserver.unobserve(currentSectionRef);
+      }
+      if (currentFirstSlideRef) {
+        firstSlideObserver.unobserve(currentFirstSlideRef);
+      }
+      slideContentRefs.current.forEach((slideEl) => {
+        if (slideEl) {
+          slideContentObserver.unobserve(slideEl);
+        }
+      });
     };
-  }, []);
+  }, []); // Empty dependency array to run once on mount
 
   const numSlides = gallerySlidesContent.length;
+
+  // CSS variable for the number of slides to control scroll container height
+  const scrollContainerStyle = {
+    '--num-slides': numSlides,
+    height: `calc(var(--num-slides) * 100vh)`, // Dynamic height based on number of slides
+  } as React.CSSProperties;
 
   return (
     <section
       id="gallery"
       ref={sectionRef}
       className={cn(
-        "relative w-full bg-background z-20", // Ensures it scrolls over the sticky dentist card
-        "initial-fade-in-up", // For the whole section container
+        "relative w-full bg-background z-20", // Ensure it has a background to cover the sticky section
+        "initial-fade-in-up", // General fade-in for the whole section
         isSectionVisible && "is-visible"
       )}
     >
       <div
         ref={scrollContainerRef}
         className="relative snap-y snap-mandatory overflow-y-scroll"
-        style={{ height: `${numSlides * 100}vh` }}
+        style={scrollContainerStyle} // Use the dynamic style here
       >
         {gallerySlidesContent.map((slide, index) => (
           <div
             key={index}
-            ref={index === 0 ? firstSlideParentRef : null} // Only the first slide gets this special ref
+            ref={index === 0 ? firstSlideRef : null} // Attach ref to the first slide
             className={cn(
-              "h-screen w-full snap-start flex flex-col items-center justify-center p-4 md:p-8 relative text-center"
-              // Fade-in for the slide's *overall container* if needed, but content fade is more granular
+              "h-screen w-full snap-start flex flex-col items-center relative text-center"
             )}
           >
-            {/* Div to observe for content fade-in (excluding special heading animation) */}
+            {/* This inner div is for the content of each slide and its animation */}
             <div
               ref={(el) => (slideContentRefs.current[index] = el)}
               className={cn(
-                "w-full h-full flex flex-col items-center justify-center",
-                // Apply fade-in to content wrapper, not the snapping slide div itself
-                slide.type !== 'intro' && "initial-fade-in-up", // Don't apply to intro's wrapper as heading has its own
-                slide.type !== 'intro' && visibleSlideContents[index] && "is-visible"
+                "w-full h-full flex flex-col items-center",
+                // Apply justify-between for the intro slide to push text up and arrow down
+                slide.type === 'intro'
+                  ? 'justify-between py-16 md:py-20'
+                  : 'justify-center', // Center content for image/CTA slides
+                // Animation for non-intro slides, or intro slide if it's not the *very first* content (though here it is)
+                (slide.type !== 'intro' || index !== 0) && "initial-fade-in-up",
+                visibleSlideContents[index] && (slide.type !== 'intro' || index !== 0) && "is-visible"
               )}
-              style={slide.type !== 'intro' ? { transitionDelay: visibleSlideContents[index] ? `150ms` : '0ms' } : {}}
+              style={(slide.type !== 'intro' || index !== 0) ? { transitionDelay: visibleSlideContents[index] ? `150ms` : '0ms' } : {}}
             >
               {slide.type === 'intro' && (
-                <div className="max-w-2xl">
-                  <h2
-                    className={cn(
-                      "text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-4 text-primary transition-all duration-700 ease-out",
-                      isFirstSlideIntersecting ? "translate-y-0 opacity-100" : "-translate-y-[80px] opacity-0"
-                    )}
-                  >
-                    {slide.title}
-                  </h2>
-                  <p className={cn(
-                      "text-muted-foreground md:text-xl lg:text-2xl mb-8 transition-opacity duration-700 ease-out",
-                      isFirstSlideIntersecting ? "opacity-100" : "opacity-0"
-                    )}
-                    style={{ transitionDelay: isFirstSlideIntersecting ? `150ms` : '0ms' }}
-                  >
-                    {slide.description}
-                  </p>
+                <>
+                  {/* Text block for intro: title and description */}
+                  <div className="max-w-2xl">
+                    <h2
+                      className={cn(
+                        "text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-4 text-primary transition-all duration-700 ease-out",
+                        isFirstSlideVisible ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0" // Slide down and fade in
+                      )}
+                    >
+                      {slide.title}
+                    </h2>
+                    <p
+                      className={cn(
+                        "text-muted-foreground md:text-xl lg:text-2xl transition-opacity duration-700 ease-out",
+                        isFirstSlideVisible ? "opacity-100" : "opacity-0"
+                      )}
+                      style={{ transitionDelay: isFirstSlideVisible ? `150ms` : '0ms' }}
+                    >
+                      {slide.description}
+                    </p>
+                  </div>
+                  {/* Arrow icon, pushed to the bottom by justify-between */}
                   <ArrowDownCircle
                     className={cn(
-                      "h-12 w-12 text-primary mx-auto animate-bounce transition-opacity duration-700 ease-out",
-                      isFirstSlideIntersecting ? "opacity-100" : "opacity-0"
+                      "h-10 w-10 sm:h-12 sm:w-12 text-primary mx-auto animate-bounce transition-opacity duration-700 ease-out",
+                      isFirstSlideVisible ? "opacity-100" : "opacity-0"
                     )}
-                    style={{ transitionDelay: isFirstSlideIntersecting ? `300ms` : '0ms' }}
+                    style={{ transitionDelay: isFirstSlideVisible ? `300ms` : '0ms' }}
                   />
-                </div>
+                </>
               )}
               {slide.type === 'image' && (
                 <>
@@ -171,7 +218,7 @@ export function SmileGallerySection() {
                       fill
                       style={{ objectFit: 'cover' }}
                       data-ai-hint={slide.dataAiHint}
-                      priority={index <= 2} // Prioritize loading for the first few images
+                      priority={index <= 2} // Prioritize loading for early slides
                     />
                   </div>
                   {slide.caption && (
