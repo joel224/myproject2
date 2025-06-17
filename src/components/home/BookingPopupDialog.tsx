@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Phone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
+import Image from 'next/image'; // Import next/image
 
 interface BookingPopupDialogProps {
   isOpen: boolean;
@@ -25,7 +25,7 @@ interface BookingPopupDialogProps {
 }
 
 const MOCK_CITIES = ["Smileville", "Tooth City", "Dentalburg", "Metropolis"];
-const MOCK_CLINIC_PHONE = "+1234567890"; // Placeholder - Replace with actual number
+const MOCK_CLINIC_PHONE = "+1234567890"; 
 
 export function BookingPopupDialog({ isOpen, onClose, onOpenChange }: BookingPopupDialogProps) {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -41,16 +41,14 @@ export function BookingPopupDialog({ isOpen, onClose, onOpenChange }: BookingPop
       });
       return;
     }
-    // In a real app, you would send this data to your backend
     console.log('Booking request:', { phoneNumber, selectedCity });
     toast({
       title: 'Request Submitted (Mock)',
       description: `We'll contact you at ${phoneNumber} regarding services in ${selectedCity}.`,
     });
-    onClose(); // Close the dialog after submission
+    onClose(); 
   };
 
-  // Reset form when dialog opens or closes to ensure clean state
   useEffect(() => {
     if (!isOpen) {
       setPhoneNumber('');
@@ -60,65 +58,81 @@ export function BookingPopupDialog({ isOpen, onClose, onOpenChange }: BookingPop
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle className="text-2xl text-center text-primary">Bring out your smile!</DialogTitle>
-          <DialogDescription className="text-center pt-2">
-            Ready for a consultation? Enter your details below or call us directly.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="popup-phone" className="text-right col-span-1">
-              Phone
-            </Label>
-            <Input
-              id="popup-phone"
-              type="tel"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              placeholder="(123) 456-7890"
-              className="col-span-3"
-              required
+      <DialogContent className="sm:max-w-xl p-0 overflow-hidden"> {/* Changed max-width and removed padding */}
+        <div className="grid md:grid-cols-2">
+          {/* Left side: Image - hidden on small screens, visible on md and up */}
+          <div className="hidden md:block relative aspect-[3/4] md:aspect-auto"> {/* aspect ratio for image container */}
+            <Image
+              src="https://drive.google.com/uc?export=download&id=10HnjuMf4QBKmklhRdTvGKfcN5yrxo1G9"
+              alt="Smiling patient receiving dental care"
+              layout="fill"
+              objectFit="cover"
+              className="rounded-l-lg" // Curve on the left edge of the dialog
+              data-ai-hint="dental patient smile"
             />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="popup-city" className="text-right col-span-1">
-              City
-            </Label>
-            <Select value={selectedCity} onValueChange={setSelectedCity} required>
-              <SelectTrigger id="popup-city" className="col-span-3">
-                <SelectValue placeholder="Select your city" />
-              </SelectTrigger>
-              <SelectContent>
-                {MOCK_CITIES.map((city) => (
-                  <SelectItem key={city} value={city}>
-                    {city}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+
+          {/* Right side: Form Content */}
+          <div className="p-6 flex flex-col space-y-4">
+            <DialogHeader className="text-center md:text-left">
+              <DialogTitle className="text-2xl text-primary">Bring out your smile!</DialogTitle>
+              <DialogDescription className="pt-2">
+                Ready for a consultation? Enter your details below or call us directly.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="grid gap-4"> {/* Adjusted spacing for inputs */}
+              <div className="space-y-2"> {/* Wrapped Label and Input */}
+                <Label htmlFor="popup-phone" className="text-left">
+                  Phone
+                </Label>
+                <Input
+                  id="popup-phone"
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="(123) 456-7890"
+                  required
+                />
+              </div>
+              <div className="space-y-2"> {/* Wrapped Label and Select */}
+                <Label htmlFor="popup-city" className="text-left">
+                  City
+                </Label>
+                <Select value={selectedCity} onValueChange={setSelectedCity} required>
+                  <SelectTrigger id="popup-city">
+                    <SelectValue placeholder="Select your city" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MOCK_CITIES.map((city) => (
+                      <SelectItem key={city} value={city}>
+                        {city}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <DialogFooter className="flex-col sm:flex-col gap-3 pt-2"> {/* Changed to flex-col for mobile stacking */}
+              <Button type="button" onClick={handleSubmit} className="w-full">
+                Request Callback
+              </Button>
+              <a href={`tel:${MOCK_CLINIC_PHONE}`} aria-label="Call us directly" className="w-full">
+                <Button 
+                  variant="outline" 
+                  className="w-full border-accent text-accent hover:bg-accent/10"
+                  type="button"
+                >
+                  <Phone className="mr-2 h-4 w-4" /> Call Us Now
+                </Button>
+              </a>
+              <Button variant="ghost" onClick={onClose} className="w-full">
+                Maybe Later
+              </Button>
+            </DialogFooter>
           </div>
         </div>
-        <DialogFooter className="flex-col sm:flex-row sm:justify-between gap-2 pt-2">
-           <a href={`tel:${MOCK_CLINIC_PHONE}`} aria-label="Call us directly" className="w-full sm:w-auto">
-            <Button 
-              variant="outline" 
-              className="w-full border-accent text-accent hover:bg-accent/10"
-              type="button"
-            >
-              <Phone className="mr-2 h-4 w-4" /> Call Us Now
-            </Button>
-          </a>
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <Button variant="ghost" onClick={onClose} className="w-full sm:w-auto order-2 sm:order-1">
-              Maybe Later
-            </Button>
-            <Button type="button" onClick={handleSubmit} className="w-full sm:w-auto order-1 sm:order-2">
-              Request Callback
-            </Button>
-          </div>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
