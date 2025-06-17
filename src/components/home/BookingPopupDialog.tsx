@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Phone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import Image from 'next/image'; // Import next/image
+import Image from 'next/image';
 
 interface BookingPopupDialogProps {
   isOpen: boolean;
@@ -58,22 +58,23 @@ export function BookingPopupDialog({ isOpen, onClose, onOpenChange }: BookingPop
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl p-0 overflow-hidden"> {/* Changed max-width and removed padding */}
-        <div className="grid md:grid-cols-2">
-          {/* Left side: Image - hidden on small screens, visible on md and up */}
-          <div className="hidden md:block relative aspect-[3/4] md:aspect-auto"> {/* aspect ratio for image container */}
+      <DialogContent className="sm:max-w-2xl lg:max-w-3xl p-0 overflow-hidden">
+        <div className="flex flex-col md:flex-row min-h-[300px] md:min-h-[400px]"> {/* Ensure minimum height */}
+          {/* Left side: Image */}
+          <div className="hidden md:block md:w-1/3 lg:w-2/5 relative">
             <Image
               src="https://drive.google.com/uc?export=download&id=10HnjuMf4QBKmklhRdTvGKfcN5yrxo1G9"
               alt="Smiling patient receiving dental care"
               layout="fill"
               objectFit="cover"
-              className="rounded-l-lg" // Curve on the left edge of the dialog
+              className="rounded-l-lg"
               data-ai-hint="dental patient smile"
+              priority // Prioritize loading for LCP if dialog appears early
             />
           </div>
 
           {/* Right side: Form Content */}
-          <div className="p-6 flex flex-col space-y-4">
+          <div className="w-full md:w-2/3 lg:w-3/5 p-6 sm:p-8 flex flex-col justify-center space-y-4"> {/* Added justify-center */}
             <DialogHeader className="text-center md:text-left">
               <DialogTitle className="text-2xl text-primary">Bring out your smile!</DialogTitle>
               <DialogDescription className="pt-2">
@@ -81,13 +82,13 @@ export function BookingPopupDialog({ isOpen, onClose, onOpenChange }: BookingPop
               </DialogDescription>
             </DialogHeader>
             
-            <div className="grid gap-4"> {/* Adjusted spacing for inputs */}
-              <div className="space-y-2"> {/* Wrapped Label and Input */}
-                <Label htmlFor="popup-phone" className="text-left">
+            <div className="grid gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="popup-phone-main" className="text-left"> {/* Changed ID to avoid conflict */}
                   Phone
                 </Label>
                 <Input
-                  id="popup-phone"
+                  id="popup-phone-main"
                   type="tel"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
@@ -95,12 +96,12 @@ export function BookingPopupDialog({ isOpen, onClose, onOpenChange }: BookingPop
                   required
                 />
               </div>
-              <div className="space-y-2"> {/* Wrapped Label and Select */}
-                <Label htmlFor="popup-city" className="text-left">
+              <div className="space-y-2">
+                <Label htmlFor="popup-city-main" className="text-left"> {/* Changed ID to avoid conflict */}
                   City
                 </Label>
                 <Select value={selectedCity} onValueChange={setSelectedCity} required>
-                  <SelectTrigger id="popup-city">
+                  <SelectTrigger id="popup-city-main">
                     <SelectValue placeholder="Select your city" />
                   </SelectTrigger>
                   <SelectContent>
@@ -114,7 +115,7 @@ export function BookingPopupDialog({ isOpen, onClose, onOpenChange }: BookingPop
               </div>
             </div>
 
-            <DialogFooter className="flex-col sm:flex-col gap-3 pt-2"> {/* Changed to flex-col for mobile stacking */}
+            <DialogFooter className="flex-col sm:flex-col gap-3 pt-2">
               <Button type="button" onClick={handleSubmit} className="w-full">
                 Request Callback
               </Button>
