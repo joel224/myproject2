@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { ArrowDownCircle } from 'lucide-react';
+// Removed: import { ArrowDownCircle } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import type { MuxPlayerProps } from '@mux/mux-player-react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -52,10 +52,11 @@ const gallerySlidesContent = [
   },
 ];
 
+
 export function SmileGallerySection() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const firstSlideIntroContentRef = useRef<HTMLDivElement>(null); // Ref for the intro text block
+  const firstSlideIntroContentRef = useRef<HTMLDivElement>(null);
   const videoBackgroundLayerRef = useRef<HTMLDivElement>(null);
 
   const [isSectionVisible, setIsSectionVisible] = useState(false);
@@ -75,7 +76,7 @@ export function SmileGallerySection() {
       { threshold: 0.05 }
     );
     sectionObserver.observe(sectionEl);
-    return () => sectionObserver.unobserve(sectionEl);
+    return () => { if (sectionEl) sectionObserver.unobserve(sectionEl); };
   }, []);
 
   useEffect(() => {
@@ -88,10 +89,10 @@ export function SmileGallerySection() {
           introObserver.unobserve(introContentEl);
         }
       }),
-      { threshold: 0.1 }
+      { threshold: 0.1 } 
     );
     introObserver.observe(introContentEl);
-    return () => introObserver.unobserve(introContentEl);
+    return () => { if (introContentEl) introObserver.unobserve(introContentEl); };
   }, []);
 
 
@@ -106,15 +107,15 @@ export function SmileGallerySection() {
       id="gallery"
       ref={sectionRef}
       className={cn(
-        "relative w-full bg-background z-20",
-        "initial-fade-in", // Changed to simple fade-in for the whole section
+        "relative w-full bg-background z-20", // Keep z-20 to be above dentist card
+        "initial-fade-in",
         isSectionVisible && "is-visible"
       )}
     >
       {isMobile && (
         <div
           ref={videoBackgroundLayerRef}
-          className="sticky top-0 left-0 w-full h-screen z-[-1] overflow-hidden bg-black" // Added bg-black
+          className="sticky top-0 left-0 w-full h-screen z-[-1] overflow-hidden bg-black"
         >
           <MuxPlayer
             playbackId={MOBILE_GALLERY_VIDEO_PLAYBACK_ID}
@@ -129,7 +130,7 @@ export function SmileGallerySection() {
       )}
       <div
         ref={scrollContainerRef}
-        className="relative snap-y snap-mandatory overflow-y-scroll z-10"
+        className="relative snap-y snap-mandatory overflow-y-scroll z-10" // z-10 to be above background video if any, and below potential fixed headers
         style={scrollContainerStyle}
       >
         {gallerySlidesContent.map((slide, index) => (
@@ -137,20 +138,21 @@ export function SmileGallerySection() {
             key={index}
             className="h-screen w-full snap-start flex flex-col items-center relative"
           >
-            <div // This is the flex container whose justify-content we are changing
+            <div
               className={cn(
                 "w-full h-full flex flex-col items-center",
                 slide.type === 'intro' ? 'justify-between py-10 sm:py-12 md:py-16 lg:py-20' : 
-                slide.type === 'image' ? 'justify-start pt-20 sm:pt-24 md:pt-28' : // justify-start and add top padding for images
-                'justify-center p-4 sm:p-6 md:p-10' // Default for CTA
+                slide.type === 'image' ? 'justify-start pt-20 sm:pt-24 md:pt-28' : 
+                'justify-center p-4 sm:p-6 md:p-10'
               )}
             >
               {slide.type === 'intro' && (
-                <div ref={firstSlideIntroContentRef} className="w-full h-full flex flex-col justify-between items-center">
-                  <div className="max-w-2xl bg-background/70 dark:bg-neutral-900/70 backdrop-blur-sm p-6 rounded-lg shadow-md">
+                <div ref={firstSlideIntroContentRef} className="w-full h-full flex flex-col justify-start items-center pt-10 sm:pt-12 md:pt-16 lg:pt-20"> {/* Changed to justify-start and applied padding here */}
+                  <div className="max-w-2xl bg-background/70 dark:bg-neutral-900/70 backdrop-blur-sm p-6 rounded-lg shadow-md text-center">
                     <h2
                       className={cn(
-                        "text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-4 text-primary transition-all duration-700 ease-out",
+                        "text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-4 text-black dark:text-white transition-all duration-700 ease-out",
+                        "[text-shadow:0_0_10px_hsl(var(--accent)/0.5)] dark:[text-shadow:0_0_12px_hsl(var(--accent)/0.6)]", // Subtle glow
                         isFirstSlideIntroVisible ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0"
                       )}
                     >
@@ -166,13 +168,7 @@ export function SmileGallerySection() {
                       {slide.description}
                     </p>
                   </div>
-                  <ArrowDownCircle
-                    className={cn(
-                      "h-10 w-10 sm:h-12 sm:w-12 text-primary mx-auto animate-bounce transition-opacity duration-700 ease-out",
-                      isFirstSlideIntroVisible ? "opacity-100" : "opacity-0"
-                    )}
-                    style={{ transitionDelay: isFirstSlideIntroVisible ? `300ms` : '0ms' }}
-                  />
+                  {/* ArrowDownCircle removed */}
                 </div>
               )}
               {slide.type === 'image' && (
