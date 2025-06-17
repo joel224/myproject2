@@ -54,7 +54,7 @@ export function HeroSection() {
       window.removeEventListener('scroll', handleScroll);
       clearTimeout(timer);
     };
-  }, [handleScroll, isPlayerReady]); // Re-run if player readiness changes or scroll handler itself changes
+  }, [handleScroll, isPlayerReady]); 
 
   useEffect(() => {
     const observerOptions = { threshold: 0.1 };
@@ -77,34 +77,30 @@ export function HeroSection() {
 
   // useEffect for the booking pop-up timer
   useEffect(() => {
-    // This effect runs once on mount to decide if/when to show the popup
-    if (typeof window !== "undefined") { // Ensure window is defined for sessionStorage
+    if (typeof window !== "undefined") { 
       const hasPoppedThisSession = sessionStorage.getItem('bookingPopupShown');
 
       if (!hasPoppedThisSession) {
-        // If not shown this session, set the timer
         const popupTimer = setTimeout(() => {
           setShowBookingPopup(true);
-          sessionStorage.setItem('bookingPopupShown', 'true'); // Mark as shown for this session
+          sessionStorage.setItem('bookingPopupShown', 'true'); 
         }, 10000); // 10 seconds
 
-        // Cleanup function to clear the timer if the component unmounts before 10s
         return () => clearTimeout(popupTimer);
       }
-      // If hasPoppedThisSession is true, do nothing, the popup won't show again this session.
     }
-  }, []); // Empty dependency array means this runs once on mount and cleanup on unmount
+  }, []);
 
 
   return (
-    <> {/* Fragment to wrap section and dialog */}
+    <> 
       <section
         ref={sectionRef}
         className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-neutral-800"
       >
         <div
           ref={playerContainerRef}
-          className="absolute top-0 left-0 w-full h-[150%]" // Increased height for more parallax room
+          className="absolute top-0 left-0 w-full h-[150%]" 
           style={{ transition: 'transform 0.1s linear' }}
         >
           <MuxPlayer
@@ -118,32 +114,29 @@ export function HeroSection() {
               className="absolute top-0 left-0 w-full h-full object-cover"
               onLoadedMetadata={() => {
                 setIsPlayerReady(true);
-                handleScroll(); // Call handleScroll once player is ready
+                handleScroll(); 
               }}
-              onPlayerReady={() => { // Mux specific event
+              onPlayerReady={() => { 
                 setIsPlayerReady(true);
-                handleScroll(); // Call handleScroll once player is ready
+                handleScroll(); 
               }}
               onError={(evt) => {
                 console.error("Hero MuxPlayer Raw Error Event:", evt);
-                // You could set a fallback image here or log the error
               }}
             />
         </div>
 
-        {/* Gradient overlay */}
         <div className="absolute inset-0 w-full h-full bg-gradient-to-b from-black/60 via-black/40 to-transparent z-[2] pointer-events-none"></div>
 
-        {/* Content */}
         <div className="container relative px-4 md:px-6 z-[3] py-12 md:py-24 lg:py-32">
           <div className="flex flex-col items-center justify-center min-h-[calc(100vh-12rem)] text-center">
             <div
               ref={textRef}
               className={cn(
                 "space-y-6",
-                "initial-fade-in-up", // Initial state for animation
-                textVisible && "is-visible", // Apply 'is-visible' when textRef is in view
-                "text-neutral-100", // Ensure text color is light for dark video
+                "initial-fade-in-up", 
+                textVisible && "is-visible", 
+                "text-neutral-100", 
                 "max-w-2xl"
               )}
             >
@@ -157,7 +150,7 @@ export function HeroSection() {
                 <Link href="/#appointment">
                   <Button
                     size="lg"
-                    className="px-8 py-6 text-lg shadow-lg bg-medicalAccent text-medicalAccent-foreground hover:bg-medicalAccent/90 transition-shadow"
+                    className="px-8 py-6 text-lg shadow-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-shadow"
                   >
                     Book an Appointment in 30 Seconds
                   </Button>
@@ -170,7 +163,7 @@ export function HeroSection() {
       <BookingPopupDialog 
         isOpen={showBookingPopup} 
         onClose={() => setShowBookingPopup(false)}
-        onOpenChange={setShowBookingPopup} // Allow dialog's internal close mechanisms to work
+        onOpenChange={setShowBookingPopup}
       />
     </>
   );
