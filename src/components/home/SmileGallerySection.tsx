@@ -1,3 +1,4 @@
+
 // src/components/home/SmileGallerySection.tsx
 'use client';
 
@@ -56,9 +57,8 @@ export function SmileGallerySection() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const firstSlideRef = useRef<HTMLDivElement>(null);
-  const firstSlideHeadingRef = useRef<HTMLHeadingElement>(null);
-  const firstSlideParagraphRef = useRef<HTMLParagraphElement>(null);
   const videoBackgroundLayerRef = useRef<HTMLDivElement>(null);
+
 
   const [isSectionVisible, setIsSectionVisible] = useState(false);
   const [isFirstSlideVisible, setIsFirstSlideVisible] = useState(false);
@@ -72,7 +72,7 @@ export function SmileGallerySection() {
           sectionObserver.unobserve(entry.target);
         }
       }),
-      { threshold: 0.05 }
+      { threshold: 0.05 } // Trigger when 5% of the section is visible
     );
     const currentSectionRef = sectionRef.current;
     if (currentSectionRef) sectionObserver.observe(currentSectionRef);
@@ -87,7 +87,7 @@ export function SmileGallerySection() {
           firstSlideContentObserver.unobserve(entry.target);
         }
       }),
-      { threshold: 0.1 }
+      { threshold: 0.1 } // Trigger when 10% of the first slide's content area is visible
     );
     const currentFirstSlideRef = firstSlideRef.current;
     if (currentFirstSlideRef) firstSlideContentObserver.observe(currentFirstSlideRef);
@@ -98,7 +98,7 @@ export function SmileGallerySection() {
   const numSlides = gallerySlidesContent.length;
   const scrollContainerStyle = {
     '--num-slides': numSlides,
-    height: `calc(var(--num-slides) * 100vh)`,
+    height: `calc(var(--num-slides) * 100vh)`, // Each slide takes 100% of viewport height
   } as React.CSSProperties;
 
   return (
@@ -114,7 +114,7 @@ export function SmileGallerySection() {
       {isMobile && (
         <div
           ref={videoBackgroundLayerRef}
-          className="sticky top-0 left-0 w-full h-screen z-[-1] overflow-hidden" // Sticky video layer
+          className="sticky top-0 left-0 w-full h-screen z-[-1] overflow-hidden" // Sticky video layer, behind slides
         >
           <MuxPlayer
             playbackId={MOBILE_GALLERY_VIDEO_PLAYBACK_ID}
@@ -123,7 +123,7 @@ export function SmileGallerySection() {
             muted
             playsInline
             noControls
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full min-w-full min-h-full object-cover" // Ensure cover and fill
           />
         </div>
       )}
@@ -141,14 +141,15 @@ export function SmileGallerySection() {
             <div
               className={cn(
                 "w-full h-full flex flex-col items-center",
-                slide.type === 'intro' ? 'justify-between py-16 md:py-20' : 'justify-center p-6 md:p-10',
+                // Adjust justification and padding for different slide types
+                slide.type === 'intro' ? 'justify-between py-10 sm:py-12 md:py-16 lg:py-20' : 'justify-center p-4 sm:p-6 md:p-10',
               )}
             >
               {slide.type === 'intro' && (
+                // This inner div is needed for justify-between to work correctly with padding on the parent
                 <div className="w-full h-full flex flex-col justify-between items-center">
                   <div className="max-w-2xl bg-background/70 dark:bg-neutral-900/70 backdrop-blur-sm p-6 rounded-lg shadow-md">
                     <h2
-                      ref={firstSlideHeadingRef}
                       className={cn(
                         "text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-4 text-primary transition-all duration-700 ease-out",
                         isFirstSlideVisible ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0"
@@ -157,7 +158,6 @@ export function SmileGallerySection() {
                       {slide.title}
                     </h2>
                     <p
-                      ref={firstSlideParagraphRef}
                       className={cn(
                         "text-muted-foreground md:text-xl lg:text-2xl transition-opacity duration-700 ease-out",
                         isFirstSlideVisible ? "opacity-100" : "opacity-0"
@@ -177,7 +177,7 @@ export function SmileGallerySection() {
                 </div>
               )}
               {slide.type === 'image' && (
-                <div className="w-full max-w-md p-4 bg-background/80 dark:bg-neutral-800/80 backdrop-blur-sm rounded-lg shadow-xl">
+                <div className="w-full max-w-md p-3 sm:p-4 bg-background/80 dark:bg-neutral-800/80 backdrop-blur-sm rounded-lg shadow-xl">
                   <div className="relative aspect-[4/3] shadow-lg rounded-md overflow-hidden bg-muted">
                     <Image
                       src={slide.src}
@@ -189,16 +189,16 @@ export function SmileGallerySection() {
                     />
                   </div>
                   {slide.caption && (
-                    <p className="mt-4 text-lg text-foreground text-center">
+                    <p className="mt-3 sm:mt-4 text-base sm:text-lg text-foreground text-center">
                       {slide.caption}
                     </p>
                   )}
                 </div>
               )}
               {slide.type === 'cta' && (
-                <div className="bg-background/70 dark:bg-neutral-900/70 backdrop-blur-sm p-8 rounded-lg shadow-md">
+                <div className="bg-background/70 dark:bg-neutral-900/70 backdrop-blur-sm p-6 sm:p-8 rounded-lg shadow-md">
                   <Link href={slide.href}>
-                    <Button size="lg" className="px-8 py-6 text-xl sm:px-10 sm:text-2xl">
+                    <Button size="lg" className="px-6 py-5 text-lg sm:px-8 sm:py-6 sm:text-xl">
                       {slide.buttonText}
                     </Button>
                   </Link>
