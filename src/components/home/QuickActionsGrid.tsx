@@ -13,7 +13,7 @@ const actions = [
     icon: <PhoneCall className="h-8 w-8 text-destructive" />,
     title: 'Emergency',
     description: 'Toothache? Tap Here!',
-    href: 'tel:+1234567890', // Example phone number
+    href: 'tel:+1234567890', 
     buttonText: 'Call Now',
     variant: 'destructive' as const,
   },
@@ -21,7 +21,7 @@ const actions = [
     icon: <CalendarPlus className="h-8 w-8 text-primary" />,
     title: 'Book Appointment',
     description: 'Schedule your visit easily.',
-    href: '/#appointment', // Link to booking section or page
+    href: '/#appointment', 
     buttonText: 'Book Now',
     variant: 'default' as const,
   },
@@ -29,7 +29,7 @@ const actions = [
     icon: <Video className="h-8 w-8 text-primary" />,
     title: 'Virtual Consultation',
     description: 'Meet our dentists online.',
-    href: '/virtual-consultation', // Placeholder link
+    href: '/virtual-consultation', 
     buttonText: 'Start Video Call',
     variant: 'outline' as const,
   },
@@ -37,7 +37,7 @@ const actions = [
     icon: <LogIn className="h-8 w-8 text-primary" />,
     title: 'Patient Login',
     description: 'Access records & payments.',
-    href: '/login', // Link to patient login page
+    href: '/login', 
     buttonText: 'Login',
     variant: 'outline' as const,
   },
@@ -81,33 +81,98 @@ export function QuickActionsGrid() {
     >
       <div className="container px-4 md:px-6">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {actions.map((action, index) => (
-            <Card
-              key={action.title}
-              className={cn(
-                "flex flex-col items-center text-center shadow-lg hover:shadow-2xl transition-all duration-200 ease-in-out hover:-translate-y-2 hover:scale-[1.03]",
-                "initial-fade-in-up", // Apply to each card for potential stagger
-                isVisible && "is-visible"
-              )}
-              style={{ transitionDelay: isVisible ? `${index * 100}ms` : '0ms' }} // Stagger effect
-            >
-              <CardHeader className="items-center">
-                {action.icon}
-                <CardTitle className="mt-4">{action.title}</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col flex-grow items-center">
-                <CardDescription className="mb-4 flex-grow">{action.description}</CardDescription>
-                <Link href={action.href} className="w-full mt-auto">
-                  <Button variant={action.variant} className="w-full">
-                    {action.buttonText}
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          ))}
+          {actions.map((action, index) => {
+            const commonCardClasses = "flex flex-col items-center text-center shadow-lg transition-all duration-200 ease-in-out initial-fade-in-up";
+            const cardDynamicStyle = { transitionDelay: isVisible ? `${index * 100}ms` : '0ms' };
+
+            const actionCardContent = (
+              <>
+                <CardHeader className="items-center">
+                  {action.icon}
+                  <CardTitle className="mt-4">{action.title}</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col flex-grow items-center">
+                  <CardDescription className="mb-4 flex-grow">{action.description}</CardDescription>
+                  <Link href={action.href} className="w-full mt-auto">
+                    <Button variant={action.variant} className="w-full">
+                      {action.buttonText}
+                    </Button>
+                  </Link>
+                </CardContent>
+              </>
+            );
+
+            if (action.title === 'Book Appointment') {
+              return (
+                <div className="relative group" key={action.title} style={cardDynamicStyle}>
+                  <Card
+                    className={cn(
+                      commonCardClasses,
+                      isVisible && "is-visible",
+                      "group-hover:shadow-2xl" // Enhanced shadow on group hover
+                    )}
+                    // Removed individual hover scale/translate for this card
+                  >
+                    {actionCardContent}
+                  </Card>
+                  {/* Pop-up content */}
+                  <div className={cn(
+                    "absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-80 p-5",
+                    "bg-card border border-border shadow-2xl rounded-xl",
+                    "opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100",
+                    "transition-all duration-300 ease-out origin-bottom", // Origin for scale animation
+                    "pointer-events-none group-hover:pointer-events-auto", // Make it interactive on hover
+                    "z-30 text-left space-y-3.5 text-card-foreground" // Increased z-index and spacing
+                  )}>
+                    {/* Section 1: Trusted Experts */}
+                    <div className="text-center">
+                      <p className="text-xs font-medium uppercase tracking-wider text-primary mb-0.5">Trusted Dental Experts</p>
+                      <div className="flex items-baseline justify-center gap-x-1.5">
+                        <span className="text-5xl font-bold text-accent">100K+</span>
+                        <span className="text-sm text-muted-foreground relative top-1">Teeth Restored</span>
+                      </div>
+                    </div>
+
+                    <div className="h-px bg-border/60"></div>
+
+                    {/* Section 2: Painless Procedures */}
+                    <div className="text-center">
+                      <p className="text-xs font-medium uppercase tracking-wider text-primary mb-1">Your Comfort, Our Priority</p>
+                      <p className="text-2xl font-semibold text-accent">
+                        PAIN-FREE
+                      </p>
+                      <p className="text-sm text-muted-foreground">Injections &amp; Surgery</p>
+                    </div>
+                    
+                    <div className="h-px bg-border/60"></div>
+
+                    {/* Section 3: Financial Accessibility */}
+                    <div className="text-center">
+                      <p className="text-xs font-medium uppercase tracking-wider text-primary mb-1">Smiles For Everyone</p>
+                      <p className="text-xl font-semibold text-accent">Flexible Financing</p>
+                      <p className="text-sm text-muted-foreground">Plans To Fit Your Budget</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            } else {
+              return (
+                <Card
+                  key={action.title}
+                  className={cn(
+                    commonCardClasses,
+                    isVisible && "is-visible",
+                    "hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.03]" // Original hover for other cards
+                  )}
+                  style={cardDynamicStyle}
+                >
+                  {actionCardContent}
+                </Card>
+              );
+            }
+          })}
         </div>
       </div>
     </section>
   );
 }
-
