@@ -1,4 +1,3 @@
-
 // src/components/home/SmileGallerySection.tsx
 'use client';
 
@@ -56,49 +55,50 @@ const gallerySlidesContent = [
 export function SmileGallerySection() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const firstSlideRef = useRef<HTMLDivElement>(null);
+  const firstSlideIntroContentRef = useRef<HTMLDivElement>(null); // Ref for the intro text block
   const videoBackgroundLayerRef = useRef<HTMLDivElement>(null);
 
-
   const [isSectionVisible, setIsSectionVisible] = useState(false);
-  const [isFirstSlideVisible, setIsFirstSlideVisible] = useState(false);
+  const [isFirstSlideIntroVisible, setIsFirstSlideIntroVisible] = useState(false);
   const isMobile = useIsMobile();
 
   useEffect(() => {
+    const sectionEl = sectionRef.current;
+    if (!sectionEl) return;
     const sectionObserver = new IntersectionObserver(
       (entries) => entries.forEach((entry) => {
         if (entry.isIntersecting) {
           setIsSectionVisible(true);
-          sectionObserver.unobserve(entry.target);
+          sectionObserver.unobserve(sectionEl);
         }
       }),
-      { threshold: 0.05 } // Trigger when 5% of the section is visible
+      { threshold: 0.05 }
     );
-    const currentSectionRef = sectionRef.current;
-    if (currentSectionRef) sectionObserver.observe(currentSectionRef);
-    return () => { if (currentSectionRef) sectionObserver.unobserve(currentSectionRef); };
+    sectionObserver.observe(sectionEl);
+    return () => sectionObserver.unobserve(sectionEl);
   }, []);
 
   useEffect(() => {
-    const firstSlideContentObserver = new IntersectionObserver(
+    const introContentEl = firstSlideIntroContentRef.current;
+    if (!introContentEl) return;
+    const introObserver = new IntersectionObserver(
       (entries) => entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          setIsFirstSlideVisible(true);
-          firstSlideContentObserver.unobserve(entry.target);
+          setIsFirstSlideIntroVisible(true);
+          introObserver.unobserve(introContentEl);
         }
       }),
-      { threshold: 0.1 } // Trigger when 10% of the first slide's content area is visible
+      { threshold: 0.1 }
     );
-    const currentFirstSlideRef = firstSlideRef.current;
-    if (currentFirstSlideRef) firstSlideContentObserver.observe(currentFirstSlideRef);
-    return () => { if (currentFirstSlideRef) firstSlideContentObserver.unobserve(currentFirstSlideRef); };
+    introObserver.observe(introContentEl);
+    return () => introObserver.unobserve(introContentEl);
   }, []);
 
 
   const numSlides = gallerySlidesContent.length;
   const scrollContainerStyle = {
     '--num-slides': numSlides,
-    height: `calc(var(--num-slides) * 100vh)`, // Each slide takes 100% of viewport height
+    height: `calc(var(--num-slides) * 100vh)`,
   } as React.CSSProperties;
 
   return (
@@ -106,15 +106,15 @@ export function SmileGallerySection() {
       id="gallery"
       ref={sectionRef}
       className={cn(
-        "relative w-full bg-background z-20", // Main section, z-20 to be above dentist card
-        "initial-fade-in-up",
+        "relative w-full bg-background z-20",
+        "initial-fade-in", // Changed to simple fade-in for the whole section
         isSectionVisible && "is-visible"
       )}
     >
       {isMobile && (
         <div
           ref={videoBackgroundLayerRef}
-          className="sticky top-0 left-0 w-full h-screen z-[-1] overflow-hidden" // Sticky video layer, behind slides
+          className="sticky top-0 left-0 w-full h-screen z-[-1] overflow-hidden bg-black" // Added bg-black
         >
           <MuxPlayer
             playbackId={MOBILE_GALLERY_VIDEO_PLAYBACK_ID}
@@ -123,36 +123,35 @@ export function SmileGallerySection() {
             muted
             playsInline
             noControls
-            className="absolute inset-0 w-full h-full min-w-full min-h-full object-cover" // Ensure cover and fill
+            className="absolute inset-0 w-full h-full min-w-full min-h-full object-cover"
           />
         </div>
       )}
       <div
         ref={scrollContainerRef}
-        className="relative snap-y snap-mandatory overflow-y-scroll z-10" // Slides container, above sticky video
+        className="relative snap-y snap-mandatory overflow-y-scroll z-10"
         style={scrollContainerStyle}
       >
         {gallerySlidesContent.map((slide, index) => (
           <div
             key={index}
-            ref={index === 0 ? firstSlideRef : null}
-            className="h-screen w-full snap-start flex flex-col items-center relative" // Each slide is full screen
+            className="h-screen w-full snap-start flex flex-col items-center relative"
           >
-            <div
+            <div // This is the flex container whose justify-content we are changing
               className={cn(
                 "w-full h-full flex flex-col items-center",
-                // Adjust justification and padding for different slide types
-                slide.type === 'intro' ? 'justify-between py-10 sm:py-12 md:py-16 lg:py-20' : 'justify-center p-4 sm:p-6 md:p-10',
+                slide.type === 'intro' ? 'justify-between py-10 sm:py-12 md:py-16 lg:py-20' : 
+                slide.type === 'image' ? 'justify-start pt-20 sm:pt-24 md:pt-28' : // justify-start and add top padding for images
+                'justify-center p-4 sm:p-6 md:p-10' // Default for CTA
               )}
             >
               {slide.type === 'intro' && (
-                // This inner div is needed for justify-between to work correctly with padding on the parent
-                <div className="w-full h-full flex flex-col justify-between items-center">
+                <div ref={firstSlideIntroContentRef} className="w-full h-full flex flex-col justify-between items-center">
                   <div className="max-w-2xl bg-background/70 dark:bg-neutral-900/70 backdrop-blur-sm p-6 rounded-lg shadow-md">
                     <h2
                       className={cn(
                         "text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-4 text-primary transition-all duration-700 ease-out",
-                        isFirstSlideVisible ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0"
+                        isFirstSlideIntroVisible ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0"
                       )}
                     >
                       {slide.title}
@@ -160,9 +159,9 @@ export function SmileGallerySection() {
                     <p
                       className={cn(
                         "text-muted-foreground md:text-xl lg:text-2xl transition-opacity duration-700 ease-out",
-                        isFirstSlideVisible ? "opacity-100" : "opacity-0"
+                        isFirstSlideIntroVisible ? "opacity-100" : "opacity-0"
                       )}
-                      style={{ transitionDelay: isFirstSlideVisible ? `150ms` : '0ms' }}
+                      style={{ transitionDelay: isFirstSlideIntroVisible ? `150ms` : '0ms' }}
                     >
                       {slide.description}
                     </p>
@@ -170,9 +169,9 @@ export function SmileGallerySection() {
                   <ArrowDownCircle
                     className={cn(
                       "h-10 w-10 sm:h-12 sm:w-12 text-primary mx-auto animate-bounce transition-opacity duration-700 ease-out",
-                      isFirstSlideVisible ? "opacity-100" : "opacity-0"
+                      isFirstSlideIntroVisible ? "opacity-100" : "opacity-0"
                     )}
-                    style={{ transitionDelay: isFirstSlideVisible ? `300ms` : '0ms' }}
+                    style={{ transitionDelay: isFirstSlideIntroVisible ? `300ms` : '0ms' }}
                   />
                 </div>
               )}
@@ -185,7 +184,7 @@ export function SmileGallerySection() {
                       fill
                       style={{ objectFit: 'cover' }}
                       data-ai-hint={slide.dataAiHint}
-                      priority={index <= 2} // Prioritize loading for early slides
+                      priority={index <= 2}
                     />
                   </div>
                   {slide.caption && (
