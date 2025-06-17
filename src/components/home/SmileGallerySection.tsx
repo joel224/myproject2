@@ -9,9 +9,8 @@ import { cn } from '@/lib/utils';
 import { ArrowDownCircle } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import type { MuxPlayerProps } from '@mux/mux-player-react';
-import { useIsMobile } from '@/hooks/use-mobile'; // Import useIsMobile
+import { useIsMobile } from '@/hooks/use-mobile';
 
-// Dynamically import MuxPlayer with SSR disabled
 const MuxPlayer = dynamic<MuxPlayerProps>(
   () => import('@mux/mux-player-react').then((mod) => mod.default),
   { ssr: false, loading: () => <div className="absolute inset-0 w-full h-full bg-black/30" /> }
@@ -57,88 +56,91 @@ export function SmileGallerySection() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const firstSlideRef = useRef<HTMLDivElement>(null);
-  const firstSlideHeadingRef = useRef<HTMLDivElement>(null);
-  const firstSlideParagraphRef = useRef<HTMLDivElement>(null);
+  const firstSlideHeadingRef = useRef<HTMLHeadingElement>(null);
+  const firstSlideParagraphRef = useRef<HTMLParagraphElement>(null);
+  const videoBackgroundLayerRef = useRef<HTMLDivElement>(null); 
 
   const [isSectionVisible, setIsSectionVisible] = useState(false);
   const [isFirstSlideVisible, setIsFirstSlideVisible] = useState(false);
-  const isMobile = useIsMobile(); // Check for mobile device
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const sectionObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsSectionVisible(true);
-            sectionObserver.unobserve(entry.target);
-          }
-        });
-      },
+      (entries) => entries.forEach((entry) => entry.isIntersecting && (setIsSectionVisible(true), sectionObserver.unobserve(entry.target))),
       { threshold: 0.05 }
     );
-
     const currentSectionRef = sectionRef.current;
-    if (currentSectionRef) {
-      sectionObserver.observe(currentSectionRef);
-    }
-
-    const firstSlideObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsFirstSlideVisible(true);
-            firstSlideObserver.unobserve(entry.target);
-          } else {
-            // Optional: Reset if you want the animation to re-trigger if scrolled out and back in
-            // setIsFirstSlideVisible(false);
-          }
-        });
-      },
-      { threshold: 0.1 } // Trigger when 10% of the first slide is visible
-    );
-
-    const currentFirstSlideRef = firstSlideRef.current;
-    if (currentFirstSlideRef) {
-      firstSlideObserver.observe(currentFirstSlideRef);
-    }
-
-    return () => {
-      if (currentSectionRef) sectionObserver.unobserve(currentSectionRef);
-      if (currentFirstSlideRef) firstSlideObserver.unobserve(currentFirstSlideRef);
-    };
+    if (currentSectionRef) sectionObserver.observe(currentSectionRef);
+    return () => { if (currentSectionRef) sectionObserver.unobserve(currentSectionRef) };
   }, []);
+
+  useEffect(() => {
+    const firstSlideContentObserver = new IntersectionObserver(
+      (entries) => entries.forEach((entry) => entry.isIntersecting && (setIsFirstSlideVisible(true), firstSlideContentObserver.unobserve(entry.target))),
+      { threshold: 0.1 }
+    );
+    const currentFirstSlideRef = firstSlideRef.current;
+    if (currentFirstSlideRef) firstSlideContentObserver.observe(currentFirstSlideRef);
+    return () => { if (currentFirstSlideRef) firstSlideContentObserver.unobserve(currentFirstSlideRef) };
+  }, []);
+
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    const videoLayer = videoBackgroundLayerRef.current;
+
+    if (!isMobile || !scrollContainer || !videoLayer) {
+      if (videoLayer) videoLayer.style.transform = '';
+      return;
+    }
+
+    const handleScroll = () => {
+      const scrollTop = scrollContainer.scrollTop;
+      videoLayer.style.transform = `translateY(${-scrollTop * 0.3}px)`;
+    };
+
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      scrollContainer.removeEventListener('scroll', handleScroll);
+      if (videoLayer) videoLayer.style.transform = ''; 
+    };
+  }, [isMobile]); 
 
   const numSlides = gallerySlidesContent.length;
   const scrollContainerStyle = {
     '--num-slides': numSlides,
-    height: `calc(var(--num-slides) * 100vh)`,
+    height: `calc(var(--num-slides) * 100vh)`, 
   } as React.CSSProperties;
-
 
   return (
     <section
       id="gallery"
       ref={sectionRef}
       className={cn(
-        "relative w-full bg-background z-20", // z-20 to be above dentist spotlight
+        "relative w-full bg-background z-20 overflow-hidden", 
         "initial-fade-in-up",
         isSectionVisible && "is-visible"
       )}
     >
       {isMobile && (
-        <MuxPlayer
-          playbackId={MOBILE_GALLERY_VIDEO_PLAYBACK_ID}
-          autoPlay
-          loop
-          muted
-          playsInline
-          noControls
-          className="absolute inset-0 w-full h-full object-cover z-[-1]" // Video behind content
-        />
+        <div 
+          ref={videoBackgroundLayerRef} 
+          className="absolute inset-0 w-full h-full z-[-1]" 
+        >
+          <MuxPlayer
+            playbackId={MOBILE_GALLERY_VIDEO_PLAYBACK_ID}
+            autoPlay
+            loop
+            muted
+            playsInline
+            noControls
+            className="absolute inset-0 w-full h-full object-cover" 
+          />
+        </div>
       )}
       <div
         ref={scrollContainerRef}
-        className="relative snap-y snap-mandatory overflow-y-scroll z-10" // Ensure this is above the video
+        className="relative snap-y snap-mandatory overflow-y-scroll z-10" 
         style={scrollContainerStyle}
       >
         {gallerySlidesContent.map((slide, index) => (
@@ -147,7 +149,7 @@ export function SmileGallerySection() {
             ref={index === 0 ? firstSlideRef : null}
             className="h-screen w-full snap-start flex flex-col items-center relative text-center"
           >
-            <div
+            <div 
               className={cn(
                 "w-full h-full flex flex-col items-center",
                 slide.type === 'intro' ? 'justify-between py-16 md:py-20' : 'justify-center p-6 md:p-10',
