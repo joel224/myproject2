@@ -7,7 +7,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import type { MuxPlayerProps } from '@mux/mux-player-react';
-import { BookingPopupDialog } from './BookingPopupDialog'; // Import the new dialog
+import { BookingPopupDialog } from './BookingPopupDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 
@@ -18,7 +18,7 @@ const MuxPlayer = dynamic<MuxPlayerProps>(
 );
 
 const HERO_VIDEO_PLAYBACK_ID_DESKTOP = "cbfCGJ7UGeVzI3SLW4xt2fEgTANh7uHd8C3E00QuAnDU";
-const HERO_VIDEO_PLAYBACK_ID_MOBILE = "d6029nUGS7fZ00W027QSUwzd01GtdUAyLC01qd02CaPX2t00Cc"; // For vertical mobile video
+const HERO_VIDEO_PLAYBACK_ID_MOBILE = "d6029nUGS7fZ00W027QSUwzd01GtdUAyLC01qd02CaPX2t00Cc";
 
 export function HeroSection() {
   const videoRef = useRef<any>(null);
@@ -29,9 +29,7 @@ export function HeroSection() {
   const [isPlayerReady, setIsPlayerReady] = useState(false);
   const isMobile = useIsMobile();
 
-  // State for the booking pop-up
   const [showBookingPopup, setShowBookingPopup] = useState(false);
-  const [popupHasBeenTriggered, setPopupHasBeenTriggered] = useState(false);
 
   const currentPlaybackId = isMobile ? HERO_VIDEO_PLAYBACK_ID_MOBILE : HERO_VIDEO_PLAYBACK_ID_DESKTOP;
 
@@ -51,12 +49,12 @@ export function HeroSection() {
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll, { passive: true });
-    const timer = setTimeout(() => handleScroll(), 100);
+    const timer = setTimeout(() => handleScroll(), 100); // Ensure initial call after layout
     return () => {
       window.removeEventListener('scroll', handleScroll);
       clearTimeout(timer);
     };
-  }, [handleScroll, isPlayerReady]);
+  }, [handleScroll, isPlayerReady]); // Re-run if player readiness changes or scroll handler itself changes
 
   useEffect(() => {
     const observerOptions = { threshold: 0.1 };
@@ -79,21 +77,23 @@ export function HeroSection() {
 
   // useEffect for the booking pop-up timer
   useEffect(() => {
-    if (typeof window !== "undefined" && !popupHasBeenTriggered) { // Ensure window is defined for sessionStorage
+    // This effect runs once on mount to decide if/when to show the popup
+    if (typeof window !== "undefined") { // Ensure window is defined for sessionStorage
       const hasPoppedThisSession = sessionStorage.getItem('bookingPopupShown');
+
       if (!hasPoppedThisSession) {
+        // If not shown this session, set the timer
         const popupTimer = setTimeout(() => {
           setShowBookingPopup(true);
-          setPopupHasBeenTriggered(true);
           sessionStorage.setItem('bookingPopupShown', 'true'); // Mark as shown for this session
         }, 10000); // 10 seconds
 
+        // Cleanup function to clear the timer if the component unmounts before 10s
         return () => clearTimeout(popupTimer);
-      } else {
-        setPopupHasBeenTriggered(true); // Already shown this session, don't set timer
       }
+      // If hasPoppedThisSession is true, do nothing, the popup won't show again this session.
     }
-  }, [popupHasBeenTriggered]);
+  }, []); // Empty dependency array means this runs once on mount and cleanup on unmount
 
 
   return (
@@ -104,7 +104,7 @@ export function HeroSection() {
       >
         <div
           ref={playerContainerRef}
-          className="absolute top-0 left-0 w-full h-[150%]"
+          className="absolute top-0 left-0 w-full h-[150%]" // Increased height for more parallax room
           style={{ transition: 'transform 0.1s linear' }}
         >
           <MuxPlayer
@@ -118,29 +118,32 @@ export function HeroSection() {
               className="absolute top-0 left-0 w-full h-full object-cover"
               onLoadedMetadata={() => {
                 setIsPlayerReady(true);
-                handleScroll();
+                handleScroll(); // Call handleScroll once player is ready
               }}
-              onPlayerReady={() => {
+              onPlayerReady={() => { // Mux specific event
                 setIsPlayerReady(true);
-                handleScroll();
+                handleScroll(); // Call handleScroll once player is ready
               }}
               onError={(evt) => {
                 console.error("Hero MuxPlayer Raw Error Event:", evt);
+                // You could set a fallback image here or log the error
               }}
             />
         </div>
 
+        {/* Gradient overlay */}
         <div className="absolute inset-0 w-full h-full bg-gradient-to-b from-black/60 via-black/40 to-transparent z-[2] pointer-events-none"></div>
 
+        {/* Content */}
         <div className="container relative px-4 md:px-6 z-[3] py-12 md:py-24 lg:py-32">
           <div className="flex flex-col items-center justify-center min-h-[calc(100vh-12rem)] text-center">
             <div
               ref={textRef}
               className={cn(
                 "space-y-6",
-                "initial-fade-in-up",
-                textVisible && "is-visible",
-                "text-neutral-100",
+                "initial-fade-in-up", // Initial state for animation
+                textVisible && "is-visible", // Apply 'is-visible' when textRef is in view
+                "text-neutral-100", // Ensure text color is light for dark video
                 "max-w-2xl"
               )}
             >
