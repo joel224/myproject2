@@ -1,12 +1,12 @@
+
 // src/components/home/SmileGallerySection.tsx
 'use client';
 
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-// Removed: import { ArrowDownCircle } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import type { MuxPlayerProps } from '@mux/mux-player-react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -107,7 +107,7 @@ export function SmileGallerySection() {
       id="gallery"
       ref={sectionRef}
       className={cn(
-        "relative w-full bg-background z-20", // Keep z-20 to be above dentist card
+        "relative w-full bg-background z-20",
         "initial-fade-in",
         isSectionVisible && "is-visible"
       )}
@@ -130,7 +130,7 @@ export function SmileGallerySection() {
       )}
       <div
         ref={scrollContainerRef}
-        className="relative snap-y snap-mandatory overflow-y-scroll z-10" // z-10 to be above background video if any, and below potential fixed headers
+        className="relative snap-y snap-mandatory overflow-y-scroll z-10" 
         style={scrollContainerStyle}
       >
         {gallerySlidesContent.map((slide, index) => (
@@ -141,18 +141,18 @@ export function SmileGallerySection() {
             <div
               className={cn(
                 "w-full h-full flex flex-col items-center",
-                slide.type === 'intro' ? 'justify-between py-10 sm:py-12 md:py-16 lg:py-20' : 
-                slide.type === 'image' ? 'justify-start pt-20 sm:pt-24 md:pt-28' : 
-                'justify-center p-4 sm:p-6 md:p-10'
+                slide.type === 'intro' ? 'justify-start py-10 sm:py-12 md:pt-16 lg:pt-20' : 
+                slide.type === 'image' ? 'justify-center p-4' : 
+                'justify-center p-4 sm:p-6 md:p-10' // CTA
               )}
             >
               {slide.type === 'intro' && (
-                <div ref={firstSlideIntroContentRef} className="w-full h-full flex flex-col justify-start items-center pt-10 sm:pt-12 md:pt-16 lg:pt-20"> {/* Changed to justify-start and applied padding here */}
+                <div ref={firstSlideIntroContentRef} className="w-full h-full flex flex-col justify-start items-center pt-10 sm:pt-12 md:pt-16 lg:pt-20">
                   <div className="max-w-2xl bg-background/70 dark:bg-neutral-900/70 backdrop-blur-sm p-6 rounded-lg shadow-md text-center">
                     <h2
                       className={cn(
                         "text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-4 text-black dark:text-white transition-all duration-700 ease-out",
-                        "[text-shadow:0_0_10px_hsl(var(--accent)/0.5)] dark:[text-shadow:0_0_12px_hsl(var(--accent)/0.6)]", // Subtle glow
+                        "[text-shadow:0_0_10px_hsl(var(--accent)/0.5)] dark:[text-shadow:0_0_12px_hsl(var(--accent)/0.6)]",
                         isFirstSlideIntroVisible ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0"
                       )}
                     >
@@ -168,12 +168,11 @@ export function SmileGallerySection() {
                       {slide.description}
                     </p>
                   </div>
-                  {/* ArrowDownCircle removed */}
                 </div>
               )}
               {slide.type === 'image' && (
-                <div className="w-full max-w-md p-3 sm:p-4 bg-background/80 dark:bg-neutral-800/80 backdrop-blur-sm rounded-lg shadow-xl">
-                  <div className="relative aspect-[4/3] shadow-lg rounded-md overflow-hidden bg-muted">
+                <>
+                  <div className="relative w-full max-w-sm aspect-[4/3] shadow-lg rounded-lg overflow-hidden bg-muted">
                     <Image
                       src={slide.src}
                       alt={slide.alt}
@@ -184,11 +183,11 @@ export function SmileGallerySection() {
                     />
                   </div>
                   {slide.caption && (
-                    <p className="mt-3 sm:mt-4 text-base sm:text-lg text-foreground text-center">
+                    <p className="mt-4 text-base sm:text-lg text-foreground text-center bg-background/70 dark:bg-neutral-900/70 backdrop-blur-sm px-3 py-1 rounded-md shadow">
                       {slide.caption}
                     </p>
                   )}
-                </div>
+                </>
               )}
               {slide.type === 'cta' && (
                 <div className="bg-background/70 dark:bg-neutral-900/70 backdrop-blur-sm p-6 sm:p-8 rounded-lg shadow-md">
@@ -206,3 +205,4 @@ export function SmileGallerySection() {
     </section>
   );
 }
+    
