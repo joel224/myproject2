@@ -3,13 +3,14 @@
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useEffect, useRef, useState, useCallback } from 'react'; // Added useRef
+import { useEffect, useRef, useState, useCallback } from 'react'; 
 import { cn } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import type { MuxPlayerProps } from '@mux/mux-player-react';
 import { BookingPopupDialog } from './BookingPopupDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import Image from 'next/image';
+import { WaitTimeWidget } from './WaitTimeWidget'; // Import the WaitTimeWidget
 
 const MuxPlayer = dynamic<MuxPlayerProps>(
   () => import('@mux/mux-player-react').then((mod) => mod.default),
@@ -31,7 +32,7 @@ export function HeroSection() {
 
   const [showBookingPopup, setShowBookingPopup] = useState(false);
   const [showPromoPopup, setShowPromoPopup] = useState(false);
-  const promoImageContainerRef = useRef<HTMLDivElement>(null); // Ref for the image container
+  const promoImageContainerRef = useRef<HTMLDivElement>(null); 
 
   const currentPlaybackId = isMobile ? HERO_VIDEO_PLAYBACK_ID_MOBILE : HERO_VIDEO_PLAYBACK_ID_DESKTOP;
 
@@ -50,12 +51,12 @@ export function HeroSection() {
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll, { passive: true });
-    const timer = setTimeout(() => handleScroll(), 100); // Delay to ensure layout is stable
+    const timer = setTimeout(() => handleScroll(), 100); 
     return () => {
       window.removeEventListener('scroll', handleScroll);
       clearTimeout(timer);
     };
-  }, [handleScroll, isPlayerReady]); // Re-run if player readiness changes to apply initial parallax
+  }, [handleScroll, isPlayerReady]); 
 
   useEffect(() => {
     const observerOptions = { threshold: 0.1 };
@@ -77,16 +78,15 @@ export function HeroSection() {
   }, []);
 
   useEffect(() => {
-    // Temporarily removed sessionStorage for easier testing.
-    // console.log('HeroSection: Pop-up effect hook running.');
-    const popupTimer = setTimeout(() => {
-      // console.log('HeroSection: Timer fired! Attempting to show booking pop-up.');
+    console.log('HeroSection: Pop-up effect hook running.');
+    const timer = setTimeout(() => {
+      console.log('HeroSection: Timer fired! Attempting to show booking pop-up.');
       setShowBookingPopup(true);
     }, 10000);
 
     return () => {
-      // console.log('HeroSection: Cleaning up booking pop-up timer.');
-      clearTimeout(popupTimer);
+      console.log('HeroSection: Cleaning up booking pop-up timer.');
+      clearTimeout(timer);
     };
   }, []);
 
@@ -99,7 +99,7 @@ export function HeroSection() {
         {/* Video Background */}
         <div
           ref={playerContainerRef}
-          className="absolute top-0 left-0 w-full h-[150%]" // Increased height to allow for parallax shift
+          className="absolute top-0 left-0 w-full h-[150%]" 
           style={{ transition: 'transform 0.1s linear' }}
         >
           <MuxPlayer
@@ -141,16 +141,15 @@ export function HeroSection() {
               </p>
               <div className="flex flex-col gap-2 min-[400px]:flex-row justify-center">
                 <div
-                  className="relative" // Wrapper for hover trigger
+                  className="relative" 
                   onMouseEnter={() => {
                     setShowPromoPopup(true);
                   }}
                   onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => {
-                    // Check if the mouse is leaving to the promo image container itself
                     if (promoImageContainerRef.current && e.relatedTarget instanceof Node && promoImageContainerRef.current.contains(e.relatedTarget)) {
-                      return; // Do not hide if mouse is moving to the image pop-up
+                      return; 
                     }
-                    setShowPromoPopup(false); // Hide if mouse is leaving to somewhere else
+                    setShowPromoPopup(false); 
                   }}
                 >
                   <Link href="/#appointment">
@@ -175,19 +174,18 @@ export function HeroSection() {
             "transition-opacity duration-300 ease-out",
             showPromoPopup ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
           )}
-          // The overlay itself doesn't need mouse events for this specific show/hide logic
+          onMouseLeave={() => { 
+            setShowPromoPopup(false);
+          }}
         >
           <div
-            ref={promoImageContainerRef} // Assign the ref to the image's direct container
+            ref={promoImageContainerRef} 
             className={cn(
               "relative w-[80vw] max-w-4xl aspect-video transition-all duration-300 ease-out",
               showPromoPopup ? "scale-100 opacity-100" : "scale-95 opacity-0"
             )}
             onMouseEnter={() => {
-              setShowPromoPopup(true); // Keep open if mouse enters the image area
-            }}
-            onMouseLeave={() => {
-              setShowPromoPopup(false); // Hide if mouse leaves the image area
+              setShowPromoPopup(true); 
             }}
           >
             <Image
@@ -200,6 +198,7 @@ export function HeroSection() {
             />
           </div>
         </div>
+        <WaitTimeWidget /> {/* Render the floating wait time widget */}
       </section>
 
       <BookingPopupDialog

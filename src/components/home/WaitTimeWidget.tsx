@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Clock, Loader2, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -12,33 +12,9 @@ interface ClinicWaitTime {
 }
 
 export function WaitTimeWidget() {
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
   const [waitTime, setWaitTime] = useState<ClinicWaitTime | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsVisible(true);
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-
-    return () => {
-      if (sectionRef.current) observer.unobserve(sectionRef.current);
-    };
-  }, []);
 
   useEffect(() => {
     const fetchWaitTime = async () => {
@@ -60,46 +36,44 @@ export function WaitTimeWidget() {
     };
 
     fetchWaitTime();
+    // Set up an interval to refetch wait time periodically, e.g., every minute
+    const intervalId = setInterval(fetchWaitTime, 60000); 
+
+    // Clear interval on component unmount
+    return () => clearInterval(intervalId);
   }, []);
 
   return (
-    <section
-      ref={sectionRef}
-      className={cn(
-        "w-full py-8 md:py-12",
-        "initial-fade-in-up",
-        isVisible && "is-visible"
-      )}
+    <div
+      className="fixed bottom-6 right-6 z-30 shadow-2xl rounded-lg"
     >
-      <div className="container px-4 md:px-6 flex justify-center">
-        <Card className="bg-primary text-primary-foreground shadow-lg w-full max-w-md">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-lg font-semibold">Live Wait Time</CardTitle>
-            <Clock className="h-6 w-6 text-primary-foreground/80" />
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex items-center justify-center h-10">
-                <Loader2 className="h-8 w-8 animate-spin text-primary-foreground/70" />
-              </div>
-            ) : error ? (
-              <div className="flex flex-col items-center text-center text-primary-foreground/80">
-                <AlertTriangle className="h-8 w-8 mb-1" />
-                <p className="text-sm">{error}</p>
-              </div>
-            ) : waitTime ? (
-              <>
-                <div className="text-3xl font-bold">{waitTime.text}</div>
-                <p className="text-xs text-primary-foreground/70">
-                  Current estimated wait time for walk-ins.
-                </p>
-              </>
-            ) : (
-               <div className="text-3xl font-bold">-</div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </section>
+      <Card className="bg-primary text-primary-foreground w-full max-w-xs sm:max-w-sm"> {/* Adjusted max-width */}
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-base sm:text-lg font-semibold">Live Wait Time</CardTitle> {/* Responsive text size */}
+          <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground/80" /> {/* Responsive icon size */}
+        </CardHeader>
+        <CardContent className="pt-1"> {/* Reduced top padding for content */}
+          {isLoading && !waitTime ? ( // Show loader only on initial load if no data yet
+            <div className="flex items-center justify-center h-10">
+              <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary-foreground/70" />
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center text-center text-primary-foreground/80 py-2">
+              <AlertTriangle className="h-6 w-6 sm:h-8 sm:w-8 mb-1" />
+              <p className="text-xs sm:text-sm">{error}</p>
+            </div>
+          ) : waitTime ? (
+            <>
+              <div className="text-2xl sm:text-3xl font-bold">{waitTime.text}</div>
+              <p className="text-xs sm:text-sm text-primary-foreground/70 mt-0.5"> 
+                Current estimate. Last updated: {waitTime.updatedAt ? new Date(waitTime.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+              </p>
+            </>
+          ) : (
+             <div className="text-2xl sm:text-3xl font-bold">-</div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
