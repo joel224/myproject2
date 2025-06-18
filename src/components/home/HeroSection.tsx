@@ -143,7 +143,7 @@ export function HeroSection() {
                 <div
                   className="relative" // Wrapper for hover trigger
                   onMouseEnter={() => setShowPromoPopup(true)}
-                  onMouseLeave={() => setShowPromoPopup(false)}
+                  // onMouseLeave is removed from here
                 >
                   <Link href="/#appointment">
                     <Button
@@ -162,11 +162,12 @@ export function HeroSection() {
         {/* Large Promotional Image Pop-up */}
         <div
           className={cn(
-            "fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-8 md:p-12 lg:p-16", // Padding for the overlay itself
-            "bg-black/75 backdrop-blur-md", // Semi-transparent background with blur
+            "fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-8 md:p-12 lg:p-16", 
+            "bg-black/75 backdrop-blur-md", 
             "transition-opacity duration-300 ease-out",
             showPromoPopup ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
           )}
+          onMouseLeave={() => setShowPromoPopup(false)} // Mouse leave now on the overlay
         >
           {/* Container for the image to control its size and aspect ratio */}
           <div
@@ -179,7 +180,7 @@ export function HeroSection() {
               src={PROMO_IMAGE_URL}
               alt="Promotional Offer: Happy Patient"
               layout="fill"
-              objectFit="contain" // 'contain' ensures the whole image is visible within the box
+              objectFit="contain" 
               className="rounded-lg shadow-2xl"
               data-ai-hint="dental promotion happy patient"
             />
