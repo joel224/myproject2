@@ -1,4 +1,3 @@
-
 // src/components/home/HeroSection.tsx
 'use client';
 
@@ -10,9 +9,8 @@ import dynamic from 'next/dynamic';
 import type { MuxPlayerProps } from '@mux/mux-player-react';
 import { BookingPopupDialog } from './BookingPopupDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
-import Image from 'next/image'; // Added Image import
+import Image from 'next/image';
 
-// Dynamically import MuxPlayer with SSR disabled
 const MuxPlayer = dynamic<MuxPlayerProps>(
   () => import('@mux/mux-player-react').then((mod) => mod.default),
   { ssr: false, loading: () => <div className="absolute top-0 left-0 w-full h-full bg-black/50" /> }
@@ -20,6 +18,7 @@ const MuxPlayer = dynamic<MuxPlayerProps>(
 
 const HERO_VIDEO_PLAYBACK_ID_DESKTOP = "cbfCGJ7UGeVzI3SLW4xt2fEgTANh7uHd8C3E00QuAnDU";
 const HERO_VIDEO_PLAYBACK_ID_MOBILE = "d6029nUGS7fZ00W027QSUwzd01GtdUAyLC01qd02CaPX2t00Cc";
+const PROMO_IMAGE_URL = "https://drive.google.com/uc?export=download&id=1NhzQDy42-S4O69a6y1F6ti5HuUE8LWkn";
 
 export function HeroSection() {
   const videoRef = useRef<any>(null);
@@ -31,7 +30,7 @@ export function HeroSection() {
   const isMobile = useIsMobile();
 
   const [showBookingPopup, setShowBookingPopup] = useState(false);
-  const [showPromoPopup, setShowPromoPopup] = useState(false); // State for promo pop-up
+  const [showPromoPopup, setShowPromoPopup] = useState(false);
 
   const currentPlaybackId = isMobile ? HERO_VIDEO_PLAYBACK_ID_MOBILE : HERO_VIDEO_PLAYBACK_ID_DESKTOP;
 
@@ -48,10 +47,9 @@ export function HeroSection() {
     }
   }, []);
 
-
   useEffect(() => {
     window.addEventListener('scroll', handleScroll, { passive: true });
-    const timer = setTimeout(() => handleScroll(), 100); 
+    const timer = setTimeout(() => handleScroll(), 100);
     return () => {
       window.removeEventListener('scroll', handleScroll);
       clearTimeout(timer);
@@ -78,12 +76,13 @@ export function HeroSection() {
   }, []);
 
   useEffect(() => {
-    console.log('HeroSection: Pop-up effect hook running (Dev Mode - No Session Check).');
+    console.log('HeroSection: Pop-up effect hook running.');
+    // Removed sessionStorage check for easier testing as per user request
     const popupTimer = setTimeout(() => {
       console.log('HeroSection: Timer fired! Attempting to show pop-up.');
       setShowBookingPopup(true);
       console.log('HeroSection: Pop-up should be visible now (showBookingPopup set to true).');
-    }, 10000); // 10 seconds
+    }, 10000);
 
     return () => {
       console.log('HeroSection: Cleaning up pop-up timer.');
@@ -91,43 +90,37 @@ export function HeroSection() {
     };
   }, []);
 
-
   return (
     <>
       <section
         ref={sectionRef}
         className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-neutral-800"
       >
+        {/* Video Background */}
         <div
           ref={playerContainerRef}
           className="absolute top-0 left-0 w-full h-[150%]"
           style={{ transition: 'transform 0.1s linear' }}
         >
           <MuxPlayer
-              ref={videoRef}
-              playbackId={currentPlaybackId}
-              autoPlay
-              loop
-              muted
-              playsInline
-              noControls
-              className="absolute top-0 left-0 w-full h-full object-cover min-w-full min-h-full"
-              onLoadedMetadata={() => {
-                setIsPlayerReady(true);
-                handleScroll();
-              }}
-              onPlayerReady={() => {
-                setIsPlayerReady(true);
-                handleScroll();
-              }}
-              onError={(evt) => {
-                console.error("Hero MuxPlayer Raw Error Event:", evt);
-              }}
-            />
+            ref={videoRef}
+            playbackId={currentPlaybackId}
+            autoPlay
+            loop
+            muted
+            playsInline
+            noControls
+            className="absolute top-0 left-0 w-full h-full object-cover min-w-full min-h-full"
+            onLoadedMetadata={() => { setIsPlayerReady(true); handleScroll(); }}
+            onPlayerReady={() => { setIsPlayerReady(true); handleScroll(); }}
+            onError={(evt) => { console.error("Hero MuxPlayer Raw Error Event:", evt); }}
+          />
         </div>
 
+        {/* Gradient Overlay */}
         <div className="absolute inset-0 w-full h-full bg-gradient-to-b from-black/60 via-black/40 to-transparent z-[2] pointer-events-none"></div>
 
+        {/* Hero Content */}
         <div className="container relative px-4 md:px-6 z-[3] py-12 md:py-24 lg:py-32">
           <div className="flex flex-col items-center justify-center min-h-[calc(100vh-12rem)] text-center">
             <div
@@ -148,7 +141,7 @@ export function HeroSection() {
               </p>
               <div className="flex flex-col gap-2 min-[400px]:flex-row justify-center">
                 <div
-                  className="relative"
+                  className="relative" // Wrapper for hover trigger
                   onMouseEnter={() => setShowPromoPopup(true)}
                   onMouseLeave={() => setShowPromoPopup(false)}
                 >
@@ -160,31 +153,41 @@ export function HeroSection() {
                       Book an Appointment in 30 Seconds
                     </Button>
                   </Link>
-
-                  <div
-                    className={cn(
-                      "absolute bottom-full left-1/2 -translate-x-1/2 mb-3", // Position above button
-                      "p-2 bg-background rounded-lg shadow-2xl z-10",       // Pop-up styling
-                      "w-64 md:w-72",                                           // Width of the pop-up
-                      "transition-all duration-300 ease-out",
-                      showPromoPopup ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"
-                    )}
-                  >
-                    <Image
-                      src="https://drive.google.com/uc?export=download&id=1NhzQDy42-S4O69a6y1F6ti5HuUE8LWkn"
-                      alt="Promotional Offer: Happy Patient"
-                      width={288} // Corresponds to w-72
-                      height={192} // Example height, adjust based on actual image aspect ratio if needed
-                      className="rounded"
-                      data-ai-hint="dental promotion happy patient"
-                    />
-                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Large Promotional Image Pop-up */}
+        <div
+          className={cn(
+            "fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-8 md:p-12 lg:p-16", // Padding for the overlay itself
+            "bg-black/75 backdrop-blur-md", // Semi-transparent background with blur
+            "transition-opacity duration-300 ease-out",
+            showPromoPopup ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          )}
+        >
+          {/* Container for the image to control its size and aspect ratio */}
+          <div
+            className={cn(
+              "relative w-[80vw] max-w-4xl aspect-video transition-all duration-300 ease-out", 
+              showPromoPopup ? "scale-100 opacity-100" : "scale-95 opacity-0"
+            )}
+          >
+            <Image
+              src={PROMO_IMAGE_URL}
+              alt="Promotional Offer: Happy Patient"
+              layout="fill"
+              objectFit="contain" // 'contain' ensures the whole image is visible within the box
+              className="rounded-lg shadow-2xl"
+              data-ai-hint="dental promotion happy patient"
+            />
+          </div>
+        </div>
       </section>
+
+      {/* Booking Dialog (10-second timer) */}
       <BookingPopupDialog
         isOpen={showBookingPopup}
         onClose={() => setShowBookingPopup(false)}
