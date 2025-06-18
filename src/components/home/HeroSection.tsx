@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useEffect, useRef, useState, useCallback } from 'react'; 
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import type { MuxPlayerProps } from '@mux/mux-player-react';
@@ -32,7 +32,7 @@ export function HeroSection() {
 
   const [showBookingPopup, setShowBookingPopup] = useState(false);
   const [showPromoPopup, setShowPromoPopup] = useState(false);
-  const promoImageContainerRef = useRef<HTMLDivElement>(null); 
+  const promoImageContainerRef = useRef<HTMLDivElement>(null);
 
   const currentPlaybackId = isMobile ? HERO_VIDEO_PLAYBACK_ID_MOBILE : HERO_VIDEO_PLAYBACK_ID_DESKTOP;
 
@@ -51,12 +51,12 @@ export function HeroSection() {
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll, { passive: true });
-    const timer = setTimeout(() => handleScroll(), 100); 
+    const timer = setTimeout(() => handleScroll(), 100);
     return () => {
       window.removeEventListener('scroll', handleScroll);
       clearTimeout(timer);
     };
-  }, [handleScroll, isPlayerReady]); 
+  }, [handleScroll, isPlayerReady]);
 
   useEffect(() => {
     const observerOptions = { threshold: 0.1 };
@@ -79,16 +79,27 @@ export function HeroSection() {
 
   useEffect(() => {
     console.log('HeroSection: Pop-up effect hook running.');
-    const timer = setTimeout(() => {
-      console.log('HeroSection: Timer fired! Attempting to show booking pop-up.');
-      setShowBookingPopup(true);
-    }, 10000);
+    // const bookingPopupShown = sessionStorage.getItem('bookingPopupShown');
+    // console.log('HeroSection: bookingPopupShown from session storage =', bookingPopupShown);
 
-    return () => {
-      console.log('HeroSection: Cleaning up booking pop-up timer.');
-      clearTimeout(timer);
-    };
+    // if (!bookingPopupShown) {
+      console.log('HeroSection: Setting 10s timer for booking pop-up.');
+      const timer = setTimeout(() => {
+        console.log('HeroSection: 10s Timer fired! Setting showBookingPopup to true.');
+        setShowBookingPopup(true);
+        // console.log('HeroSection: Setting bookingPopupShown in session storage.');
+        // sessionStorage.setItem('bookingPopupShown', 'true');
+      }, 10000);
+
+      return () => {
+        console.log('HeroSection: Cleaning up booking pop-up timer.');
+        clearTimeout(timer);
+      };
+    // } else {
+      // console.log('HeroSection: Booking pop-up already shown this session. Timer not set.');
+    // }
   }, []);
+
 
   return (
     <>
@@ -99,7 +110,7 @@ export function HeroSection() {
         {/* Video Background */}
         <div
           ref={playerContainerRef}
-          className="absolute top-0 left-0 w-full h-[150%]" 
+          className="absolute top-0 left-0 w-full h-[150%]"
           style={{ transition: 'transform 0.1s linear' }}
         >
           <MuxPlayer
@@ -141,15 +152,16 @@ export function HeroSection() {
               </p>
               <div className="flex flex-col gap-2 min-[400px]:flex-row justify-center">
                 <div
-                  className="relative" 
+                  className="relative"
                   onMouseEnter={() => {
                     setShowPromoPopup(true);
                   }}
-                  onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => {
-                    if (promoImageContainerRef.current && e.relatedTarget instanceof Node && promoImageContainerRef.current.contains(e.relatedTarget)) {
-                      return; 
-                    }
-                    setShowPromoPopup(false); 
+                  onMouseLeave={() => {
+                    setTimeout(() => {
+                      if (promoImageContainerRef.current && !promoImageContainerRef.current.matches(':hover')) {
+                        setShowPromoPopup(false);
+                      }
+                    }, 50); // Small delay to allow mouse to enter promo pop-up
                   }}
                 >
                   <Link href="/#appointment">
@@ -168,25 +180,25 @@ export function HeroSection() {
 
         {/* Large Promotional Image Pop-up */}
         <div
+          ref={promoImageContainerRef}
           className={cn(
             "fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-8 md:p-12 lg:p-16",
             "bg-black/75 backdrop-blur-md",
             "transition-opacity duration-300 ease-out",
             showPromoPopup ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
           )}
-          onMouseLeave={() => { 
+           onMouseEnter={() => { // Keep pop-up open if mouse enters it
+            setShowPromoPopup(true);
+          }}
+          onMouseLeave={() => { // Hide pop-up if mouse leaves it
             setShowPromoPopup(false);
           }}
         >
           <div
-            ref={promoImageContainerRef} 
             className={cn(
               "relative w-[80vw] max-w-4xl aspect-video transition-all duration-300 ease-out",
               showPromoPopup ? "scale-100 opacity-100" : "scale-95 opacity-0"
             )}
-            onMouseEnter={() => {
-              setShowPromoPopup(true); 
-            }}
           >
             <Image
               src={PROMO_IMAGE_URL}

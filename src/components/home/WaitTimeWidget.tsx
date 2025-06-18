@@ -36,41 +36,39 @@ export function WaitTimeWidget() {
     };
 
     fetchWaitTime();
-    // Set up an interval to refetch wait time periodically, e.g., every minute
     const intervalId = setInterval(fetchWaitTime, 60000); 
 
-    // Clear interval on component unmount
     return () => clearInterval(intervalId);
   }, []);
 
   return (
     <div
-      className="fixed bottom-6 right-6 z-30 shadow-2xl rounded-lg"
+      className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-30 shadow-2xl rounded-lg"
     >
-      <Card className="bg-primary text-primary-foreground w-full max-w-xs sm:max-w-sm"> {/* Adjusted max-width */}
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-base sm:text-lg font-semibold">Live Wait Time</CardTitle> {/* Responsive text size */}
-          <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground/80" /> {/* Responsive icon size */}
+      <Card className="bg-primary text-primary-foreground w-full max-w-[280px] sm:max-w-xs">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-4">
+          <CardTitle className="text-sm sm:text-base font-semibold">Live Wait Time</CardTitle>
+          <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground/80" />
         </CardHeader>
-        <CardContent className="pt-1"> {/* Reduced top padding for content */}
-          {isLoading && !waitTime ? ( // Show loader only on initial load if no data yet
-            <div className="flex items-center justify-center h-10">
-              <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary-foreground/70" />
+        <CardContent className="pt-1 pb-3 px-4">
+          {isLoading && !waitTime ? (
+            <div className="flex items-center justify-center h-8">
+              <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin text-primary-foreground/70" />
             </div>
           ) : error ? (
-            <div className="flex flex-col items-center text-center text-primary-foreground/80 py-2">
-              <AlertTriangle className="h-6 w-6 sm:h-8 sm:w-8 mb-1" />
-              <p className="text-xs sm:text-sm">{error}</p>
+            <div className="flex flex-col items-center text-center text-primary-foreground/80 py-1">
+              <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 mb-0.5" />
+              <p className="text-[11px] sm:text-xs">{error}</p>
             </div>
           ) : waitTime ? (
             <>
-              <div className="text-2xl sm:text-3xl font-bold">{waitTime.text}</div>
-              <p className="text-xs sm:text-sm text-primary-foreground/70 mt-0.5"> 
-                Current estimate. Last updated: {waitTime.updatedAt ? new Date(waitTime.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+              <div className="text-xl sm:text-2xl font-bold">{waitTime.text}</div>
+              <p className="text-[10px] sm:text-xs text-primary-foreground/70 mt-0.5">
+                Last updated: {waitTime.updatedAt ? new Date(waitTime.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
               </p>
             </>
           ) : (
-             <div className="text-2xl sm:text-3xl font-bold">-</div>
+             <div className="text-xl sm:text-2xl font-bold">-</div>
           )}
         </CardContent>
       </Card>
