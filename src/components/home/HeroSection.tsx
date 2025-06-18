@@ -10,7 +10,7 @@ import dynamic from 'next/dynamic';
 import type { MuxPlayerProps } from '@mux/mux-player-react';
 import { BookingPopupDialog } from './BookingPopupDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
-
+import Image from 'next/image'; // Added Image import
 
 // Dynamically import MuxPlayer with SSR disabled
 const MuxPlayer = dynamic<MuxPlayerProps>(
@@ -31,6 +31,7 @@ export function HeroSection() {
   const isMobile = useIsMobile();
 
   const [showBookingPopup, setShowBookingPopup] = useState(false);
+  const [showPromoPopup, setShowPromoPopup] = useState(false); // State for promo pop-up
 
   const currentPlaybackId = isMobile ? HERO_VIDEO_PLAYBACK_ID_MOBILE : HERO_VIDEO_PLAYBACK_ID_DESKTOP;
 
@@ -50,12 +51,12 @@ export function HeroSection() {
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll, { passive: true });
-    const timer = setTimeout(() => handleScroll(), 100); // Ensure initial call after layout
+    const timer = setTimeout(() => handleScroll(), 100); 
     return () => {
       window.removeEventListener('scroll', handleScroll);
       clearTimeout(timer);
     };
-  }, [handleScroll, isPlayerReady]); 
+  }, [handleScroll, isPlayerReady]);
 
   useEffect(() => {
     const observerOptions = { threshold: 0.1 };
@@ -76,35 +77,30 @@ export function HeroSection() {
     };
   }, []);
 
-  // useEffect for the booking pop-up timer
   useEffect(() => {
-    console.log('HeroSection: Pop-up effect hook running.');
-    if (typeof window !== "undefined") {
-      // Removed sessionStorage check to make it pop up every time for dev
-      console.log('HeroSection: Setting 10s timer for booking pop-up (dev mode - always shows).');
-      const popupTimer = setTimeout(() => {
-        console.log('HeroSection: Timer fired! Attempting to show pop-up.');
-        setShowBookingPopup(true);
-        console.log('HeroSection: Pop-up should be visible now (showBookingPopup set to true).');
-      }, 10000); // 10 seconds
+    console.log('HeroSection: Pop-up effect hook running (Dev Mode - No Session Check).');
+    const popupTimer = setTimeout(() => {
+      console.log('HeroSection: Timer fired! Attempting to show pop-up.');
+      setShowBookingPopup(true);
+      console.log('HeroSection: Pop-up should be visible now (showBookingPopup set to true).');
+    }, 10000); // 10 seconds
 
-      return () => {
-        console.log('HeroSection: Cleaning up pop-up timer.');
-        clearTimeout(popupTimer);
-      };
-    }
-  }, []); // Empty dependency array ensures this runs only once on mount
+    return () => {
+      console.log('HeroSection: Cleaning up pop-up timer.');
+      clearTimeout(popupTimer);
+    };
+  }, []);
 
 
   return (
-    <> 
+    <>
       <section
         ref={sectionRef}
         className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-neutral-800"
       >
         <div
           ref={playerContainerRef}
-          className="absolute top-0 left-0 w-full h-[150%]" 
+          className="absolute top-0 left-0 w-full h-[150%]"
           style={{ transition: 'transform 0.1s linear' }}
         >
           <MuxPlayer
@@ -115,14 +111,14 @@ export function HeroSection() {
               muted
               playsInline
               noControls
-              className="absolute top-0 left-0 w-full h-full object-cover"
+              className="absolute top-0 left-0 w-full h-full object-cover min-w-full min-h-full"
               onLoadedMetadata={() => {
                 setIsPlayerReady(true);
-                handleScroll(); 
+                handleScroll();
               }}
-              onPlayerReady={() => { 
+              onPlayerReady={() => {
                 setIsPlayerReady(true);
-                handleScroll(); 
+                handleScroll();
               }}
               onError={(evt) => {
                 console.error("Hero MuxPlayer Raw Error Event:", evt);
@@ -138,9 +134,9 @@ export function HeroSection() {
               ref={textRef}
               className={cn(
                 "space-y-6",
-                "initial-fade-in-up", 
-                textVisible && "is-visible", 
-                "text-neutral-100", 
+                "initial-fade-in-up",
+                textVisible && "is-visible",
+                "text-neutral-100",
                 "max-w-2xl"
               )}
             >
@@ -151,21 +147,46 @@ export function HeroSection() {
                 Experience exceptional dental care at Dr. Loji's Dental Hub. We're dedicated to creating healthy, beautiful smiles for life.
               </p>
               <div className="flex flex-col gap-2 min-[400px]:flex-row justify-center">
-                <Link href="/#appointment">
-                  <Button
-                    size="lg"
-                    className="px-8 py-6 text-lg shadow-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-shadow"
+                <div
+                  className="relative"
+                  onMouseEnter={() => setShowPromoPopup(true)}
+                  onMouseLeave={() => setShowPromoPopup(false)}
+                >
+                  <Link href="/#appointment">
+                    <Button
+                      size="lg"
+                      className="px-8 py-6 text-lg shadow-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-shadow"
+                    >
+                      Book an Appointment in 30 Seconds
+                    </Button>
+                  </Link>
+
+                  <div
+                    className={cn(
+                      "absolute bottom-full left-1/2 -translate-x-1/2 mb-3", // Position above button
+                      "p-2 bg-background rounded-lg shadow-2xl z-10",       // Pop-up styling
+                      "w-64 md:w-72",                                           // Width of the pop-up
+                      "transition-all duration-300 ease-out",
+                      showPromoPopup ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"
+                    )}
                   >
-                    Book an Appointment in 30 Seconds
-                  </Button>
-                </Link>
+                    <Image
+                      src="https://drive.google.com/uc?export=download&id=1NhzQDy42-S4O69a6y1F6ti5HuUE8LWkn"
+                      alt="Promotional Offer: Happy Patient"
+                      width={288} // Corresponds to w-72
+                      height={192} // Example height, adjust based on actual image aspect ratio if needed
+                      className="rounded"
+                      data-ai-hint="dental promotion happy patient"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
-      <BookingPopupDialog 
-        isOpen={showBookingPopup} 
+      <BookingPopupDialog
+        isOpen={showBookingPopup}
         onClose={() => setShowBookingPopup(false)}
         onOpenChange={setShowBookingPopup}
       />
