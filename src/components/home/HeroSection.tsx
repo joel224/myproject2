@@ -1,3 +1,4 @@
+
 // src/components/home/HeroSection.tsx
 'use client';
 
@@ -18,7 +19,7 @@ const MuxPlayer = dynamic<MuxPlayerProps>(
 );
 
 const HERO_VIDEO_PLAYBACK_ID_DESKTOP = "cbfCGJ7UGeVzI3SLW4xt2fEgTANh7uHd8C3E00QuAnDU";
-const HERO_VIDEO_PLAYBACK_ID_MOBILE = "d6029nUGS7fZ00W027QSUwzd01GtdUAyLC01qd02CaPX2t00Cc";
+const HERO_VIDEO_PLAYBACK_ID_MOBILE = "ECn2TzbFivc9s8jGBr00K3AwdGCnyd8gurT301Vsn5p9k"; // Updated Mobile URL
 const PROMO_IMAGE_URL = "https://drive.google.com/uc?export=download&id=1NhzQDy42-S4O69a6y1F6ti5HuUE8LWkn";
 
 export function HeroSection() {
@@ -26,6 +27,8 @@ export function HeroSection() {
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
+  const promoImageContainerRef = useRef<HTMLDivElement>(null); // Ref for the promo image container
+
   const [textVisible, setTextVisible] = useState(false);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
   const isMobile = useIsMobile();
@@ -33,8 +36,6 @@ export function HeroSection() {
   const [showBookingPopup, setShowBookingPopup] = useState(false);
   const [showPromoPopup, setShowPromoPopup] = useState(false);
   
-  const hidePromoTimerRef = useRef<NodeJS.Timeout | null>(null); // Timer for promo pop-up
-
   const currentPlaybackId = isMobile ? HERO_VIDEO_PLAYBACK_ID_MOBILE : HERO_VIDEO_PLAYBACK_ID_DESKTOP;
 
   const handleScroll = useCallback(() => {
@@ -79,46 +80,30 @@ export function HeroSection() {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowBookingPopup(true);
-    }, 10000); 
+    // Logic for the 10-second automatic booking pop-up (once per session)
+    // This remains unchanged for now as per previous discussions, but could be revisited.
+    const bookingPopupAlreadyShown = sessionStorage.getItem('bookingPopupShown');
+    if (!bookingPopupAlreadyShown) {
+      console.log("HeroSection: Timer for booking pop-up is being set (10 seconds).");
+      const timer = setTimeout(() => {
+        console.log("HeroSection: 10-second timer fired. Attempting to show booking pop-up.");
+        setShowBookingPopup(true);
+        sessionStorage.setItem('bookingPopupShown', 'true');
+        console.log("HeroSection: bookingPopupShown set in sessionStorage, showBookingPopup set to true.");
+      }, 10000);
+      return () => clearTimeout(timer);
+    } else {
+      console.log("HeroSection: Booking pop-up already shown in this session. Timer not set.");
+    }
+  }, []);
 
-    return () => {
-      clearTimeout(timer);
-    };
-  }, []); 
-
-
-  const PROMO_POPUP_DELAY = 200; // milliseconds
 
   const handlePromoTriggerMouseEnter = () => {
-    if (hidePromoTimerRef.current) {
-      clearTimeout(hidePromoTimerRef.current);
-      hidePromoTimerRef.current = null;
-    }
     setShowPromoPopup(true);
   };
 
-  const handlePromoTriggerMouseLeave = () => {
-    hidePromoTimerRef.current = setTimeout(() => {
-      setShowPromoPopup(false);
-    }, PROMO_POPUP_DELAY);
-  };
-
-  const handlePromoPopupMouseEnter = () => {
-    if (hidePromoTimerRef.current) {
-      clearTimeout(hidePromoTimerRef.current);
-      hidePromoTimerRef.current = null;
-    }
-    if (!showPromoPopup) {
-       setShowPromoPopup(true);
-    }
-  };
-
   const handlePromoPopupMouseLeave = () => {
-    hidePromoTimerRef.current = setTimeout(() => {
-      setShowPromoPopup(false);
-    }, PROMO_POPUP_DELAY);
+    setShowPromoPopup(false);
   };
 
 
@@ -172,7 +157,7 @@ export function HeroSection() {
                 <div
                   className="relative" 
                   onMouseEnter={handlePromoTriggerMouseEnter}
-                  onMouseLeave={handlePromoTriggerMouseLeave}
+                  // MouseLeave is handled by the promo pop-up itself
                 >
                   <Link href="/#appointment">
                     <Button
@@ -188,15 +173,16 @@ export function HeroSection() {
           </div>
         </div>
 
+        {/* Promotional Image Pop-up */}
         <div
+          ref={promoImageContainerRef}
           className={cn(
             "fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-8 md:p-12 lg:p-16",
             "bg-black/75 backdrop-blur-md",
             "transition-opacity duration-300 ease-out",
             showPromoPopup ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
           )}
-          onMouseEnter={handlePromoPopupMouseEnter} 
-          onMouseLeave={handlePromoPopupMouseLeave} 
+          onMouseLeave={handlePromoPopupMouseLeave} // Hide when mouse leaves the pop-up area
         >
           <div
             className={cn(
