@@ -1,10 +1,54 @@
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Instagram, MessageSquare, Phone, MapPin } from 'lucide-react';
+import { Instagram, MessageSquare, Phone, MapPin, Mail } from 'lucide-react';
 import { Logo } from '@/components/icons/Logo';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
+
+  const locations = [
+    {
+      type: "Head Office",
+      name: "Head Office",
+      addressLines: [
+        "Classic Bazar Complex, Athani (P.O),",
+        "Nedumbassery, Ernakulam Dist."
+      ],
+      email: "drlojisdental@gmail.com",
+      phones: ["0484 2474782", "+91-98 47 39 14 14"]
+    },
+    {
+      type: "Branch",
+      name: "KUNNUKARA",
+      addressLines: [
+        "Kallumadaparambil, Near Catholic Syrian Bank,",
+        "Kunnukara, Ernakulam Dist."
+      ],
+      email: "drlojisdental@gmail.com",
+      phones: ["+91-98 47 39 14 14", "90 72 86 81 11"]
+    },
+    {
+      type: "Branch",
+      name: "Vattapparambu",
+      addressLines: [
+        "Bharanikulangara Towers, Vattaparambu. P.O,",
+        "Ernakulam Dist"
+      ],
+      email: "drlojisdental@gmail.com",
+      phones: ["+91-98 47 39 14 14", "90 72 86 83 33"]
+    },
+    {
+      type: "Branch",
+      name: "Angamaly",
+      addressLines: [
+        "Near S M Press, Opp. Chungath Jewellery,",
+        "Angamaly, Ernakulam Dist"
+      ],
+      email: "drlojisdental@gmail.com",
+      phones: ["+91-98 47 39 14 14", "90 72 71 52 14"]
+    }
+  ];
 
   return (
     <footer className="bg-muted/50 border-t">
@@ -29,25 +73,65 @@ export function Footer() {
             </ul>
           </div>
 
-          <div className="space-y-3">
-            <h4 className="font-semibold text-foreground">Contact Us</h4>
-            <address className="not-italic text-sm space-y-2">
+          <div className="space-y-4 md:col-span-2 lg:col-span-1">
+            <h4 className="font-semibold text-foreground">Our Locations</h4>
+            
+            {/* Head Office */}
+            <div className="space-y-2 text-sm">
+              <h5 className="font-medium text-foreground/90">{locations[0].name}</h5>
+              <p className="flex items-start text-muted-foreground">
+                <MapPin className="mr-2 mt-1 h-4 w-4 text-primary flex-shrink-0" />
+                <span>
+                  {locations[0].addressLines.map((line, index) => (
+                    <span key={index} className="block">{line}</span>
+                  ))}
+                </span>
+              </p>
               <p className="flex items-center text-muted-foreground">
-                <MapPin className="mr-2 h-4 w-4 text-primary" />
-                123 Dental Street, Smileville, ST 12345
+                <Mail className="mr-2 h-4 w-4 text-primary" />
+                <a href={`mailto:${locations[0].email}`} className="hover:text-primary">{locations[0].email}</a>
               </p>
-              <Link href="https://maps.google.com/?q=123+Dental+Street,+Smileville,+ST+12345" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline block">
-                Get Directions
-              </Link>
-              <p className="flex items-center text-muted-foreground">
-                <Phone className="mr-2 h-4 w-4 text-primary" />
-                <a href="tel:+1234567890" className="hover:text-primary">(123) 456-7890</a>
-              </p>
-               <p className="flex items-center text-muted-foreground">
-                <MessageSquare className="mr-2 h-4 w-4 text-primary" /> {/* Using MessageSquare for generic contact/WhatsApp */}
-                <a href="https://wa.me/1234567890" target="_blank" rel="noopener noreferrer" className="hover:text-primary">WhatsApp Us</a>
-              </p>
-            </address>
+              <div className="flex items-start text-muted-foreground">
+                <Phone className="mr-2 mt-1 h-4 w-4 text-primary flex-shrink-0" />
+                <div>
+                  {locations[0].phones.map((phone, index) => (
+                    <a key={index} href={`tel:${phone.replace(/\s+/g, '')}`} className="hover:text-primary block">{phone}</a>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Branches */}
+            {locations.slice(1).length > 0 && (
+              <div className="mt-4 space-y-3">
+                <h5 className="font-semibold text-foreground/90">Our Branches</h5>
+                {locations.slice(1).map((branch, idx) => (
+                  <div key={idx} className="space-y-1.5 text-sm pt-2 border-t border-border/50 first:border-t-0 first:pt-0">
+                     <p className="font-medium text-foreground/80">{idx + 1}. {branch.name}</p>
+                     <p className="flex items-start text-muted-foreground">
+                       <MapPin className="mr-2 mt-1 h-4 w-4 text-primary flex-shrink-0" />
+                       <span>
+                        {branch.addressLines.map((line, lineIdx) => (
+                          <span key={lineIdx} className="block">{line}</span>
+                        ))}
+                       </span>
+                     </p>
+                     <p className="flex items-center text-muted-foreground">
+                       <Mail className="mr-2 h-4 w-4 text-primary" />
+                       <a href={`mailto:${branch.email}`} className="hover:text-primary">{branch.email}</a>
+                     </p>
+                     <div className="flex items-start text-muted-foreground">
+                       <Phone className="mr-2 mt-1 h-4 w-4 text-primary flex-shrink-0" />
+                       <div>
+                        {branch.phones.map((phone, phoneIdx) => (
+                          <a key={phoneIdx} href={`tel:${phone.replace(/\s+/g, '')}`} className="hover:text-primary block">{phone}</a>
+                        ))}
+                       </div>
+                     </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           
           <div className="space-y-3">
@@ -59,11 +143,15 @@ export function Footer() {
                 </Button>
               </Link>
               <Link href="https://tiktok.com" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
-                {/* Using MessageSquare as a placeholder for TikTok as it's not in Lucide directly */}
                 <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 12a4 4 0 1 0 4 4V8.5a4.5 4.5 0 1 0-9 0V16a4 4 0 1 0 4-4V4.5A4.5 4.5 0 1 0 7.5 9"></path></svg>
                 </Button>
               </Link>
+            </div>
+            <div className="mt-4 text-sm">
+                <h5 className="font-medium text-foreground/90 mb-1">Working Hours:</h5>
+                <p className="text-muted-foreground">Mon - Sat: 9:00 AM - 6:00 PM</p>
+                <p className="text-muted-foreground">Sunday: Closed</p>
             </div>
           </div>
         </div>
