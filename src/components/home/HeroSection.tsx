@@ -78,27 +78,20 @@ export function HeroSection() {
 
   // useEffect for the booking pop-up timer
   useEffect(() => {
+    console.log('HeroSection: Pop-up effect hook running.');
     if (typeof window !== "undefined") {
-      const hasPoppedThisSession = sessionStorage.getItem('bookingPopupShown');
-      console.log('HeroSection mount: hasPoppedThisSession?', hasPoppedThisSession);
+      // Removed sessionStorage check to make it pop up every time for dev
+      console.log('HeroSection: Setting 10s timer for booking pop-up (dev mode - always shows).');
+      const popupTimer = setTimeout(() => {
+        console.log('HeroSection: Timer fired! Attempting to show pop-up.');
+        setShowBookingPopup(true);
+        console.log('HeroSection: Pop-up should be visible now (showBookingPopup set to true).');
+      }, 10000); // 10 seconds
 
-      if (!hasPoppedThisSession) {
-        console.log('HeroSection: Setting 10s timer for booking pop-up.');
-        const popupTimer = setTimeout(() => {
-          console.log('HeroSection: Timer fired! Attempting to show pop-up.');
-          // Set sessionStorage item first to ensure it's marked even if setShowBookingPopup has issues or is delayed.
-          sessionStorage.setItem('bookingPopupShown', 'true');
-          setShowBookingPopup(true);
-          console.log('HeroSection: Pop-up should be visible now (showBookingPopup set to true).');
-        }, 10000); // 10 seconds
-
-        return () => {
-          console.log('HeroSection: Cleaning up pop-up timer.');
-          clearTimeout(popupTimer); // Cleanup timer on unmount
-        };
-      } else {
-         console.log('HeroSection: Pop-up already shown this session, not setting timer.');
-      }
+      return () => {
+        console.log('HeroSection: Cleaning up pop-up timer.');
+        clearTimeout(popupTimer);
+      };
     }
   }, []); // Empty dependency array ensures this runs only once on mount
 
