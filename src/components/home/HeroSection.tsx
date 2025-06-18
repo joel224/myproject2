@@ -10,7 +10,7 @@ import type { MuxPlayerProps } from '@mux/mux-player-react';
 import { BookingPopupDialog } from './BookingPopupDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import Image from 'next/image';
-import { WaitTimeWidget } from './WaitTimeWidget'; // Import the WaitTimeWidget
+import { WaitTimeWidget } from './WaitTimeWidget';
 
 const MuxPlayer = dynamic<MuxPlayerProps>(
   () => import('@mux/mux-player-react').then((mod) => mod.default),
@@ -32,7 +32,8 @@ export function HeroSection() {
 
   const [showBookingPopup, setShowBookingPopup] = useState(false);
   const [showPromoPopup, setShowPromoPopup] = useState(false);
-  const promoImageContainerRef = useRef<HTMLDivElement>(null);
+  
+  const hidePromoTimerRef = useRef<NodeJS.Timeout | null>(null); // Timer for promo pop-up
 
   const currentPlaybackId = isMobile ? HERO_VIDEO_PLAYBACK_ID_MOBILE : HERO_VIDEO_PLAYBACK_ID_DESKTOP;
 
@@ -51,12 +52,12 @@ export function HeroSection() {
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll, { passive: true });
-    const timer = setTimeout(() => handleScroll(), 100);
+    const timer = setTimeout(() => handleScroll(), 100); 
     return () => {
       window.removeEventListener('scroll', handleScroll);
       clearTimeout(timer);
     };
-  }, [handleScroll, isPlayerReady]);
+  }, [handleScroll, isPlayerReady]); 
 
   useEffect(() => {
     const observerOptions = { threshold: 0.1 };
@@ -78,27 +79,47 @@ export function HeroSection() {
   }, []);
 
   useEffect(() => {
-    console.log('HeroSection: Pop-up effect hook running.');
-    // const bookingPopupShown = sessionStorage.getItem('bookingPopupShown');
-    // console.log('HeroSection: bookingPopupShown from session storage =', bookingPopupShown);
+    const timer = setTimeout(() => {
+      setShowBookingPopup(true);
+    }, 10000); 
 
-    // if (!bookingPopupShown) {
-      console.log('HeroSection: Setting 10s timer for booking pop-up.');
-      const timer = setTimeout(() => {
-        console.log('HeroSection: 10s Timer fired! Setting showBookingPopup to true.');
-        setShowBookingPopup(true);
-        // console.log('HeroSection: Setting bookingPopupShown in session storage.');
-        // sessionStorage.setItem('bookingPopupShown', 'true');
-      }, 10000);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, []); 
 
-      return () => {
-        console.log('HeroSection: Cleaning up booking pop-up timer.');
-        clearTimeout(timer);
-      };
-    // } else {
-      // console.log('HeroSection: Booking pop-up already shown this session. Timer not set.');
-    // }
-  }, []);
+
+  const PROMO_POPUP_DELAY = 200; // milliseconds
+
+  const handlePromoTriggerMouseEnter = () => {
+    if (hidePromoTimerRef.current) {
+      clearTimeout(hidePromoTimerRef.current);
+      hidePromoTimerRef.current = null;
+    }
+    setShowPromoPopup(true);
+  };
+
+  const handlePromoTriggerMouseLeave = () => {
+    hidePromoTimerRef.current = setTimeout(() => {
+      setShowPromoPopup(false);
+    }, PROMO_POPUP_DELAY);
+  };
+
+  const handlePromoPopupMouseEnter = () => {
+    if (hidePromoTimerRef.current) {
+      clearTimeout(hidePromoTimerRef.current);
+      hidePromoTimerRef.current = null;
+    }
+    if (!showPromoPopup) {
+       setShowPromoPopup(true);
+    }
+  };
+
+  const handlePromoPopupMouseLeave = () => {
+    hidePromoTimerRef.current = setTimeout(() => {
+      setShowPromoPopup(false);
+    }, PROMO_POPUP_DELAY);
+  };
 
 
   return (
@@ -107,10 +128,9 @@ export function HeroSection() {
         ref={sectionRef}
         className="relative w-full overflow-hidden min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-neutral-800"
       >
-        {/* Video Background */}
         <div
           ref={playerContainerRef}
-          className="absolute top-0 left-0 w-full h-[150%]"
+          className="absolute top-0 left-0 w-full h-[150%]" 
           style={{ transition: 'transform 0.1s linear' }}
         >
           <MuxPlayer
@@ -128,10 +148,8 @@ export function HeroSection() {
           />
         </div>
 
-        {/* Gradient Overlay */}
         <div className="absolute inset-0 w-full h-full bg-gradient-to-b from-black/60 via-black/40 to-transparent z-[2] pointer-events-none"></div>
 
-        {/* Hero Content */}
         <div className="container relative px-4 md:px-6 z-[3] py-12 md:py-24 lg:py-32">
           <div className="flex flex-col items-center justify-center min-h-[calc(100vh-12rem)] text-center">
             <div
@@ -140,7 +158,7 @@ export function HeroSection() {
                 "space-y-6",
                 "initial-fade-in-up",
                 textVisible && "is-visible",
-                "text-neutral-100",
+                "text-neutral-100", 
                 "max-w-2xl"
               )}
             >
@@ -152,17 +170,9 @@ export function HeroSection() {
               </p>
               <div className="flex flex-col gap-2 min-[400px]:flex-row justify-center">
                 <div
-                  className="relative"
-                  onMouseEnter={() => {
-                    setShowPromoPopup(true);
-                  }}
-                  onMouseLeave={() => {
-                    setTimeout(() => {
-                      if (promoImageContainerRef.current && !promoImageContainerRef.current.matches(':hover')) {
-                        setShowPromoPopup(false);
-                      }
-                    }, 50); // Small delay to allow mouse to enter promo pop-up
-                  }}
+                  className="relative" 
+                  onMouseEnter={handlePromoTriggerMouseEnter}
+                  onMouseLeave={handlePromoTriggerMouseLeave}
                 >
                   <Link href="/#appointment">
                     <Button
@@ -178,21 +188,15 @@ export function HeroSection() {
           </div>
         </div>
 
-        {/* Large Promotional Image Pop-up */}
         <div
-          ref={promoImageContainerRef}
           className={cn(
             "fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-8 md:p-12 lg:p-16",
             "bg-black/75 backdrop-blur-md",
             "transition-opacity duration-300 ease-out",
             showPromoPopup ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
           )}
-           onMouseEnter={() => { // Keep pop-up open if mouse enters it
-            setShowPromoPopup(true);
-          }}
-          onMouseLeave={() => { // Hide pop-up if mouse leaves it
-            setShowPromoPopup(false);
-          }}
+          onMouseEnter={handlePromoPopupMouseEnter} 
+          onMouseLeave={handlePromoPopupMouseLeave} 
         >
           <div
             className={cn(
@@ -210,7 +214,7 @@ export function HeroSection() {
             />
           </div>
         </div>
-        <WaitTimeWidget /> {/* Render the floating wait time widget */}
+        <WaitTimeWidget />
       </section>
 
       <BookingPopupDialog
