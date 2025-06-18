@@ -81,18 +81,17 @@ export function HeroSection() {
   }, []);
 
   useEffect(() => {
-    // Removed sessionStorage logic, pop-up shows every 10s for easier testing
-    console.log("HeroSection: Timer for booking pop-up is being set (10 seconds).");
+    const popupDelay = isMobile ? 15000 : 10000; // 15s for mobile, 10s for desktop
+    console.log(`HeroSection: Timer for booking pop-up is being set (${popupDelay / 1000} seconds). Mobile: ${isMobile}`);
     const timer = setTimeout(() => {
-      console.log("HeroSection: 10-second timer fired. Setting showBookingPopup to true.");
+      console.log(`HeroSection: ${popupDelay / 1000}-second timer fired. Setting showBookingPopup to true.`);
       setShowBookingPopup(true);
-      // No longer setting sessionStorage.setItem('bookingPopupShown', 'true');
-    }, 10000);
+    }, popupDelay);
     return () => {
       console.log("HeroSection: Cleanup function for booking pop-up timer.");
       clearTimeout(timer);
     };
-  }, []);
+  }, [isMobile]);
 
   const handlePromoTriggerMouseEnter = () => {
     if (hidePromoTimerRef.current) {
@@ -105,7 +104,7 @@ export function HeroSection() {
   const handlePromoTriggerMouseLeave = () => {
     hidePromoTimerRef.current = setTimeout(() => {
       setShowPromoPopup(false);
-    }, 150); // Adjust delay as needed
+    }, 200); 
   };
 
   const handlePromoPopupMouseEnter = () => {
@@ -113,14 +112,15 @@ export function HeroSection() {
       clearTimeout(hidePromoTimerRef.current);
       hidePromoTimerRef.current = null;
     }
-    setShowPromoPopup(true); // Ensure it stays open if mouse re-enters quickly
+    setShowPromoPopup(true); 
   };
   
   const handlePromoPopupMouseLeave = () => {
      hidePromoTimerRef.current = setTimeout(() => {
         setShowPromoPopup(false);
-    }, 100); // Shorter delay for leaving the popup itself
+    }, 100); 
   };
+
 
   return (
     <>
@@ -130,7 +130,7 @@ export function HeroSection() {
       >
         <div
           ref={playerContainerRef}
-          className="absolute top-0 left-0 w-full h-[150%] z-[1] bg-black" 
+          className="absolute top-0 left-0 w-full h-[152%] z-[1] bg-black"
           style={{ transition: 'transform 0.1s linear' }}
         >
           <MuxPlayer
