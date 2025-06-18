@@ -47,6 +47,10 @@ export function QuickActionsGrid() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
 
+  // For dynamic pop-up positioning of "Book Appointment" card
+  const bookCardRef = useRef<HTMLDivElement>(null);
+  const [popupPosition, setPopupPosition] = useState<'top' | 'bottom'>('top');
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -60,14 +64,35 @@ export function QuickActionsGrid() {
       { threshold: 0.1 }
     );
 
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
+    const currentSectionRef = sectionRef.current;
+    if (currentSectionRef) {
+      observer.observe(currentSectionRef);
     }
 
     return () => {
-      if (sectionRef.current) observer.unobserve(sectionRef.current);
+      if (currentSectionRef) observer.unobserve(currentSectionRef);
     };
   }, []);
+
+  const handleBookCardMouseEnter = () => {
+    if (bookCardRef.current) {
+      const cardRect = bookCardRef.current.getBoundingClientRect();
+      const POPUP_HEIGHT_ESTIMATE = 270; // Estimated height of the pop-up in pixels
+      const VIEWPORT_PADDING = 20; // Minimum space from viewport edge
+
+      const spaceAbove = cardRect.top - VIEWPORT_PADDING;
+      const spaceBelow = window.innerHeight - cardRect.bottom - VIEWPORT_PADDING;
+
+      if (spaceAbove >= POPUP_HEIGHT_ESTIMATE) {
+        setPopupPosition('top');
+      } else if (spaceBelow >= POPUP_HEIGHT_ESTIMATE) {
+        setPopupPosition('bottom');
+      } else {
+        // Default to the side with more space if neither fits perfectly
+        setPopupPosition(spaceAbove > spaceBelow ? 'top' : 'bottom');
+      }
+    }
+  };
 
   return (
     <section
@@ -104,51 +129,49 @@ export function QuickActionsGrid() {
 
             if (action.title === 'Book Appointment') {
               return (
-                <div className="relative group" key={action.title} style={cardDynamicStyle}>
+                <div 
+                  className="relative group" 
+                  key={action.title} 
+                  style={cardDynamicStyle}
+                  ref={bookCardRef}
+                  onMouseEnter={handleBookCardMouseEnter}
+                >
                   <Card
                     className={cn(
                       commonCardClasses,
                       isVisible && "is-visible",
-                      "group-hover:shadow-2xl" // Enhanced shadow on group hover
+                      "group-hover:shadow-2xl"
                     )}
-                    // Removed individual hover scale/translate for this card
                   >
                     {actionCardContent}
                   </Card>
-                  {/* Pop-up content */}
                   <div className={cn(
-                    "absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-80 p-5",
+                    "absolute left-1/2 -translate-x-1/2 w-96 p-6", // Increased width and padding
+                    popupPosition === 'top' ? 'bottom-full mb-3' : 'top-full mt-3',
                     "bg-card border border-border shadow-2xl rounded-xl",
                     "opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100",
-                    "transition-all duration-300 ease-out origin-bottom", // Origin for scale animation
-                    "pointer-events-none group-hover:pointer-events-auto", // Make it interactive on hover
-                    "z-30 text-left space-y-3.5 text-card-foreground" // Increased z-index and spacing
+                    "transition-all duration-300 ease-out origin-bottom",
+                    "pointer-events-none group-hover:pointer-events-auto",
+                    "z-30 text-left space-y-3.5 text-card-foreground"
                   )}>
-                    {/* Section 1: Trusted Experts */}
                     <div className="text-center">
-                      <p className="text-xs font-medium uppercase tracking-wider text-primary mb-0.5">Trusted Dental Experts</p>
+                      <p className="text-xs font-medium uppercase tracking-wider text-accent mb-0.5">Trusted Dental Experts</p>
                       <div className="flex items-baseline justify-center gap-x-1.5">
                         <span className="text-5xl font-bold text-accent">100K+</span>
                         <span className="text-sm text-muted-foreground relative top-1">Teeth Restored</span>
                       </div>
                     </div>
-
                     <div className="h-px bg-border/60"></div>
-
-                    {/* Section 2: Painless Procedures */}
                     <div className="text-center">
-                      <p className="text-xs font-medium uppercase tracking-wider text-primary mb-1">Your Comfort, Our Priority</p>
+                      <p className="text-xs font-medium uppercase tracking-wider text-accent mb-1">Your Comfort, Our Priority</p>
                       <p className="text-2xl font-semibold text-accent">
-                        PAIN-FREE
+                        PAIN-LESS
                       </p>
-                      <p className="text-sm text-muted-foreground">Injections &amp; Surgery</p>
+                      <p className="text-sm text-muted-foreground">Injection &amp; Surgery</p>
                     </div>
-                    
                     <div className="h-px bg-border/60"></div>
-
-                    {/* Section 3: Financial Accessibility */}
                     <div className="text-center">
-                      <p className="text-xs font-medium uppercase tracking-wider text-primary mb-1">Smiles For Everyone</p>
+                      <p className="text-xs font-medium uppercase tracking-wider text-accent mb-1">Smiles For Everyone</p>
                       <p className="text-xl font-semibold text-accent">Flexible Financing</p>
                       <p className="text-sm text-muted-foreground">Plans To Fit Your Budget</p>
                     </div>
@@ -162,7 +185,7 @@ export function QuickActionsGrid() {
                   className={cn(
                     commonCardClasses,
                     isVisible && "is-visible",
-                    "hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.03]" // Original hover for other cards
+                    "hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.03]"
                   )}
                   style={cardDynamicStyle}
                 >
@@ -176,3 +199,4 @@ export function QuickActionsGrid() {
     </section>
   );
 }
+
