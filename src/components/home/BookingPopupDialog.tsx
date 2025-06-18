@@ -1,3 +1,4 @@
+
 // src/components/home/BookingPopupDialog.tsx
 'use client';
 
@@ -50,6 +51,7 @@ export function BookingPopupDialog({ isOpen, onClose, onOpenChange }: BookingPop
   };
 
   useEffect(() => {
+    // Reset form fields when the dialog is closed
     if (!isOpen) {
       setPhoneNumber('');
       setSelectedCity('');
@@ -61,7 +63,7 @@ export function BookingPopupDialog({ isOpen, onClose, onOpenChange }: BookingPop
       <DialogContent className="sm:max-w-2xl lg:max-w-3xl p-0 overflow-hidden">
         <div className="flex flex-col md:flex-row min-h-[300px] md:min-h-[400px]">
           {/* Left side: Image */}
-          <div className="hidden md:block md:w-1/3 lg:w-2/5 relative">
+          <div className="hidden md:block md:w-1/4 lg:w-1/3 relative"> {/* Adjusted width */}
             <Image
               src="https://drive.google.com/uc?export=download&id=10HnjuMf4QBKmklhRdTvGKfcN5yrxo1G9"
               alt="Smiling patient receiving dental care"
@@ -74,7 +76,7 @@ export function BookingPopupDialog({ isOpen, onClose, onOpenChange }: BookingPop
           </div>
 
           {/* Right side: Form Content */}
-          <div className="w-full md:w-2/3 lg:w-3/5 p-6 sm:p-8 flex flex-col justify-center space-y-4">
+          <div className="w-full md:w-3/4 lg:w-2/3 p-6 sm:p-8 flex flex-col justify-center space-y-4"> {/* Adjusted width */}
             <DialogHeader className="text-center md:text-left">
               <DialogTitle className="text-2xl text-primary">Bring out your smile!</DialogTitle>
               <DialogDescription className="pt-2">
@@ -84,11 +86,11 @@ export function BookingPopupDialog({ isOpen, onClose, onOpenChange }: BookingPop
             
             <div className="grid gap-4">
               <div className="space-y-2">
-                <Label htmlFor="popup-phone-main" className="text-left">
+                <Label htmlFor="popup-phone" className="text-left">
                   Phone
                 </Label>
                 <Input
-                  id="popup-phone-main"
+                  id="popup-phone"
                   type="tel"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
@@ -97,11 +99,11 @@ export function BookingPopupDialog({ isOpen, onClose, onOpenChange }: BookingPop
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="popup-city-main" className="text-left">
+                <Label htmlFor="popup-city" className="text-left">
                   City
                 </Label>
                 <Select value={selectedCity} onValueChange={setSelectedCity} required>
-                  <SelectTrigger id="popup-city-main">
+                  <SelectTrigger id="popup-city">
                     <SelectValue placeholder="Select your city" />
                   </SelectTrigger>
                   <SelectContent>
@@ -138,3 +140,5 @@ export function BookingPopupDialog({ isOpen, onClose, onOpenChange }: BookingPop
     </Dialog>
   );
 }
+
+    
