@@ -19,7 +19,7 @@ const MuxPlayer = dynamic<MuxPlayerProps>(
 );
 
 const HERO_VIDEO_PLAYBACK_ID_DESKTOP = "cbfCGJ7UGeVzI3SLW4xt2fEgTANh7uHd8C3E00QuAnDU";
-const HERO_VIDEO_PLAYBACK_ID_MOBILE = "ECn2TzbFivc9s8jGBr00K3AwdGCnyd8gurT301Vsn5p9k"; // Updated Mobile URL
+const HERO_VIDEO_PLAYBACK_ID_MOBILE = "ECn2TzbFivc9s8jGBr00K3AwdGCnyd8gurT301Vsn5p9k";
 const PROMO_IMAGE_URL = "https://drive.google.com/uc?export=download&id=1NhzQDy42-S4O69a6y1F6ti5HuUE8LWkn";
 
 export function HeroSection() {
@@ -27,7 +27,8 @@ export function HeroSection() {
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
-  const promoImageContainerRef = useRef<HTMLDivElement>(null); // Ref for the promo image container
+  const promoImageContainerRef = useRef<HTMLDivElement>(null);
+  const hidePromoTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const [textVisible, setTextVisible] = useState(false);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
@@ -80,32 +81,46 @@ export function HeroSection() {
   }, []);
 
   useEffect(() => {
-    // Logic for the 10-second automatic booking pop-up (once per session)
-    // This remains unchanged for now as per previous discussions, but could be revisited.
-    const bookingPopupAlreadyShown = sessionStorage.getItem('bookingPopupShown');
-    if (!bookingPopupAlreadyShown) {
-      console.log("HeroSection: Timer for booking pop-up is being set (10 seconds).");
-      const timer = setTimeout(() => {
-        console.log("HeroSection: 10-second timer fired. Attempting to show booking pop-up.");
-        setShowBookingPopup(true);
-        sessionStorage.setItem('bookingPopupShown', 'true');
-        console.log("HeroSection: bookingPopupShown set in sessionStorage, showBookingPopup set to true.");
-      }, 10000);
-      return () => clearTimeout(timer);
-    } else {
-      console.log("HeroSection: Booking pop-up already shown in this session. Timer not set.");
-    }
+    // Removed sessionStorage logic, pop-up shows every 10s for easier testing
+    console.log("HeroSection: Timer for booking pop-up is being set (10 seconds).");
+    const timer = setTimeout(() => {
+      console.log("HeroSection: 10-second timer fired. Setting showBookingPopup to true.");
+      setShowBookingPopup(true);
+      // No longer setting sessionStorage.setItem('bookingPopupShown', 'true');
+    }, 10000);
+    return () => {
+      console.log("HeroSection: Cleanup function for booking pop-up timer.");
+      clearTimeout(timer);
+    };
   }, []);
 
-
   const handlePromoTriggerMouseEnter = () => {
+    if (hidePromoTimerRef.current) {
+      clearTimeout(hidePromoTimerRef.current);
+      hidePromoTimerRef.current = null;
+    }
     setShowPromoPopup(true);
   };
 
-  const handlePromoPopupMouseLeave = () => {
-    setShowPromoPopup(false);
+  const handlePromoTriggerMouseLeave = () => {
+    hidePromoTimerRef.current = setTimeout(() => {
+      setShowPromoPopup(false);
+    }, 150); // Adjust delay as needed
   };
 
+  const handlePromoPopupMouseEnter = () => {
+    if (hidePromoTimerRef.current) {
+      clearTimeout(hidePromoTimerRef.current);
+      hidePromoTimerRef.current = null;
+    }
+    setShowPromoPopup(true); // Ensure it stays open if mouse re-enters quickly
+  };
+  
+  const handlePromoPopupMouseLeave = () => {
+     hidePromoTimerRef.current = setTimeout(() => {
+        setShowPromoPopup(false);
+    }, 100); // Shorter delay for leaving the popup itself
+  };
 
   return (
     <>
@@ -115,7 +130,7 @@ export function HeroSection() {
       >
         <div
           ref={playerContainerRef}
-          className="absolute top-0 left-0 w-full h-[150%]" 
+          className="absolute top-0 left-0 w-full h-[150%] z-[1] bg-black" 
           style={{ transition: 'transform 0.1s linear' }}
         >
           <MuxPlayer
@@ -126,7 +141,7 @@ export function HeroSection() {
             muted
             playsInline
             noControls
-            className="absolute top-0 left-0 w-full h-full object-cover min-w-full min-h-full"
+            className="absolute inset-0 w-full h-full object-cover min-w-full min-h-full"
             onLoadedMetadata={() => { setIsPlayerReady(true); handleScroll(); }}
             onPlayerReady={() => { setIsPlayerReady(true); handleScroll(); }}
             onError={(evt) => { console.error("Hero MuxPlayer Raw Error Event:", evt); }}
@@ -157,7 +172,7 @@ export function HeroSection() {
                 <div
                   className="relative" 
                   onMouseEnter={handlePromoTriggerMouseEnter}
-                  // MouseLeave is handled by the promo pop-up itself
+                  onMouseLeave={handlePromoTriggerMouseLeave}
                 >
                   <Link href="/#appointment">
                     <Button
@@ -182,7 +197,8 @@ export function HeroSection() {
             "transition-opacity duration-300 ease-out",
             showPromoPopup ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
           )}
-          onMouseLeave={handlePromoPopupMouseLeave} // Hide when mouse leaves the pop-up area
+          onMouseEnter={handlePromoPopupMouseEnter}
+          onMouseLeave={handlePromoPopupMouseLeave}
         >
           <div
             className={cn(
