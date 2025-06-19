@@ -16,7 +16,7 @@ const MuxPlayer = dynamic<MuxPlayerProps>(
   { ssr: false, loading: () => <div className="absolute inset-0 w-full h-full bg-black/50" /> }
 );
 
-const MOBILE_GALLERY_VIDEO_PLAYBACK_ID = "d6029nUGS7fZ00W027QSUwzd01GtdUAyLC01qd02CaPX2t00Cc";
+const MOBILE_GALLERY_VIDEO_PLAYBACK_ID = "ECn2TzbFivc9s8jGBr00K3AwdGCnyd8gurT301Vsn5p9k";
 
 interface SlideContent {
   type: 'intro' | 'image' | 'cta' | 'image-gallery';
@@ -181,15 +181,16 @@ export function SmileGallerySection() {
       >
         {renderableSections.map((section, index) => (
           <div
-            key={index} // Use index for key as section structure might change
+            key={index} 
             className="h-screen w-full snap-start flex flex-col items-center relative"
           >
             <div
               className={cn(
                 "w-full h-full flex flex-col items-center",
                 section.type === 'intro' ? 'justify-start py-10 sm:py-12 md:pt-16 lg:pt-20' :
-                section.type === 'image-gallery' ? 'justify-center p-4' : // CTA or other types
-                'justify-center p-4 sm:p-6 md:p-10'
+                section.type === 'image-gallery' ? 'justify-center p-4' :
+                section.type === 'cta' ? 'justify-start pt-16 sm:pt-20 md:pt-24 p-4 sm:p-6 md:p-10' : 
+                'justify-center p-4 sm:p-6 md:p-10' 
               )}
             >
               {section.type === 'intro' && (
