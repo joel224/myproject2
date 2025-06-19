@@ -19,7 +19,7 @@ const MuxPlayer = dynamic<MuxPlayerProps>(
 );
 
 const HERO_VIDEO_PLAYBACK_ID_DESKTOP = "cbfCGJ7UGeVzI3SLW4xt2fEgTANh7uHd8C3E00QuAnDU";
-const HERO_VIDEO_PLAYBACK_ID_MOBILE = "D3mIJKP4RyoacfufEKanS3gcEKo95gzWJjlzkfPMLUk";
+const HERO_VIDEO_PLAYBACK_ID_MOBILE = "ECn2TzbFivc9s8jGBr00K3AwdGCnyd8gurT301Vsn5p9k";
 const PROMO_IMAGE_URL = "https://drive.google.com/uc?export=download&id=1NhzQDy42-S4O69a6y1F6ti5HuUE8LWkn";
 
 export function HeroSection() {
@@ -36,7 +36,7 @@ export function HeroSection() {
 
   const [showBookingPopup, setShowBookingPopup] = useState(false);
   const [showPromoPopup, setShowPromoPopup] = useState(false);
-  
+
   const currentPlaybackId = isMobile ? HERO_VIDEO_PLAYBACK_ID_MOBILE : HERO_VIDEO_PLAYBACK_ID_DESKTOP;
 
   const handleScroll = useCallback(() => {
@@ -54,12 +54,12 @@ export function HeroSection() {
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll, { passive: true });
-    const timer = setTimeout(() => handleScroll(), 100); 
+    const timer = setTimeout(() => handleScroll(), 100);
     return () => {
       window.removeEventListener('scroll', handleScroll);
       clearTimeout(timer);
     };
-  }, [handleScroll, isPlayerReady]); 
+  }, [handleScroll, isPlayerReady]);
 
   useEffect(() => {
     const observerOptions = { threshold: 0.1 };
@@ -81,14 +81,11 @@ export function HeroSection() {
   }, []);
 
   useEffect(() => {
-    const popupDelay = isMobile ? 17000 : 10000; // 20s for mobile, 10s for desktop
-    console.log(`HeroSection: Timer for booking pop-up is being set (${popupDelay / 1000} seconds). Mobile: ${isMobile}`);
+    const popupDelay = isMobile ? 15000 : 10000; // 15s for mobile, 10s for desktop
     const timer = setTimeout(() => {
-      console.log(`HeroSection: ${popupDelay / 1000}-second timer fired. Setting showBookingPopup to true.`);
       setShowBookingPopup(true);
     }, popupDelay);
     return () => {
-      console.log("HeroSection: Cleanup function for booking pop-up timer.");
       clearTimeout(timer);
     };
   }, [isMobile]);
@@ -104,7 +101,7 @@ export function HeroSection() {
   const handlePromoTriggerMouseLeave = () => {
     hidePromoTimerRef.current = setTimeout(() => {
       setShowPromoPopup(false);
-    }, 200); 
+    }, 200);
   };
 
   const handlePromoPopupMouseEnter = () => {
@@ -112,13 +109,13 @@ export function HeroSection() {
       clearTimeout(hidePromoTimerRef.current);
       hidePromoTimerRef.current = null;
     }
-    setShowPromoPopup(true); 
+    setShowPromoPopup(true);
   };
-  
+
   const handlePromoPopupMouseLeave = () => {
      hidePromoTimerRef.current = setTimeout(() => {
         setShowPromoPopup(false);
-    }, 100); 
+    }, 100);
   };
 
 
@@ -130,7 +127,7 @@ export function HeroSection() {
       >
         <div
           ref={playerContainerRef}
-          className="absolute top-0 left-0 w-full h-[152%] z-[1] bg-black"
+          className="absolute top-0 left-0 w-full h-[165%] z-[1] bg-black" // Video height increased
           style={{ transition: 'transform 0.1s linear' }}
         >
           <MuxPlayer
@@ -141,7 +138,7 @@ export function HeroSection() {
             muted
             playsInline
             noControls
-            className="absolute inset-0 w-full h-full object-cover min-w-full min-h-full"
+            className="absolute inset-0 w-full h-full object-cover min-w-full min-h-full transform -translate-y-6" // Shifted video up
             onLoadedMetadata={() => { setIsPlayerReady(true); handleScroll(); }}
             onPlayerReady={() => { setIsPlayerReady(true); handleScroll(); }}
             onError={(evt) => { console.error("Hero MuxPlayer Raw Error Event:", evt); }}
@@ -158,19 +155,35 @@ export function HeroSection() {
                 "space-y-6",
                 "initial-fade-in-up",
                 textVisible && "is-visible",
-                "text-neutral-100", 
+                "text-neutral-100",
                 "max-w-2xl"
               )}
             >
-              <h1 className="font-manrope text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-                Your <span className="inline-block transition-transform duration-300 ease-in-out hover:scale-105 [text-shadow:0_0_8px_hsl(var(--primary)/0.7)]">Smile</span>, Our Passion!
-              </h1>
+              <div className="relative inline-block">
+                <h1 className="font-manrope text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
+                  Your <span className="inline-block transition-transform duration-300 ease-in-out hover:scale-105 [text-shadow:0_0_8px_hsl(var(--primary)/0.7)]">Smile</span>, Our Passion!
+                </h1>
+                <svg
+                  className="absolute bottom-0 left-0 w-full h-[10px]"
+                  viewBox="0 0 300 10"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M5 5 C 75 15, 225 15, 295 5"
+                    stroke="#86EFAC"
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </div>
               <p className="max-w-[600px] text-neutral-200 md:text-xl mx-auto">
                 Experience exceptional dental care at Dr. Loji's Dental Hub. We're dedicated to creating healthy, beautiful smiles for life.
               </p>
               <div className="flex flex-col gap-2 min-[400px]:flex-row justify-center">
                 <div
-                  className="relative" 
+                  className="relative"
                   onMouseEnter={handlePromoTriggerMouseEnter}
                   onMouseLeave={handlePromoTriggerMouseLeave}
                 >
@@ -189,12 +202,12 @@ export function HeroSection() {
         </div>
 
         {/* Promotional Image Pop-up */}
-        <div
+       {showPromoPopup && (
+         <div
           ref={promoImageContainerRef}
           className={cn(
             "fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-8 md:p-12 lg:p-16",
-            "bg-black/75 backdrop-blur-md",
-            "transition-opacity duration-300 ease-out",
+            "bg-black/75 backdrop-blur-md transition-opacity duration-300 ease-out",
             showPromoPopup ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
           )}
           onMouseEnter={handlePromoPopupMouseEnter}
@@ -214,8 +227,19 @@ export function HeroSection() {
               className="rounded-lg shadow-2xl"
               data-ai-hint="dental promotion happy patient"
             />
+            {/* Close Button */}
+            <button
+              onClick={() => setShowPromoPopup(false)}
+              className="absolute top-4 left-4 z-50 flex items-center px-4 py-2 bg-green-500 text-white rounded-full shadow-lg hover:bg-green-600 transition-colors text-sm font-semibold"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 transform rotate-45" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              CLOSE?
+            </button>
           </div>
         </div>
+       )}
         <WaitTimeWidget />
       </section>
 
