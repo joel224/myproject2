@@ -19,7 +19,7 @@ const MuxPlayer = dynamic<MuxPlayerProps>(
 );
 
 const HERO_VIDEO_PLAYBACK_ID_DESKTOP = "cbfCGJ7UGeVzI3SLW4xt2fEgTANh7uHd8C3E00QuAnDU";
-const HERO_VIDEO_PLAYBACK_ID_MOBILE = "ECn2TzbFivc9s8jGBr00K3AwdGCnyd8gurT301Vsn5p9k";
+const HERO_VIDEO_PLAYBACK_ID_MOBILE = "D3mIJKP4RyoacfufEKanS3gcEKo95gzWJjlzkfPMLUk";
 const PROMO_IMAGE_URL = "https://drive.google.com/uc?export=download&id=1NhzQDy42-S4O69a6y1F6ti5HuUE8LWkn";
 
 export function HeroSection() {
@@ -81,7 +81,7 @@ export function HeroSection() {
   }, []);
 
   useEffect(() => {
-    const popupDelay = isMobile ? 15000 : 10000; // 15s for mobile, 10s for desktop
+    const popupDelay = isMobile ? 17000 : 10000; // 20s for mobile, 10s for desktop
     console.log(`HeroSection: Timer for booking pop-up is being set (${popupDelay / 1000} seconds). Mobile: ${isMobile}`);
     const timer = setTimeout(() => {
       console.log(`HeroSection: ${popupDelay / 1000}-second timer fired. Setting showBookingPopup to true.`);

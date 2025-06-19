@@ -5,7 +5,7 @@
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import type { MuxPlayerProps } from '@mux/mux-player-react';
@@ -18,7 +18,20 @@ const MuxPlayer = dynamic<MuxPlayerProps>(
 
 const MOBILE_GALLERY_VIDEO_PLAYBACK_ID = "d6029nUGS7fZ00W027QSUwzd01GtdUAyLC01qd02CaPX2t00Cc";
 
-const gallerySlidesContent = [
+interface SlideContent {
+  type: 'intro' | 'image' | 'cta' | 'image-gallery';
+  title?: string;
+  description?: string;
+  src?: string;
+  alt?: string;
+  caption?: string;
+  dataAiHint?: string;
+  buttonText?: string;
+  href?: string;
+  images?: Array<Extract<typeof gallerySlidesContent[0], { type: 'image' }>>; // For image-gallery
+}
+
+const gallerySlidesContent: Array<Extract<SlideContent, { type: 'intro' | 'image' | 'cta' }>> = [
   {
     type: 'intro' as const,
     title: 'Transform Your Smile',
@@ -63,6 +76,38 @@ export function SmileGallerySection() {
   const [isFirstSlideIntroVisible, setIsFirstSlideIntroVisible] = useState(false);
   const isMobile = useIsMobile();
 
+  const renderableSections = useMemo(() => {
+    const processedSections: SlideContent[] = [];
+    const imageItems: Array<Extract<typeof gallerySlidesContent[0], { type: 'image' }>> = [];
+
+    gallerySlidesContent.forEach(slide => {
+      if (slide.type === 'image') {
+        imageItems.push(slide);
+      } else {
+        if (slide.type === 'intro') {
+          processedSections.push(slide);
+        }
+      }
+    });
+
+    if (imageItems.length > 0) {
+      processedSections.push({
+        type: 'image-gallery',
+        title: 'Patient Transformations', // Title for the gallery
+        images: imageItems,
+      });
+    }
+    
+    const ctaSlide = gallerySlidesContent.find(slide => slide.type === 'cta');
+    if (ctaSlide) {
+        processedSections.push(ctaSlide);
+    }
+
+
+    return processedSections;
+  }, []);
+
+
   useEffect(() => {
     const sectionEl = sectionRef.current;
     if (!sectionEl) return;
@@ -89,14 +134,14 @@ export function SmileGallerySection() {
           introObserver.unobserve(introContentEl);
         }
       }),
-      { threshold: 0.1 } 
+      { threshold: 0.1 }
     );
     introObserver.observe(introContentEl);
     return () => { if (introContentEl) introObserver.unobserve(introContentEl); };
   }, []);
 
 
-  const numSlides = gallerySlidesContent.length;
+  const numSlides = renderableSections.length;
   const scrollContainerStyle = {
     '--num-slides': numSlides,
     height: `calc(var(--num-slides) * 100vh)`,
@@ -126,27 +171,28 @@ export function SmileGallerySection() {
             noControls
             className="absolute inset-0 w-full h-full min-w-full min-h-full object-cover"
           />
+           <div className="absolute inset-0 bg-black/30"></div> {/* Dimming overlay for video */}
         </div>
       )}
       <div
         ref={scrollContainerRef}
-        className="relative snap-y snap-mandatory overflow-y-scroll z-10" 
+        className="relative snap-y snap-mandatory overflow-y-scroll z-10"
         style={scrollContainerStyle}
       >
-        {gallerySlidesContent.map((slide, index) => (
+        {renderableSections.map((section, index) => (
           <div
-            key={index}
+            key={index} // Use index for key as section structure might change
             className="h-screen w-full snap-start flex flex-col items-center relative"
           >
             <div
               className={cn(
                 "w-full h-full flex flex-col items-center",
-                slide.type === 'intro' ? 'justify-start py-10 sm:py-12 md:pt-16 lg:pt-20' : 
-                slide.type === 'image' ? 'justify-center p-4' : 
-                'justify-center p-4 sm:p-6 md:p-10' // CTA
+                section.type === 'intro' ? 'justify-start py-10 sm:py-12 md:pt-16 lg:pt-20' :
+                section.type === 'image-gallery' ? 'justify-center p-4' : // CTA or other types
+                'justify-center p-4 sm:p-6 md:p-10'
               )}
             >
-              {slide.type === 'intro' && (
+              {section.type === 'intro' && (
                 <div ref={firstSlideIntroContentRef} className="w-full h-full flex flex-col justify-start items-center pt-10 sm:pt-12 md:pt-16 lg:pt-20">
                   <div className="max-w-2xl bg-background/70 dark:bg-neutral-900/70 backdrop-blur-sm p-6 rounded-lg shadow-md text-center">
                     <h2
@@ -156,7 +202,7 @@ export function SmileGallerySection() {
                         isFirstSlideIntroVisible ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0"
                       )}
                     >
-                      {slide.title}
+                      {section.title}
                     </h2>
                     <p
                       className={cn(
@@ -165,35 +211,61 @@ export function SmileGallerySection() {
                       )}
                       style={{ transitionDelay: isFirstSlideIntroVisible ? `150ms` : '0ms' }}
                     >
-                      {slide.description}
+                      {section.description}
                     </p>
                   </div>
                 </div>
               )}
-              {slide.type === 'image' && (
-                <>
-                  <div className="relative w-full max-w-sm aspect-[4/3] shadow-lg rounded-lg overflow-hidden bg-muted">
-                    <Image
-                      src={slide.src}
-                      alt={slide.alt}
-                      fill
-                      style={{ objectFit: 'cover' }}
-                      data-ai-hint={slide.dataAiHint}
-                      priority={index <= 2}
-                    />
+
+              {section.type === 'image-gallery' && section.images && (
+                <div className="w-full max-w-5xl mx-auto flex flex-col items-center justify-center h-full p-4">
+                  <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6 md:mb-8 text-center text-foreground bg-background/70 dark:bg-neutral-900/70 backdrop-blur-sm px-4 py-2 rounded-md shadow">
+                    {section.title || 'Patient Smiles'}
+                  </h2>
+                  {/* Mobile: Horizontal Scroll */}
+                  <div className="md:hidden flex flex-row overflow-x-auto space-x-4 p-2 w-full items-center scrollbar-thin scrollbar-thumb-primary/50 scrollbar-track-transparent">
+                    {section.images.map((image, imgIndex) => (
+                      <div key={imgIndex} className="flex-shrink-0 w-64 h-auto sm:w-72 bg-background/70 dark:bg-neutral-900/80 backdrop-blur-sm rounded-lg shadow-xl p-3">
+                        <div className="relative w-full aspect-[4/3] rounded-md overflow-hidden bg-muted">
+                          <Image
+                            src={image.src!}
+                            alt={image.alt!}
+                            fill
+                            style={{ objectFit: 'cover' }}
+                            data-ai-hint={image.dataAiHint}
+                            priority={imgIndex < 2}
+                          />
+                        </div>
+                        {image.caption && <p className="mt-2 text-xs sm:text-sm text-center text-foreground">{image.caption}</p>}
+                      </div>
+                    ))}
                   </div>
-                  {slide.caption && (
-                    <p className="mt-4 text-base sm:text-lg text-foreground text-center bg-background/70 dark:bg-neutral-900/70 backdrop-blur-sm px-3 py-1 rounded-md shadow">
-                      {slide.caption}
-                    </p>
-                  )}
-                </>
+                  {/* Desktop: Grid */}
+                  <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 w-full">
+                    {section.images.map((image, imgIndex) => (
+                      <div key={imgIndex} className="w-full bg-background/70 dark:bg-neutral-900/80 backdrop-blur-sm rounded-lg shadow-xl p-3">
+                        <div className="relative w-full aspect-[4/3] rounded-md overflow-hidden bg-muted">
+                           <Image
+                            src={image.src!}
+                            alt={image.alt!}
+                            fill
+                            style={{ objectFit: 'cover' }}
+                            data-ai-hint={image.dataAiHint}
+                            priority={imgIndex < 2}
+                          />
+                        </div>
+                        {image.caption && <p className="mt-2 text-sm text-center text-foreground">{image.caption}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
-              {slide.type === 'cta' && (
+
+              {section.type === 'cta' && (
                 <div className="bg-background/70 dark:bg-neutral-900/70 backdrop-blur-sm p-6 sm:p-8 rounded-lg shadow-md">
-                  <Link href={slide.href}>
+                  <Link href={section.href!}>
                     <Button size="lg" className="px-6 py-5 text-lg sm:px-8 sm:py-6 sm:text-xl">
-                      {slide.buttonText}
+                      {section.buttonText}
                     </Button>
                   </Link>
                 </div>
