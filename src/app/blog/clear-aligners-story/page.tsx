@@ -10,7 +10,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: "Ditch the Wires: Clear Aligners in Ernakulam at Dr. Loji's!",
-  description: "Discover the benefits of clear aligners at Dr. Loji’s Dental Clinic in Ernakulam. Learn about their advantages, risks, and real patient stories to decide if they’re right for you.",
+  description: "Discover how teeth aligners work at Dr. Loji’s Dental Clinic in Ernakulam. Learn the science, benefits, and real patient stories to achieve a straighter smile discreetly.",
   keywords: "clear aligners, Dr. Loji’s dental clinic, orthodontic treatment, Invisalign alternatives, Ernakulam",
 };
 
