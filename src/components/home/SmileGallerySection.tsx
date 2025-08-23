@@ -67,8 +67,8 @@ export function SmileGallerySection() {
             isSectionVisible ? "is-visible" : ""
           )}
         >
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-secondary [text-shadow:0_2px_8px_hsl(var(--primary)/0.4)]">
-            book your smile
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-red-600 dark:text-red-700 [text-shadow:0_2px_8px_#FECACA]">
+            Book Your Smile
           </h2>
           <p className="mt-3 text-muted-foreground md:text-lg max-w-xl mx-auto">
             See the stunning results we've achieved for our happy patients.
