@@ -54,7 +54,7 @@ export function SmileGallerySection() {
       id="gallery"
       ref={sectionRef}
       className={cn(
-        "w-full py-12 md:py-16 lg:py-20 bg-background",
+        "w-full py-12 md:py-16 lg:py-20 bg-white dark:bg-neutral-900", // Changed background color
         "initial-fade-in-up",
         isSectionVisible && "is-visible"
       )}
@@ -68,7 +68,7 @@ export function SmileGallerySection() {
             isSectionVisible ? "is-visible" : ""
           )}
         >
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-primary">
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-red-600"> {/* Changed text color */}
             Transform Your Smile
           </h2>
           <p className="mt-3 text-muted-foreground md:text-lg max-w-xl mx-auto">
