@@ -99,7 +99,7 @@ export function QuickActionsGrid() {
       id="quick-actions"
       ref={sectionRef}
       className={cn(
-        "w-full py-12 md:py-16 lg:py-20 bg-background relative z-10",
+        "w-full py-12 md:py-16 lg:py-20 bg-background relative z-20",
         "initial-fade-in-up",
         isVisible && "is-visible"
       )}
