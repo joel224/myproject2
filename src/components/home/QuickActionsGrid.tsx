@@ -152,7 +152,7 @@ export function QuickActionsGrid() {
                     "opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100",
                     "transition-all duration-300 ease-out origin-bottom",
                     "pointer-events-none group-hover:pointer-events-auto",
-                    "z-30 text-left space-y-3.5 text-card-foreground"
+                    "z-40 text-left space-y-3.5 text-card-foreground"
                   )}>
                     <div className="text-center">
                       <p className="text-xs font-medium uppercase tracking-wider text-accent mb-0.5">Trusted Dental Experts</p>
@@ -199,4 +199,3 @@ export function QuickActionsGrid() {
     </section>
   );
 }
-
