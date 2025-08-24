@@ -883,10 +883,6 @@ body {
   top: 100%;
 }
 
-.-bottom-1 {
-  bottom: -.25rem;
-}
-
 .z-10 {
   z-index: 10;
 }
@@ -1084,10 +1080,6 @@ body {
 
 .mt-auto {
   margin-top: auto;
-}
-
-.mt-10 {
-  margin-top: 2.5rem;
 }
 
 .line-clamp-3 {
@@ -1482,10 +1474,6 @@ body {
   max-width: 20rem;
 }
 
-.max-w-\[328px\] {
-  max-width: 328px;
-}
-
 .flex-1 {
   flex: 1;
 }
@@ -1691,10 +1679,6 @@ body {
 
 .justify-between {
   justify-content: space-between;
-}
-
-.justify-items-center {
-  justify-items: center;
 }
 
 .gap-1 {
@@ -2166,13 +2150,13 @@ body {
   background-color: #0000;
 }
 
-.bg-white\/50 {
-  background-color: #ffffff80;
-}
-
 .bg-white {
   --tw-bg-opacity: 1;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
+}
+
+.bg-white\/50 {
+  background-color: #ffffff80;
 }
 
 .bg-gradient-to-b {
@@ -2712,11 +2696,6 @@ body {
   color: rgb(234 179 8 / var(--tw-text-opacity, 1));
 }
 
-.text-red-600 {
-  --tw-text-opacity: 1;
-  color: rgb(220 38 38 / var(--tw-text-opacity, 1));
-}
-
 .underline-offset-4 {
   text-underline-offset: 4px;
 }
@@ -2939,11 +2918,11 @@ body {
   --tw-enter-translate-y: initial;
 }
 
-.fade-in-0 {
+.fade-in {
   --tw-enter-opacity: 0;
 }
 
-.fade-in {
+.fade-in-0 {
   --tw-enter-opacity: 0;
 }
 
@@ -2993,10 +2972,6 @@ body {
 
 .\[text-shadow\:0_0_8px_hsl\(var\(--primary\)\/0\.7\)\] {
   text-shadow: 0 0 8px hsl(var(--primary) / .7);
-}
-
-.\[text-shadow\:0_1px_3px_rgb\(255_182_193_\/_50\%\)\] {
-  text-shadow: 0 1px 3px #ffb6c180;
 }
 
 .animate-marquee-bg {
@@ -3899,6 +3874,11 @@ body {
   border-color: rgb(185 28 28 / var(--tw-border-opacity, 1));
 }
 
+.dark\:bg-black:is(.dark *) {
+  --tw-bg-opacity: 1;
+  background-color: rgb(0 0 0 / var(--tw-bg-opacity, 1));
+}
+
 .dark\:bg-green-900\/30:is(.dark *) {
   background-color: #14532d4d;
 }
@@ -3909,11 +3889,6 @@ body {
 
 .dark\:bg-red-900\/30:is(.dark *) {
   background-color: #7f1d1d4d;
-}
-
-.dark\:bg-black:is(.dark *) {
-  --tw-bg-opacity: 1;
-  background-color: rgb(0 0 0 / var(--tw-bg-opacity, 1));
 }
 
 .dark\:text-green-300:is(.dark *) {
@@ -3934,11 +3909,6 @@ body {
 .dark\:text-red-400:is(.dark *) {
   --tw-text-opacity: 1;
   color: rgb(248 113 113 / var(--tw-text-opacity, 1));
-}
-
-.dark\:text-red-700:is(.dark *) {
-  --tw-text-opacity: 1;
-  color: rgb(185 28 28 / var(--tw-text-opacity, 1));
 }
 
 .dark\:hover\:bg-white\/5:hover:is(.dark *) {
@@ -4196,10 +4166,6 @@ body {
 
   .md\:max-w-\[420px\] {
     max-width: 420px;
-  }
-
-  .md\:max-w-none {
-    max-width: none;
   }
 
   .md\:grid-cols-1 {
