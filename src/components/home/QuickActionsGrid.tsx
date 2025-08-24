@@ -99,7 +99,7 @@ export function QuickActionsGrid() {
       id="quick-actions"
       ref={sectionRef}
       className={cn(
-        "w-full py-12 md:py-16 lg:py-20 bg-background",
+        "w-full py-12 md:py-16 lg:py-20 bg-background relative z-20",
         "initial-fade-in-up",
         isVisible && "is-visible"
       )}
@@ -152,7 +152,7 @@ export function QuickActionsGrid() {
                     "opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100",
                     "transition-all duration-300 ease-out origin-bottom",
                     "pointer-events-none group-hover:pointer-events-auto",
-                    "z-30 text-left space-y-3.5 text-card-foreground"
+                    "z-40 text-left space-y-3.5 text-card-foreground"
                   )}>
                     <div className="text-center">
                       <p className="text-xs font-medium uppercase tracking-wider text-accent mb-0.5">Trusted Dental Experts</p>
@@ -199,4 +199,3 @@ export function QuickActionsGrid() {
     </section>
   );
 }
-

@@ -20,13 +20,12 @@ export default function Home() {
         <HeroSection />
         <QuickActionsGrid />
         <Separator className="my-8 md:my-12" />
-        <ServicesSection /> 
-        <Separator className="my-8 md:my-12" />
         <DentistSpotlightCard />
         <Separator className="my-8 md:my-12" />
         <SmileGallerySection />
         <Separator className="my-8 md:my-12" />
-        
+        <ServicesSection /> 
+        <Separator className="my-8 md:my-12" />
         <HealthTipCard />
         <Separator className="my-8 md:my-12" />
         <AppointmentBookingSection />

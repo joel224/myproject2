@@ -130,7 +130,7 @@ export function HeroSection() {
       >
         <div
           ref={playerContainerRef}
-          className="absolute top-0 left-0 w-full h-[152%] z-[1] bg-black"
+          className="absolute top-0 left-0 w-full h-[165%] z-[1] bg-black"
           style={{ transition: 'transform 0.1s linear' }}
         >
           <MuxPlayer
@@ -141,10 +141,9 @@ export function HeroSection() {
             muted
             playsInline
             noControls
-            className="absolute inset-0 w-full h-full object-cover min-w-full min-h-full"
+            className="absolute inset-0 w-full h-full object-cover min-w-full min-h-full transform -translate-y-6"
             onLoadedMetadata={() => { setIsPlayerReady(true); handleScroll(); }}
             onPlayerReady={() => { setIsPlayerReady(true); handleScroll(); }}
-            onError={(evt) => { console.error("Hero MuxPlayer Raw Error Event:", evt); }}
           />
         </div>
 
@@ -163,18 +162,19 @@ export function HeroSection() {
               )}
             >
               <div className="relative inline-block">
-                <h1 className="font-manrope text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
+                 <h1 className="font-manrope text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
                   Your <span className="inline-block transition-transform duration-300 ease-in-out hover:scale-105 [text-shadow:0_0_8px_hsl(var(--primary)/0.7)]">Smile</span>, Our Passion!
                 </h1>
                 <svg
-                  className="absolute bottom-0 left-0 w-full"
+                  className="absolute bottom-0 left-0 w-full h-[10px]"
                   viewBox="0 0 300 10"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
                 >
                   <path
                     d="M5 5 C 75 15, 225 15, 295 5"
-                    stroke="#22C55E" // Vibrant green color
+                    stroke="#86EFAC" 
                     strokeWidth="4"
                     strokeLinecap="round"
                   />
@@ -204,8 +204,8 @@ export function HeroSection() {
         </div>
 
         {/* Promotional Image Pop-up */}
-       {showPromoPopup && (
- <div
+        {showPromoPopup && (
+         <div
           ref={promoImageContainerRef}
           className={cn(
             "fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-8 md:p-12 lg:p-16",
@@ -214,9 +214,9 @@ export function HeroSection() {
             showPromoPopup ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
           )}
           onMouseEnter={handlePromoPopupMouseEnter}
- onMouseLeave={handlePromoPopupMouseLeave}
+          onMouseLeave={handlePromoPopupMouseLeave}
         >
- <div
+         <div
             className={cn(
               "relative w-[80vw] max-w-4xl aspect-video transition-all duration-300 ease-out",
               showPromoPopup ? "scale-100 opacity-100" : "scale-95 opacity-0"
@@ -232,7 +232,7 @@ export function HeroSection() {
             />
           </div>
         </div>
- )}
+        )}
         <WaitTimeWidget />
       </section>
 
