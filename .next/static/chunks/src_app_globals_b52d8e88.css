@@ -483,6 +483,10 @@ body {
   bottom: 0;
 }
 
+.-bottom-1 {
+  bottom: -.25rem;
+}
+
 .-right-2 {
   right: -.5rem;
 }
@@ -585,10 +589,6 @@ body {
 
 .top-full {
   top: 100%;
-}
-
-.-bottom-1 {
-  bottom: -.25rem;
 }
 
 .z-10 {
@@ -914,8 +914,8 @@ body {
   height: 2.25rem;
 }
 
-.h-\[10px\] {
-  height: 10px;
+.h-\[12px\] {
+  height: 12px;
 }
 
 .h-\[165\%\] {
@@ -948,10 +948,6 @@ body {
 
 .h-svh {
   height: 100svh;
-}
-
-.h-\[12px\] {
-  height: 12px;
 }
 
 .max-h-96 {
@@ -2717,6 +2713,29 @@ body {
   100% {
     transform: translateX(100%);
   }
+}
+
+@keyframes text-shine-animation {
+  0% {
+    background-position: 200%;
+  }
+
+  100% {
+    background-position: -200%;
+  }
+}
+
+.text-shine {
+  background: linear-gradient(to right, hsl(var(--foreground)) 20%, hsl(var(--foreground)) 40%, hsl(var(--primary-foreground)) 50%, hsl(var(--foreground)) 60%, hsl(var(--foreground)) 80%);
+  background-size: 200%;
+  color: #0000;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-shine:hover {
+  animation: 1.5s ease-in-out text-shine-animation;
 }
 
 [data-mobile="true"] [data-sidebar="menu-button"] [data-sidebar="menu-label"] {

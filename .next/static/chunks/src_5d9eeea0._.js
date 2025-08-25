@@ -1706,7 +1706,7 @@ function HeroSection() {
                                         className: "relative inline-block",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
-                                                className: "font-sans text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl",
+                                                className: "text-shine font-sans text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl",
                                                 children: [
                                                     "Your ",
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {

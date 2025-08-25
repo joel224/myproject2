@@ -162,7 +162,7 @@ export function HeroSection() {
               )}
             >
               <div className="relative inline-block">
-                 <h1 className="font-sans text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
+                 <h1 className="text-shine font-sans text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
                   Your <span className="inline-block transition-transform duration-300 ease-in-out hover:scale-105 [text-shadow:0_0_8px_hsl(var(--primary)/0.7)]">Smile</span>, Our <span className="inline-block transition-transform duration-300 ease-in-out hover:scale-105 [text-shadow:0_0_8px_hsl(var(--primary)/0.7)]">Passion!</span>
                 </h1>
                 <svg
