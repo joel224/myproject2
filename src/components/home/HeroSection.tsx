@@ -162,22 +162,19 @@ export function HeroSection() {
               )}
             >
               <div className="relative inline-block">
-                 <h1 className="font-manrope text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-                  Your <span className="inline-block transition-transform duration-300 ease-in-out hover:scale-105 [text-shadow:0_0_8px_hsl(var(--primary)/0.7)]">Smile</span>, Our Passion!
+                 <h1 className="font-sans text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
+                  Your <span className="inline-block transition-transform duration-300 ease-in-out hover:scale-105 [text-shadow:0_0_8px_hsl(var(--primary)/0.7)]">Smile</span>, Our <span className="inline-block transition-transform duration-300 ease-in-out hover:scale-105 [text-shadow:0_0_8px_hsl(var(--primary)/0.7)]">Passion!</span>
                 </h1>
                 <svg
-                  className="absolute bottom-0 left-0 w-full h-[10px]"
-                  viewBox="0 0 300 10"
+                  className="absolute -bottom-1 left-0 w-full h-[12px]"
+                  viewBox="0 0 500 12"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
+                  preserveAspectRatio="none"
                   aria-hidden="true"
                 >
-                  <path
-                    d="M5 5 C 75 15, 225 15, 295 5"
-                    stroke="#86EFAC" 
-                    strokeWidth="4"
-                    strokeLinecap="round"
-                  />
+                  <path d="M5 5C 50 15, 200 0, 245 6" stroke="#86EFAC" strokeWidth="4" strokeLinecap="round" />
+                  <path d="M280 6C 350 12, 450 0, 495 5" stroke="#86EFAC" strokeWidth="4" strokeLinecap="round" />
                 </svg>
               </div>
               <p className="max-w-[600px] text-neutral-200 md:text-xl mx-auto">

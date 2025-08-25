@@ -1566,7 +1566,7 @@ function HeroSection() {
                                         className: "relative inline-block",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
-                                                className: "font-manrope text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl",
+                                                className: "font-sans text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl",
                                                 children: [
                                                     "Your ",
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1577,7 +1577,15 @@ function HeroSection() {
                                                         lineNumber: 166,
                                                         columnNumber: 24
                                                     }, this),
-                                                    ", Our Passion!"
+                                                    ", Our ",
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                        className: "inline-block transition-transform duration-300 ease-in-out hover:scale-105 [text-shadow:0_0_8px_hsl(var(--primary)/0.7)]",
+                                                        children: "Passion!"
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/components/home/HeroSection.tsx",
+                                                        lineNumber: 166,
+                                                        columnNumber: 181
+                                                    }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/components/home/HeroSection.tsx",
@@ -1585,22 +1593,35 @@ function HeroSection() {
                                                 columnNumber: 18
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("svg", {
-                                                className: "absolute bottom-0 left-0 w-full h-[10px]",
-                                                viewBox: "0 0 300 10",
+                                                className: "absolute -bottom-1 left-0 w-full h-[12px]",
+                                                viewBox: "0 0 500 12",
                                                 fill: "none",
                                                 xmlns: "http://www.w3.org/2000/svg",
+                                                preserveAspectRatio: "none",
                                                 "aria-hidden": "true",
-                                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("path", {
-                                                    d: "M5 5 C 75 15, 225 15, 295 5",
-                                                    stroke: "#86EFAC",
-                                                    strokeWidth: "4",
-                                                    strokeLinecap: "round"
-                                                }, void 0, false, {
-                                                    fileName: "[project]/src/components/home/HeroSection.tsx",
-                                                    lineNumber: 175,
-                                                    columnNumber: 19
-                                                }, this)
-                                            }, void 0, false, {
+                                                children: [
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("path", {
+                                                        d: "M5 5C 50 15, 200 0, 245 6",
+                                                        stroke: "#86EFAC",
+                                                        strokeWidth: "4",
+                                                        strokeLinecap: "round"
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/components/home/HeroSection.tsx",
+                                                        lineNumber: 176,
+                                                        columnNumber: 19
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("path", {
+                                                        d: "M280 6C 350 12, 450 0, 495 5",
+                                                        stroke: "#86EFAC",
+                                                        strokeWidth: "4",
+                                                        strokeLinecap: "round"
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/components/home/HeroSection.tsx",
+                                                        lineNumber: 177,
+                                                        columnNumber: 19
+                                                    }, this)
+                                                ]
+                                            }, void 0, true, {
                                                 fileName: "[project]/src/components/home/HeroSection.tsx",
                                                 lineNumber: 168,
                                                 columnNumber: 17
@@ -1616,7 +1637,7 @@ function HeroSection() {
                                         children: "Experience exceptional dental care at Dr. Loji's Dental Hub. We're dedicated to creating healthy, beautiful smiles for life."
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/home/HeroSection.tsx",
-                                        lineNumber: 183,
+                                        lineNumber: 180,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1633,22 +1654,22 @@ function HeroSection() {
                                                     children: "Book an Appointment in 30 Seconds"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/home/HeroSection.tsx",
-                                                    lineNumber: 193,
+                                                    lineNumber: 190,
                                                     columnNumber: 21
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/home/HeroSection.tsx",
-                                                lineNumber: 192,
+                                                lineNumber: 189,
                                                 columnNumber: 19
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/home/HeroSection.tsx",
-                                            lineNumber: 187,
+                                            lineNumber: 184,
                                             columnNumber: 17
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/home/HeroSection.tsx",
-                                        lineNumber: 186,
+                                        lineNumber: 183,
                                         columnNumber: 15
                                     }, this)
                                 ]
@@ -1683,22 +1704,22 @@ function HeroSection() {
                                 "data-ai-hint": "dental promotion happy patient"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/home/HeroSection.tsx",
-                                lineNumber: 225,
+                                lineNumber: 222,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/components/home/HeroSection.tsx",
-                            lineNumber: 219,
+                            lineNumber: 216,
                             columnNumber: 10
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/components/home/HeroSection.tsx",
-                        lineNumber: 208,
+                        lineNumber: 205,
                         columnNumber: 10
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$home$2f$WaitTimeWidget$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["WaitTimeWidget"], {}, void 0, false, {
                         fileName: "[project]/src/components/home/HeroSection.tsx",
-                        lineNumber: 236,
+                        lineNumber: 233,
                         columnNumber: 9
                     }, this)
                 ]
@@ -1713,7 +1734,7 @@ function HeroSection() {
                 onOpenChange: setShowBookingPopup
             }, void 0, false, {
                 fileName: "[project]/src/components/home/HeroSection.tsx",
-                lineNumber: 239,
+                lineNumber: 236,
                 columnNumber: 7
             }, this)
         ]
