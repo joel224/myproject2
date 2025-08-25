@@ -3022,7 +3022,7 @@ body {
 }
 
 .text-shine {
-  background: linear-gradient(to right, hsl(var(--foreground)) 20%, hsl(var(--foreground)) 40%, hsl(var(--primary-foreground)) 50%, hsl(var(--foreground)) 60%, hsl(var(--foreground)) 80%);
+  background: linear-gradient(to right, hsl(var(--card-foreground)) 20%, hsl(var(--muted-foreground)) 40%, hsl(var(--card-foreground)) 50%, hsl(var(--muted-foreground)) 60%, hsl(var(--card-foreground)) 80%);
   background-size: 200%;
   color: #0000;
   background-clip: text;
@@ -3031,7 +3031,7 @@ body {
 }
 
 .text-shine:hover {
-  animation: 1.5s ease-in-out text-shine-animation;
+  animation: 1s ease-in-out text-shine-animation;
 }
 
 [data-mobile="true"] [data-sidebar="menu-button"] [data-sidebar="menu-label"] {

@@ -175,11 +175,11 @@
 .text-shine {
   background: linear-gradient(
     to right,
-    hsl(var(--foreground)) 20%,
-    hsl(var(--foreground)) 40%,
-    hsl(var(--primary-foreground)) 50%,
-    hsl(var(--foreground)) 60%,
-    hsl(var(--foreground)) 80%
+    hsl(var(--card-foreground)) 20%,
+    hsl(var(--muted-foreground)) 40%,
+    hsl(var(--card-foreground)) 50%,
+    hsl(var(--muted-foreground)) 60%,
+    hsl(var(--card-foreground)) 80%
   );
   background-size: 200% auto;
   color: transparent;
@@ -189,7 +189,7 @@
 }
 
 .text-shine:hover {
-  animation: text-shine-animation 1.5s ease-in-out;
+  animation: text-shine-animation 1s ease-in-out;
 }
 
 
