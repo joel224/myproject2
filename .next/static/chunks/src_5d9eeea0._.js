@@ -2049,7 +2049,7 @@ function QuickActionsGrid() {
                                 children: [
                                     action.icon,
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardTitle"], {
-                                        className: "mt-4",
+                                        className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$utils$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["cn"])("mt-4", action.title === 'Book Appointment' && "text-shine"),
                                         children: action.title
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
@@ -2070,7 +2070,7 @@ function QuickActionsGrid() {
                                         children: action.description
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
-                                        lineNumber: 120,
+                                        lineNumber: 125,
                                         columnNumber: 19
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -2082,18 +2082,18 @@ function QuickActionsGrid() {
                                             children: action.buttonText
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
-                                            lineNumber: 122,
+                                            lineNumber: 127,
                                             columnNumber: 21
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
-                                        lineNumber: 121,
+                                        lineNumber: 126,
                                         columnNumber: 19
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
-                                lineNumber: 119,
+                                lineNumber: 124,
                                 columnNumber: 17
                             }, this)
                         ]
@@ -2110,7 +2110,7 @@ function QuickActionsGrid() {
                                     children: actionCardContent
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
-                                    lineNumber: 139,
+                                    lineNumber: 144,
                                     columnNumber: 19
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2124,7 +2124,7 @@ function QuickActionsGrid() {
                                                     children: "Trusted Dental Experts"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
-                                                    lineNumber: 158,
+                                                    lineNumber: 163,
                                                     columnNumber: 23
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2135,7 +2135,7 @@ function QuickActionsGrid() {
                                                             children: "100K+"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
-                                                            lineNumber: 160,
+                                                            lineNumber: 165,
                                                             columnNumber: 25
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2143,26 +2143,26 @@ function QuickActionsGrid() {
                                                             children: "Teeth Restored"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
-                                                            lineNumber: 161,
+                                                            lineNumber: 166,
                                                             columnNumber: 25
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
-                                                    lineNumber: 159,
+                                                    lineNumber: 164,
                                                     columnNumber: 23
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
-                                            lineNumber: 157,
+                                            lineNumber: 162,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                             className: "h-px bg-border/60"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
-                                            lineNumber: 164,
+                                            lineNumber: 169,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2173,7 +2173,7 @@ function QuickActionsGrid() {
                                                     children: "Your Comfort, Our Priority"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
-                                                    lineNumber: 166,
+                                                    lineNumber: 171,
                                                     columnNumber: 23
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2181,7 +2181,7 @@ function QuickActionsGrid() {
                                                     children: "PAIN-LESS"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
-                                                    lineNumber: 167,
+                                                    lineNumber: 172,
                                                     columnNumber: 23
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2189,20 +2189,20 @@ function QuickActionsGrid() {
                                                     children: "Injection & Surgery"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
-                                                    lineNumber: 170,
+                                                    lineNumber: 175,
                                                     columnNumber: 23
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
-                                            lineNumber: 165,
+                                            lineNumber: 170,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                             className: "h-px bg-border/60"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
-                                            lineNumber: 172,
+                                            lineNumber: 177,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2213,7 +2213,7 @@ function QuickActionsGrid() {
                                                     children: "Smiles For Everyone"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
-                                                    lineNumber: 174,
+                                                    lineNumber: 179,
                                                     columnNumber: 23
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2221,7 +2221,7 @@ function QuickActionsGrid() {
                                                     children: "Flexible Financing"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
-                                                    lineNumber: 175,
+                                                    lineNumber: 180,
                                                     columnNumber: 23
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2229,25 +2229,25 @@ function QuickActionsGrid() {
                                                     children: "Plans To Fit Your Budget"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
-                                                    lineNumber: 176,
+                                                    lineNumber: 181,
                                                     columnNumber: 23
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
-                                            lineNumber: 173,
+                                            lineNumber: 178,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
-                                    lineNumber: 148,
+                                    lineNumber: 153,
                                     columnNumber: 19
                                 }, this)
                             ]
                         }, action.title, true, {
                             fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
-                            lineNumber: 132,
+                            lineNumber: 137,
                             columnNumber: 17
                         }, this);
                     } else {
@@ -2257,7 +2257,7 @@ function QuickActionsGrid() {
                             children: actionCardContent
                         }, action.title, false, {
                             fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
-                            lineNumber: 183,
+                            lineNumber: 188,
                             columnNumber: 17
                         }, this);
                     }

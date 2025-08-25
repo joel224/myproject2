@@ -114,7 +114,12 @@ export function QuickActionsGrid() {
               <>
                 <CardHeader className="items-center">
                   {action.icon}
-                  <CardTitle className="mt-4">{action.title}</CardTitle>
+                  <CardTitle className={cn(
+                    "mt-4",
+                    action.title === 'Book Appointment' && "text-shine"
+                  )}>
+                    {action.title}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col flex-grow items-center">
                   <CardDescription className="mb-4 flex-grow">{action.description}</CardDescription>
