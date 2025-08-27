@@ -3,9 +3,9 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { db } from '@/lib/mockServerDb'; // Use mock DB
+import { dbClient } from '@/lib/db';
 import type { Patient } from '@/lib/types';
-import type { UserAuth } from '@/lib/mockServerDb';
+
 
 const updatePatientSchema = z.object({
   name: z.string().min(2, "Name is required").optional(),
@@ -33,33 +33,45 @@ interface PatientRouteParams {
 export async function GET(request: NextRequest, { params }: PatientRouteParams) {
   const { patientId } = params;
   try {
-    const user = db.users.find(u => u.id === patientId);
+    const userResult = await dbClient.query(`
+      SELECT id, name, email, phone, date_of_birth, age, medical_records, 
+             xray_image_urls, has_diabetes, has_high_blood_pressure, 
+             has_stroke_or_heart_attack_history, has_bleeding_disorders, 
+             has_allergy, allergy_specifics, has_asthma 
+      FROM users WHERE id = $1 AND role = 'patient'
+    `, [patientId]);
 
-    if (!user || user.role !== 'patient') {
+    if (userResult.rows.length === 0) {
       return NextResponse.json({ message: "Patient not found" }, { status: 404 });
     }
+    
+    const userData = userResult.rows[0];
 
     const patientResponse: Patient = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      dateOfBirth: user.dateOfBirth,
-      age: user.age,
-      medicalRecords: user.medicalRecords,
-      xrayImageUrls: user.xrayImageUrls || [],
-      hasDiabetes: user.hasDiabetes,
-      hasHighBloodPressure: user.hasHighBloodPressure,
-      hasStrokeOrHeartAttackHistory: user.hasStrokeOrHeartAttackHistory,
-      hasBleedingDisorders: user.hasBleedingDisorders,
-      hasAllergy: user.hasAllergy,
-      allergySpecifics: user.allergySpecifics,
-      hasAsthma: user.hasAsthma,
+      id: userData.id,
+      name: userData.name,
+      email: userData.email,
+      phone: userData.phone,
+      dateOfBirth: userData.date_of_birth,
+      age: userData.age,
+      medicalRecords: userData.medical_records,
+      xrayImageUrls: userData.xray_image_urls || [],
+      hasDiabetes: userData.has_diabetes,
+      hasHighBloodPressure: userData.has_high_blood_pressure,
+      hasStrokeOrHeartAttackHistory: userData.has_stroke_or_heart_attack_history,
+      hasBleedingDisorders: userData.has_bleeding_disorders,
+      hasAllergy: userData.has_allergy,
+      allergySpecifics: userData.allergy_specifics,
+      hasAsthma: userData.has_asthma,
     };
+
     return NextResponse.json(patientResponse, { status: 200 });
 
   } catch (error) {
-    console.error(`Error fetching patient ${patientId} from mock DB:`, error);
+    console.error(`Error fetching patient ${patientId}:`, error);
+     if (error instanceof Error && error.message.includes("Database client not initialized")) {
+        return NextResponse.json({ message: "Server configuration error: Database not connected." }, { status: 503 });
+    }
     return NextResponse.json({ message: 'Error fetching patient details' }, { status: 500 });
   }
 }
@@ -77,63 +89,74 @@ export async function PUT(request: NextRequest, { params }: PatientRouteParams) 
     
     const updateData = validation.data;
     
-    const patientIndex = db.users.findIndex(u => u.id === patientId && u.role === 'patient');
-
-    if (patientIndex === -1) {
+    const patientCheck = await dbClient.query("SELECT email FROM users WHERE id = $1 AND role = 'patient'", [patientId]);
+    if (patientCheck.rows.length === 0) {
       return NextResponse.json({ message: "Patient not found" }, { status: 404 });
     }
 
-    const currentPatient = db.users[patientIndex];
-    
-    // Check for email collision if email is being updated
-    if (updateData.email && updateData.email !== currentPatient.email) {
-        if (db.users.some(u => u.email === updateData.email && u.id !== patientId)) {
-            return NextResponse.json({ message: "Email already in use by another user." }, { status: 409 });
+    if (updateData.email && updateData.email !== patientCheck.rows[0].email) {
+        const emailCollisionCheck = await dbClient.query("SELECT id FROM users WHERE email = $1 AND id != $2", [updateData.email, patientId]);
+        if (emailCollisionCheck.rows.length > 0) {
+          return NextResponse.json({ message: "Email already in use by another user." }, { status: 409 });
         }
     }
-
-    const updatedPatient: UserAuth = {
-      ...currentPatient,
-      ...updateData, // Spread validated data
-      // Ensure nullable fields are handled correctly (set to undefined if null)
-      phone: updateData.phone === null ? undefined : updateData.phone || currentPatient.phone,
-      dateOfBirth: updateData.dateOfBirth === null ? undefined : updateData.dateOfBirth || currentPatient.dateOfBirth,
-      age: updateData.age === null ? undefined : updateData.age || currentPatient.age,
-      medicalRecords: updateData.medicalRecords === null ? undefined : updateData.medicalRecords || currentPatient.medicalRecords,
-      allergySpecifics: updateData.hasAllergy === false ? undefined : (updateData.allergySpecifics === null ? undefined : updateData.allergySpecifics || currentPatient.allergySpecifics),
-      updatedAt: new Date().toISOString(),
-    };
     
-    // Ensure allergySpecifics is cleared if hasAllergy is set to false
-    if (updateData.hasAllergy === false) {
-        updatedPatient.allergySpecifics = undefined;
+    // Dynamically build query to update only provided fields
+    const fieldsToUpdate: { name: string, value: any, placeholder: string }[] = [];
+    let placeholderIndex = 1;
+
+    Object.entries(updateData).forEach(([key, value]) => {
+      if (value !== undefined) {
+        const dbKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+        fieldsToUpdate.push({ name: dbKey, value: value, placeholder: `$${placeholderIndex++}` });
+      }
+    });
+
+    if (fieldsToUpdate.length === 0) {
+        return NextResponse.json({ message: "No fields to update." }, { status: 200 });
     }
 
-
-    db.users[patientIndex] = updatedPatient;
+    const setClause = fieldsToUpdate.map(f => `${f.name} = ${f.placeholder}`).join(', ');
+    const queryValues = fieldsToUpdate.map(f => f.value);
     
+    const updateQuery = `
+        UPDATE users 
+        SET ${setClause}, updated_at = NOW() 
+        WHERE id = $${placeholderIndex}
+        RETURNING id, name, email, phone, date_of_birth, age, medical_records, 
+                  xray_image_urls, has_diabetes, has_high_blood_pressure, 
+                  has_stroke_or_heart_attack_history, has_bleeding_disorders, 
+                  has_allergy, allergy_specifics, has_asthma;
+    `;
+
+    const updatedResult = await dbClient.query(updateQuery, [...queryValues, patientId]);
+    const updatedData = updatedResult.rows[0];
+
     const patientResponse: Patient = {
-      id: updatedPatient.id,
-      name: updatedPatient.name,
-      email: updatedPatient.email,
-      phone: updatedPatient.phone,
-      dateOfBirth: updatedPatient.dateOfBirth,
-      age: updatedPatient.age,
-      medicalRecords: updatedPatient.medicalRecords,
-      xrayImageUrls: updatedPatient.xrayImageUrls || [],
-      hasDiabetes: updatedPatient.hasDiabetes,
-      hasHighBloodPressure: updatedPatient.hasHighBloodPressure,
-      hasStrokeOrHeartAttackHistory: updatedPatient.hasStrokeOrHeartAttackHistory,
-      hasBleedingDisorders: updatedPatient.hasBleedingDisorders,
-      hasAllergy: updatedPatient.hasAllergy,
-      allergySpecifics: updatedPatient.allergySpecifics,
-      hasAsthma: updatedPatient.hasAsthma,
+      id: updatedData.id,
+      name: updatedData.name,
+      email: updatedData.email,
+      phone: updatedData.phone,
+      dateOfBirth: updatedData.date_of_birth,
+      age: updatedData.age,
+      medicalRecords: updatedData.medical_records,
+      xrayImageUrls: updatedData.xray_image_urls || [],
+      hasDiabetes: updatedData.has_diabetes,
+      hasHighBloodPressure: updatedData.has_high_blood_pressure,
+      hasStrokeOrHeartAttackHistory: updatedData.has_stroke_or_heart_attack_history,
+      hasBleedingDisorders: updatedData.has_bleeding_disorders,
+      hasAllergy: updatedData.has_allergy,
+      allergySpecifics: updatedData.allergy_specifics,
+      hasAsthma: updatedData.has_asthma,
     };
 
     return NextResponse.json(patientResponse, { status: 200 });
 
   } catch (error) {
-    console.error(`Error updating patient ${patientId} in mock DB:`, error);
+    console.error(`Error updating patient ${patientId}:`, error);
+     if (error instanceof Error && error.message.includes("Database client not initialized")) {
+        return NextResponse.json({ message: "Server configuration error: Database not connected." }, { status: 503 });
+    }
     return NextResponse.json({ message: 'Error updating patient' }, { status: 500 });
   }
 }
@@ -142,24 +165,22 @@ export async function DELETE(request: NextRequest, { params }: PatientRouteParam
   const { patientId } = params;
 
   try {
-    const patientIndex = db.users.findIndex(u => u.id === patientId && u.role === 'patient');
-
-    if (patientIndex === -1) {
+    const deleteResult = await dbClient.query("DELETE FROM users WHERE id = $1 AND role = 'patient'", [patientId]);
+    if (deleteResult.rowCount === 0) {
       return NextResponse.json({ message: "Patient not found" }, { status: 404 });
     }
-
-    db.users.splice(patientIndex, 1);
     
-    // Consider what to do with related mock data (appointments, invoices, etc.)
-    // For now, just deleting the patient user record.
-    // db.appointments = db.appointments.filter(apt => apt.patientId !== patientId);
-    // db.invoices = db.invoices.filter(inv => inv.patientId !== patientId);
-    // etc.
+    // In a real app with foreign keys and cascade rules, this might be all you need.
+    // Here, you might need to manually delete related data if not using cascades.
+    // e.g., DELETE FROM appointments WHERE patient_id = $1, etc.
 
     return NextResponse.json({ message: "Patient deleted successfully" }, { status: 200 });
 
   } catch (error) {
-    console.error(`Error deleting patient ${patientId} from mock DB:`, error);
+    console.error(`Error deleting patient ${patientId}:`, error);
+     if (error instanceof Error && error.message.includes("Database client not initialized")) {
+        return NextResponse.json({ message: "Server configuration error: Database not connected." }, { status: 503 });
+    }
     return NextResponse.json({ message: 'Error deleting patient' }, { status: 500 });
   }
 }
