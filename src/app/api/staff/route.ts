@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
 
   // If ?allUsers=true is passed, return all users regardless of role (for suggestions)
   if (allUsersQuery === 'true') {
-    const allUsers = await db.all("SELECT id, name, email, role, phone FROM users");
+    const allUsers = await db.all("SELECT id, name, email, role FROM users");
     return NextResponse.json(allUsers, { status: 200 });
   }
 
