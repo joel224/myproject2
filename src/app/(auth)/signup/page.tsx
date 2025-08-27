@@ -8,15 +8,11 @@ import { useRouter } from 'next/navigation';
 import type { FormEvent } from 'react';
 
 // Firebase imports
-import { auth, db } from '@/lib/firebase'; // Ensure this path is correct for your Firebase config
+import { auth } from '@/lib/firebase'; // Ensure this path is correct for your Firebase config
 import { 
-  createUserWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
-  updateProfile, // To set displayName for email/password users
-  type User
 } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -51,32 +47,6 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSocialLoading, setIsSocialLoading] = useState<false | 'google'>(false);
 
-   // Helper to save/update user data in Firestore
-  const saveUserToFirestore = async (user: User, name?: string) => {
-    const userRef = doc(db, "users", user.uid);
-    const userSnap = await getDoc(userRef);
-
-    const finalName = name || user.displayName || 'New User';
-
-    if (!userSnap.exists()) { 
-      const userData = {
-        uid: user.uid,
-        email: user.email,
-        fullName: finalName,
-        role: 'patient', 
-        createdAt: serverTimestamp(),
-        provider: user.providerData?.[0]?.providerId || 'password', 
-      };
-      await setDoc(userRef, userData);
-      console.log("New user profile saved to Firestore:", user.uid);
-    } else {
-      console.log("User already exists in Firestore, merging data:", user.uid);
-      await setDoc(userRef, {
-        fullName: finalName, 
-        provider: user.providerData?.[0]?.providerId || userSnap.data()?.provider, 
-      }, { merge: true });
-    }
-  };
 
   const handleSocialSignup = async (providerName: 'google') => {
     setIsSocialLoading(providerName);
@@ -96,13 +66,27 @@ export default function SignupPage() {
       const user = userCredential.user;
       console.log(`User signed up/in with ${providerName}:`, user);
 
-      await saveUserToFirestore(user); 
+      // Call our backend API to ensure the user is in our local DB
+      const response = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+              name: user.displayName,
+              email: user.email,
+              firebaseUid: user.uid,
+              provider: providerName,
+          })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to finalize social signup.");
+      }
 
       toast({
         title: "Account Created Successfully!",
         description: `Welcome! You're now signed in with ${providerName}.`,
       });
-      router.push('/'); 
+      router.push('/patient/dashboard'); 
     } catch (socialError: any) {
       console.error(`Error signing up/in with ${providerName}:`, socialError);
       if (socialError.code === 'auth/account-exists-with-different-credential') {
@@ -135,15 +119,21 @@ export default function SignupPage() {
     }
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      console.log("User created with Firebase Auth:", user);
+      const response = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+              name: fullName,
+              email: email,
+              password: password
+          })
+      });
+      
+      const data = await response.json();
 
-      if (user) {
-        await updateProfile(user, { displayName: fullName });
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to create account.");
       }
-
-      await saveUserToFirestore(user, fullName);
 
       toast({
         title: "Account Created!",
@@ -151,17 +141,9 @@ export default function SignupPage() {
       });
       router.push('/login');
 
-    } catch (firebaseError: any) {
-      console.error("Error signing up with email/password:", firebaseError);
-      if (firebaseError.code === 'auth/email-already-in-use') {
-        setError('The email address is already in use.');
-      } else if (firebaseError.code === 'auth/invalid-email') {
-        setError('Please enter a valid email address.');
-      } else if (firebaseError.code === 'auth/weak-password') {
-        setError('The password is too weak. Please choose a stronger one.');
-      } else {
-        setError('Failed to create account. ' + firebaseError.message);
-      }
+    } catch (err: any) {
+      console.error("Error signing up:", err);
+      setError(err.message || 'An unexpected error occurred.');
     } finally {
       setIsLoading(false);
     }
@@ -273,4 +255,3 @@ export default function SignupPage() {
     </div>
   );
 }
-
