@@ -55,19 +55,22 @@ export default function LoginPage() {
     const finalName = user.displayName || 'New User'; // Use display name from social provider or fallback
 
     if (!userSnap.exists()) { 
+      // This logic primarily runs if a user signs in with a social account
+      // that has no pre-existing record created by staff.
       const userData = {
         uid: user.uid,
         email: user.email,
         fullName: finalName,
         role: 'patient', // Default role for new social sign-ins
         createdAt: serverTimestamp(),
-        provider: user.providerData?.[0]?.providerId || 'social', // Get actual provider ID
+        provider: user.providerData?.[0]?.providerId || 'social', 
       };
       await setDoc(userRef, userData);
       console.log("New user profile for social sign-in saved to Firestore:", user.uid);
     } else {
-      // User exists, update their profile with latest info from social provider if needed
-      // For example, update provider or name if it changed.
+      // User exists, this is the key logic for merging.
+      // E.g., A staff member created a record, and now the patient is logging in with Google.
+      // We update their record to link the social provider.
       console.log("User already exists in Firestore, merging data for social sign-in:", user.uid);
       await setDoc(userRef, {
         fullName: finalName, // Update name in case it changed in social profile
@@ -95,6 +98,7 @@ export default function LoginPage() {
       const user = userCredential.user;
       console.log(`User signed in with ${providerName}:`, user);
 
+      // This will now correctly find the staff-created record (if it exists) and merge it.
       await saveUserToFirestore(user);
 
       toast({

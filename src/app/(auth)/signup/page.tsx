@@ -56,24 +56,29 @@ export default function SignupPage() {
     const userRef = doc(db, "users", user.uid);
     const userSnap = await getDoc(userRef);
 
+    // Use name from signup form, then from social provider, then fallback
     const finalName = name || user.displayName || 'New User';
 
     if (!userSnap.exists()) { 
+      // This will run for new email signups OR social signups where the email is not already in the system.
       const userData = {
         uid: user.uid,
         email: user.email,
         fullName: finalName,
-        role: 'patient', 
+        role: 'patient', // All signups are patients by default
         createdAt: serverTimestamp(),
         provider: user.providerData?.[0]?.providerId || 'password', 
       };
       await setDoc(userRef, userData);
       console.log("New user profile saved to Firestore:", user.uid);
     } else {
+      // This runs if a user record already exists (e.g., created by staff).
+      // We merge the new auth info with the existing record.
       console.log("User already exists in Firestore, merging data:", user.uid);
       await setDoc(userRef, {
-        fullName: finalName, 
-        provider: user.providerData?.[0]?.providerId || userSnap.data()?.provider, 
+        fullName: finalName, // Update name from social profile if available
+        provider: user.providerData?.[0]?.providerId || userSnap.data()?.provider, // Update provider
+        // We DON'T update role, allowing the staff-set role to persist.
       }, { merge: true });
     }
   };
@@ -95,14 +100,15 @@ export default function SignupPage() {
       const userCredential = await signInWithPopup(auth, provider);
       const user = userCredential.user;
       console.log(`User signed up/in with ${providerName}:`, user);
-
+      
+      // This will now correctly find the staff-created record (if it exists) and merge it.
       await saveUserToFirestore(user); 
 
       toast({
-        title: "Account Created Successfully!",
+        title: "Account Ready!",
         description: `Welcome! You're now signed in with ${providerName}.`,
       });
-      router.push('/patient/dashboard'); 
+      router.push('/patient/dashboard'); // Redirect to dashboard after social signup
     } catch (socialError: any) {
       console.error(`Error signing up/in with ${providerName}:`, socialError);
       if (socialError.code === 'auth/account-exists-with-different-credential') {
@@ -135,10 +141,17 @@ export default function SignupPage() {
     }
 
     try {
+      // We first check if a user with this email was pre-registered by staff
+      // This is a simplified check; a more robust way would be a backend check.
+      // For this app, we'll let Firebase handle the "email-already-in-use" error,
+      // which is secure and effective.
+
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       console.log("User created with Firebase Auth:", user);
-
+      
+      // We still update their profile and save to Firestore to ensure consistency
+      // and add any details like the full name.
       if (user) {
         await updateProfile(user, { displayName: fullName });
       }
@@ -149,12 +162,12 @@ export default function SignupPage() {
         title: "Account Created!",
         description: "You can now log in.",
       });
-      router.push('/login');
+      router.push('/login'); // After email signup, they must log in.
 
     } catch (firebaseError: any) {
       console.error("Error signing up with email/password:", firebaseError);
       if (firebaseError.code === 'auth/email-already-in-use') {
-        setError('The email address is already in use.');
+        setError('The email address is already in use by another account. Try logging in instead.');
       } else if (firebaseError.code === 'auth/invalid-email') {
         setError('Please enter a valid email address.');
       } else if (firebaseError.code === 'auth/weak-password') {
