@@ -1,3 +1,4 @@
+
 // src/app/staff/patients/new/page.tsx
 'use client';
 
@@ -73,10 +74,8 @@ export default function AddNewPatientPage() {
   
 
   const fetchUsers = useCallback(async () => {
-    // In a real app, this would be a secure endpoint to fetch users who've signed up
-    // but don't yet have a full patient profile. For now, we fetch all users from mock DB.
     try {
-        const response = await fetch('/api/staff?allUsers=true'); // A hypothetical endpoint to get all users
+        const response = await fetch('/api/staff?allUsers=true');
         if (!response.ok) throw new Error('Failed to fetch user suggestions');
         const data = await response.json();
         setUserSuggestions(data);
@@ -365,12 +364,12 @@ export default function AddNewPatientPage() {
               <Label className="font-semibold">Medical Conditions:</Label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
                 {[
-                  { id: 'hasDiabetes', label: 'Diabetes', icon: <HeartPulse className="h-4 w-4 mr-2" /> },
-                  { id: 'hasHighBloodPressure', label: 'High Blood Pressure', icon: <ShieldAlert className="h-4 w-4 mr-2" /> },
-                  { id: 'hasStrokeOrHeartAttackHistory', label: 'History of Stroke/Heart Attack', icon: <HeartPulse className="h-4 w-4 mr-2" /> },
-                  { id: 'hasBleedingDisorders', label: 'Bleeding Disorders', icon: <Droplets className="h-4 w-4 mr-2" /> },
-                  { id: 'hasAllergy', label: 'Allergy', icon: <Info className="h-4 w-4 mr-2" /> },
-                  { id: 'hasAsthma', label: 'Asthma/Respiratory Issues', icon: <Wind className="h-4 w-4 mr-2" /> },
+                  { id: 'hasDiabetes', label: 'Diabetes', icon: <HeartPulse className="mr-2 h-4 w-4" /> },
+                  { id: 'hasHighBloodPressure', label: 'High Blood Pressure', icon: <ShieldAlert className="mr-2 h-4 w-4" /> },
+                  { id: 'hasStrokeOrHeartAttackHistory', label: 'History of Stroke/Heart Attack', icon: <HeartPulse className="mr-2 h-4 w-4" /> },
+                  { id: 'hasBleedingDisorders', label: 'Bleeding Disorders', icon: <Droplets className="mr-2 h-4 w-4" /> },
+                  { id: 'hasAllergy', label: 'Allergy', icon: <Info className="mr-2 h-4 w-4" /> },
+                  { id: 'hasAsthma', label: 'Asthma/Respiratory Issues', icon: <Wind className="mr-2 h-4 w-4" /> },
                 ].map(condition => (
                   <div key={condition.id} className="flex items-center space-x-2">
                     <Checkbox 
