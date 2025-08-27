@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -8,8 +9,8 @@ import { Button } from "@/components/ui/button"
 import {
   Command,
   CommandEmpty,
-  CommandGroup,
   CommandInput,
+  CommandGroup,
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
@@ -30,17 +31,33 @@ interface ComboboxProps {
 
 export function Combobox({ options, value, onSelect, placeholder, notFoundText, className }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
+  // Use local state for the input to allow free typing
   const [inputValue, setInputValue] = React.useState(value || "");
 
+  // When the external `value` prop changes, update our internal `inputValue`
   React.useEffect(() => {
     setInputValue(value);
   }, [value]);
 
-
   const handleSelect = (currentValue: string) => {
+    // When an item is selected from the list, update the external state
     const selectedOption = options.find(option => option.label.toLowerCase() === currentValue.toLowerCase());
-    onSelect(selectedOption ? selectedOption.value : currentValue);
+    const finalValue = selectedOption ? selectedOption.value : currentValue;
+    onSelect(finalValue);
+    setInputValue(finalValue); // Also update local input state
     setOpen(false);
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const text = e.target.value;
+    setInputValue(text);
+    // Directly update the parent form state as the user types
+    onSelect(text); 
+  };
+  
+  const handleInputBlur = () => {
+    // When the user clicks away, we ensure the parent state has the typed value
+    onSelect(inputValue);
   }
 
   return (
@@ -59,12 +76,14 @@ export function Combobox({ options, value, onSelect, placeholder, notFoundText, 
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" align="start">
-        <Command shouldFilter={false}>
-          <CommandInput 
-            placeholder={placeholder || "Search..."} 
-            value={inputValue}
-            onValueChange={setInputValue}
-          />
+        <Command>
+            {/* The input now directly controls the local inputValue state */}
+            <CommandInput 
+                placeholder={placeholder || "Search..."} 
+                value={inputValue}
+                onValueChange={setInputValue} // Use onValueChange for live filtering in Command
+                onBlur={handleInputBlur} // When focus is lost, confirm the typed value
+            />
           <CommandList>
             <CommandEmpty>{notFoundText || "No option found."}</CommandEmpty>
             <CommandGroup>
