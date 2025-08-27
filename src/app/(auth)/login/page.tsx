@@ -63,6 +63,18 @@ export default function LoginPage() {
       const user = userCredential.user;
       console.log(`User signed in with ${providerName}:`, user);
       
+      // Also ensure user exists in our backend
+      await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: user.displayName || 'Social User',
+          email: user.email,
+          firebaseUid: user.uid,
+          provider: providerName,
+        }),
+      });
+      
       toast({
         title: "Login Successful!",
         description: `Welcome back via ${providerName}!`,

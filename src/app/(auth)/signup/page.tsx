@@ -10,10 +10,8 @@ import type { FormEvent } from 'react';
 // Firebase imports
 import { auth } from '@/lib/firebase'; // Ensure this path is correct for your Firebase config
 import { 
-  createUserWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
-  updateProfile, // To set displayName for email/password users
 } from 'firebase/auth';
 
 // UI Components
@@ -67,6 +65,23 @@ export default function SignupPage() {
       const user = userCredential.user;
       console.log(`User signed up/in with ${providerName}:`, user);
       
+      // After social sign-in, we might also need to call our backend to ensure a record exists in our DB
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: user.displayName || 'Social User',
+          email: user.email,
+          firebaseUid: user.uid,
+          provider: providerName,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to sync social login with backend.');
+      }
+      
       toast({
         title: "Account Ready!",
         description: `Welcome! You're now signed in with ${providerName}.`,
@@ -104,13 +119,16 @@ export default function SignupPage() {
     }
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      console.log("User created with Firebase Auth:", user);
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: fullName, email, password }),
+      });
       
-      // Update their Firebase profile displayName
-      if (user) {
-        await updateProfile(user, { displayName: fullName });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to create account.");
       }
 
       toast({
@@ -119,17 +137,9 @@ export default function SignupPage() {
       });
       router.push('/login'); // After email signup, they must log in.
 
-    } catch (firebaseError: any) {
-      console.error("Error signing up with email/password:", firebaseError);
-      if (firebaseError.code === 'auth/email-already-in-use') {
-        setError('The email address is already in use by another account. Try logging in instead.');
-      } else if (firebaseError.code === 'auth/invalid-email') {
-        setError('Please enter a valid email address.');
-      } else if (firebaseError.code === 'auth/weak-password') {
-        setError('The password is too weak. Please choose a stronger one.');
-      } else {
-        setError('Failed to create account. ' + firebaseError.message);
-      }
+    } catch (err: any) {
+      console.error("Error signing up with email/password:", err);
+      setError(err.message || 'An unexpected error occurred.');
     } finally {
       setIsLoading(false);
     }
