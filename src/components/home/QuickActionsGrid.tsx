@@ -160,24 +160,24 @@ export function QuickActionsGrid() {
                     "z-40 text-left space-y-3.5 text-card-foreground"
                   )}>
                     <div className="text-center">
-                      <p className="text-xs font-medium uppercase tracking-wider text-accent mb-0.5">Trusted Dental Experts</p>
+                      <p className="text-xs font-medium uppercase tracking-wider text-primary mb-0.5">Trusted Dental Experts</p>
                       <div className="flex items-baseline justify-center gap-x-1.5">
-                        <span className="text-5xl font-bold text-accent">100K+</span>
+                        <span className="text-5xl font-bold text-primary">100K+</span>
                         <span className="text-sm text-muted-foreground relative top-1">Teeth Restored</span>
                       </div>
                     </div>
                     <div className="h-px bg-border/60"></div>
                     <div className="text-center">
-                      <p className="text-xs font-medium uppercase tracking-wider text-accent mb-1">Your Comfort, Our Priority</p>
-                      <p className="text-2xl font-semibold text-accent">
+                      <p className="text-xs font-medium uppercase tracking-wider text-primary mb-1">Your Comfort, Our Priority</p>
+                      <p className="text-2xl font-semibold text-primary">
                         PAIN-LESS
                       </p>
                       <p className="text-sm text-muted-foreground">Injection &amp; Surgery</p>
                     </div>
                     <div className="h-px bg-border/60"></div>
                     <div className="text-center">
-                      <p className="text-xs font-medium uppercase tracking-wider text-accent mb-1">Smiles For Everyone</p>
-                      <p className="text-xl font-semibold text-accent">Flexible Financing</p>
+                      <p className="text-xs font-medium uppercase tracking-wider text-primary mb-1">Smiles For Everyone</p>
+                      <p className="text-xl font-semibold text-primary">Flexible Financing</p>
                       <p className="text-sm text-muted-foreground">Plans To Fit Your Budget</p>
                     </div>
                   </div>

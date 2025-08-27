@@ -2109,7 +2109,7 @@ function QuickActionsGrid() {
                                             className: "text-center",
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                    className: "text-xs font-medium uppercase tracking-wider text-accent mb-0.5",
+                                                    className: "text-xs font-medium uppercase tracking-wider text-primary mb-0.5",
                                                     children: "Trusted Dental Experts"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
@@ -2120,7 +2120,7 @@ function QuickActionsGrid() {
                                                     className: "flex items-baseline justify-center gap-x-1.5",
                                                     children: [
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                            className: "text-5xl font-bold text-accent",
+                                                            className: "text-5xl font-bold text-primary",
                                                             children: "100K+"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
@@ -2158,7 +2158,7 @@ function QuickActionsGrid() {
                                             className: "text-center",
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                    className: "text-xs font-medium uppercase tracking-wider text-accent mb-1",
+                                                    className: "text-xs font-medium uppercase tracking-wider text-primary mb-1",
                                                     children: "Your Comfort, Our Priority"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
@@ -2166,7 +2166,7 @@ function QuickActionsGrid() {
                                                     columnNumber: 23
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                    className: "text-2xl font-semibold text-accent",
+                                                    className: "text-2xl font-semibold text-primary",
                                                     children: "PAIN-LESS"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
@@ -2198,7 +2198,7 @@ function QuickActionsGrid() {
                                             className: "text-center",
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                    className: "text-xs font-medium uppercase tracking-wider text-accent mb-1",
+                                                    className: "text-xs font-medium uppercase tracking-wider text-primary mb-1",
                                                     children: "Smiles For Everyone"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
@@ -2206,7 +2206,7 @@ function QuickActionsGrid() {
                                                     columnNumber: 23
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                    className: "text-xl font-semibold text-accent",
+                                                    className: "text-xl font-semibold text-primary",
                                                     children: "Flexible Financing"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/home/QuickActionsGrid.tsx",
