@@ -208,7 +208,7 @@ export function HeroSection() {
        {showPromoPopup && (
         <div
           className={cn(
-            "fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-8",
+            "fixed inset-0 z-40 flex items-center justify-center",
             "bg-black/75 backdrop-blur-md",
             "transition-opacity duration-300 ease-out",
             showPromoPopup ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
@@ -216,41 +216,49 @@ export function HeroSection() {
           onMouseEnter={handlePromoPopupMouseEnter}
           onMouseLeave={handlePromoPopupMouseLeave}
         >
-          <div
-            className={cn(
-              "relative w-full max-w-2xl lg:max-w-4xl transition-all duration-300 ease-out",
-              showPromoPopup ? "scale-100 opacity-100" : "scale-95 opacity-0"
-            )}
-          >
-            {/* Framed Image Container */}
-            <div className="aspect-video w-full rounded-lg shadow-2xl overflow-hidden">
-               <Image
-                src={PROMO_IMAGE_URL}
-                alt="Promotional Offer: Happy Patient"
-                fill
-                className="object-cover"
-                data-ai-hint="dental promotion happy patient"
-              />
-            </div>
-           
-            {/* Actionable Button inside the pop-up */}
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10">
-                <Link href="/#appointment">
-                    <Button size="lg" className="bg-white text-black hover:bg-white/90 shadow-xl">
-                        Take Me There <ArrowRight className="ml-2 h-4 w-4"/>
-                    </Button>
-                </Link>
-            </div>
-             {/* Close button for the pop-up */}
-            <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => setShowPromoPopup(false)}
-                className="absolute top-2 right-2 z-10 h-8 w-8 text-white hover:bg-white/20 hover:text-white"
-                aria-label="Close promotional pop-up"
+          <div className="flex items-center justify-center w-full h-full">
+            {/* Left transparent close bar */}
+            <div className="w-1/6 h-full flex-shrink-0" onMouseEnter={() => setShowPromoPopup(false)}></div>
+            
+            <div
+              className={cn(
+                "relative w-full max-w-2xl lg:max-w-4xl transition-all duration-300 ease-out",
+                showPromoPopup ? "scale-100 opacity-100" : "scale-95 opacity-0"
+              )}
             >
-                <X className="h-5 w-5" />
-            </Button>
+              {/* Framed Image Container */}
+              <div className="aspect-video w-full rounded-lg shadow-2xl overflow-hidden">
+                 <Image
+                  src={PROMO_IMAGE_URL}
+                  alt="Promotional Offer: Happy Patient"
+                  fill
+                  className="object-cover"
+                  data-ai-hint="dental promotion happy patient"
+                />
+              </div>
+             
+              {/* Actionable Button inside the pop-up */}
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10">
+                  <Link href="/#appointment">
+                      <Button size="lg" className="bg-white text-black hover:bg-white/90 shadow-xl">
+                          Take Me There <ArrowRight className="ml-2 h-4 w-4"/>
+                      </Button>
+                  </Link>
+              </div>
+               {/* Close button for the pop-up */}
+              <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setShowPromoPopup(false)}
+                  className="absolute top-2 right-2 z-10 h-8 w-8 text-white hover:bg-white/20 hover:text-white"
+                  aria-label="Close promotional pop-up"
+              >
+                  <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {/* Right transparent close bar */}
+            <div className="w-1/6 h-full flex-shrink-0" onMouseEnter={() => setShowPromoPopup(false)}></div>
           </div>
         </div>
        )}
