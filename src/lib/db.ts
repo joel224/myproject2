@@ -121,10 +121,10 @@ async function seedDb(db) {
     await apptInsert.finalize();
 }
 
+export function generateId(prefix = 'id_') {
+  return prefix + Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
+}
 
 export const dbClient = {
   getDb,
-  generateId: (prefix = 'id_') => {
-    return prefix + Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
-  }
 }

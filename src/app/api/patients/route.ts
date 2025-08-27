@@ -5,6 +5,16 @@ import type { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { generateId } from '@/lib/db'; 
 import { getDb } from '@/lib/db';
+import * as admin from 'firebase-admin';
+import { getFirebaseAdminApp } from '@/lib/firebase-admin';
+
+// Initialize Firebase Admin
+try {
+    getFirebaseAdminApp();
+} catch (e) {
+    console.error("Firebase Admin SDK initialization error on patient creation route:", e);
+}
+
 
 const createPatientSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -27,6 +37,7 @@ const createPatientSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const db = await getDb();
+    // Corrected query: Select all columns from the patients table.
     const patients = await db.all("SELECT * FROM patients");
 
     return NextResponse.json(patients, { status: 200 });
@@ -56,18 +67,24 @@ export async function POST(request: NextRequest) {
     // Check if a user with this email already exists (e.g., they signed up themselves)
     let user = await db.get('SELECT id FROM users WHERE email = ?', patientData.email);
     let userId: string;
+    let firebaseUid: string;
 
     const now = new Date().toISOString();
 
     if (user) {
         // User exists, link to them
         userId = user.id;
+        firebaseUid = user.id;
     } else {
-        // No user exists, create one
-        userId = generateId('user_');
-        // Note: Password cannot be set here without Firebase Admin. 
-        // This flow assumes staff creating a user record doesn't set a password.
-        // The user would need to use "Forgot Password" to set one.
+        // No user exists, create one in both Firebase and our DB
+        const firebaseUserRecord = await admin.auth().createUser({
+            email: patientData.email,
+            password: patientData.password, // This can be undefined if staff doesn't set one
+            displayName: patientData.name,
+        });
+        firebaseUid = firebaseUserRecord.uid;
+        userId = firebaseUid; // Use the UID from Firebase as our user ID
+
         await db.run(
             'INSERT INTO users (id, name, email, role, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
             userId, patientData.name, patientData.email, 'patient', now, now
@@ -95,8 +112,11 @@ export async function POST(request: NextRequest) {
     const newPatientResponse = await db.get('SELECT * FROM patients WHERE id = ?', newPatientId);
     return NextResponse.json(newPatientResponse, { status: 201 });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating patient:', error);
-    return NextResponse.json({ message: 'Error creating patient' }, { status: 500 });
+    if (error.code === 'auth/email-already-exists') {
+        return NextResponse.json({ message: "This email is already registered for login. Please use the existing account." }, { status: 409 });
+    }
+    return NextResponse.json({ message: 'Error creating patient', details: error.message }, { status: 500 });
   }
 }
