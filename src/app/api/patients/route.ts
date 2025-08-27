@@ -2,22 +2,10 @@
 // src/app/api/patients/route.ts
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-
 import type { NextRequest } from 'next/server';
-
 import { generateId } from '@/lib/mockServerDb';
-
-import { getDb } from '@/lib/db';  
-import * as admin from 'firebase-admin';
-import { getFirebaseAdminApp } from '@/lib/firebase-admin';
-
-// Initialize Firebase Admin
-try {
-    getFirebaseAdminApp();
-} catch (e) {
-    console.error("Firebase Admin SDK initialization error on patient creation route:", e);
-}
-
+import { getDb } from '@/lib/db';
+import bcrypt from 'bcryptjs';
 
 const createPatientSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -61,43 +49,37 @@ export async function POST(request: NextRequest) {
 
     const patientData = validation.data;
     
+    // Check if a patient with this email already has a clinical record
     const existingPatient = await db.get('SELECT id FROM patients WHERE email = ?', patientData.email);
     if (existingPatient) {
         return NextResponse.json({ message: "A patient with this email already has a clinical record." }, { status: 409 });
     }
     
-    // Check if a user with this email already exists (e.g., they signed up themselves)
+    // Check if a user login with this email already exists
     let user = await db.get('SELECT id FROM users WHERE email = ?', patientData.email);
     let userId: string;
-    let firebaseUid: string;
-
     const now = new Date().toISOString();
 
     if (user) {
-        // User exists, link to them
+        // User login exists, link the new clinical record to them
         userId = user.id;
-        firebaseUid = user.id;
-    } else {
-        // No user exists, create one in both Firebase and our DB
-        const userToCreate: admin.auth.CreateRequest = {
-            email: patientData.email,
-            displayName: patientData.name,
-        };
+        // Optionally update the user's details if a password is provided by staff
         if (patientData.password) {
-            userToCreate.password = patientData.password;
+            const hashedPassword = await bcrypt.hash(patientData.password, 10);
+            await db.run('UPDATE users SET passwordHash = ? WHERE id = ?', hashedPassword, userId);
         }
-
-        const firebaseUserRecord = await admin.auth().createUser(userToCreate);
-        firebaseUid = firebaseUserRecord.uid;
-        userId = firebaseUid; // Use the UID from Firebase as our user ID
-
+    } else {
+        // No user login exists, create a new one
+        userId = generateId('user_');
+        const hashedPassword = patientData.password ? await bcrypt.hash(patientData.password, 10) : null;
+        
         await db.run(
-            'INSERT INTO users (id, name, email, role, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
-            userId, patientData.name, patientData.email, 'patient', now, now
+            'INSERT INTO users (id, name, email, role, passwordHash, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            userId, patientData.name, patientData.email, 'patient', hashedPassword, now, now
         );
     }
     
-    // Create the patient clinical record
+    // Create the patient clinical record, linked to the user ID
     const newPatientId = generateId('pat_');
     const insertPatientStmt = `
       INSERT INTO patients (
@@ -120,8 +102,9 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Error creating patient:', error);
-    if (error.code === 'auth/email-already-exists') {
-        return NextResponse.json({ message: "This email is already registered for login. Please use the existing account." }, { status: 409 });
+    // Handle potential UNIQUE constraint error for email in users table, though our logic should prevent it.
+    if (error.code === 'SQLITE_CONSTRAINT') {
+       return NextResponse.json({ message: "A user with this email already exists." }, { status: 409 });
     }
     return NextResponse.json({ message: 'Error creating patient', details: error.message }, { status: 500 });
   }

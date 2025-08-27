@@ -31,7 +31,8 @@ export async function POST(request: NextRequest) {
     }
     
     if (!user.passwordHash) {
-        return NextResponse.json({ message: "This account may use social sign-in or was created without a password. Please use the appropriate login method or reset your password." }, { status: 401 });
+        // This handles the case where a staff member created the user without a password.
+        return NextResponse.json({ message: "This account was created without a password. Please use the Sign Up page to set your password and access your account." }, { status: 401 });
     }
 
     const isValidPassword = await bcrypt.compare(password, user.passwordHash);

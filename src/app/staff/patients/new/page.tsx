@@ -11,12 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, FileText, ShieldAlert, HeartPulse, Droplets, Info, Wind, Plus, Trash2 } from 'lucide-react';
+import { Loader2, FileText, ShieldAlert, HeartPulse, Droplets, Info, Wind, Plus, Trash2, Save, User, Mail, Phone as PhoneIcon, CalendarDays, Stethoscope, Paperclip, NotebookPen } from 'lucide-react';
 import Image from 'next/image';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Check as CheckIcon, ChevronsUpDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 import type { UserAuth } from '@/lib/mockServerDb';
 
 
@@ -25,7 +22,7 @@ interface FormDataState {
   email: string;
   phone: string;
   dateOfBirth: string;
-  age: string; 
+  age: string;
   medicalRecords: string;
   xrayImageUrls: string[];
   hasDiabetes: boolean;
@@ -35,10 +32,10 @@ interface FormDataState {
   hasAllergy: boolean;
   allergySpecifics: string;
   hasAsthma: boolean;
-  password?: string; 
+  password?: string;
 }
 
-export default function AddNewPatientPage() {
+export default function StaffAddNewPatientPage() {
   const router = useRouter();
   const { toast } = useToast();
   const xrayInputRef = useRef<HTMLInputElement>(null);
@@ -68,37 +65,6 @@ export default function AddNewPatientPage() {
   const [errors, setErrors] = useState<Partial<Record<keyof FormDataState, string>>>({});
   const [showUploadOrClearMessage, setShowUploadOrClearMessage] = useState(false);
 
-  // For email combobox
-  const [userSuggestions, setUserSuggestions] = useState<UserAuth[]>([]);
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-  
-
-  const fetchUsers = useCallback(async () => {
-    try {
-        const response = await fetch('/api/staff?allUsers=true');
-        if (!response.ok) throw new Error('Failed to fetch user suggestions');
-        const data = await response.json();
-        setUserSuggestions(data);
-    } catch (error) {
-        console.error("Could not fetch user suggestions:", error);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
-
-
-  const handleEmailSelect = (user: UserAuth) => {
-    setFormData(prev => ({
-        ...prev,
-        email: user.email,
-        name: user.name || prev.name,
-        phone: user.phone || prev.phone,
-    }));
-    setIsPopoverOpen(false);
-  };
-
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -122,7 +88,7 @@ export default function AddNewPatientPage() {
       setSelectedFiles(prevFiles => [...prevFiles, ...newFiles]);
       setShowUploadOrClearMessage(true);
        if (xrayInputRef.current) {
-        xrayInputRef.current.value = ''; 
+        xrayInputRef.current.value = '';
       }
     }
   };
@@ -136,7 +102,7 @@ export default function AddNewPatientPage() {
       return updatedFiles;
     });
   };
-  
+
   const removeUploadedImage = (urlToRemove: string) => {
     setFormData(prev => ({
       ...prev,
@@ -163,7 +129,7 @@ export default function AddNewPatientPage() {
     } else if (formData.age && parseInt(formData.age) < 0) {
         newErrors.age = "Age cannot be negative.";
     }
-    
+
     if (formData.password && formData.password.length > 0 && formData.password.length < 6) {
         newErrors.password = "Password must be at least 6 characters long.";
     }
@@ -179,13 +145,13 @@ export default function AddNewPatientPage() {
       toast({ variant: "destructive", title: "Validation Error", description: "Please correct the errors in the form."});
       return;
     }
-    
+
     setIsSubmitting(true);
-    let currentXrayImageUrls = [...formData.xrayImageUrls];
+    let uploadedImageUrlsForSubmission: string[] = [...formData.xrayImageUrls];
 
     if (selectedFiles.length > 0) {
       setIsUploading(true);
-      const uploadedUrlsThisรอบ: string[] = [];
+      const newlyUploadedUrls: string[] = [];
       let uploadOk = true;
       try {
         for (const file of selectedFiles) {
@@ -194,12 +160,12 @@ export default function AddNewPatientPage() {
           const response = await fetch('/api/upload/image', { method: 'POST', body: fileData });
           const result = await response.json();
           if (!response.ok) throw new Error(result.message || `File upload failed for ${file.name}`);
-          uploadedUrlsThisรอบ.push(result.imageUrl);
+          newlyUploadedUrls.push(result.imageUrl);
         }
-        currentXrayImageUrls = [...currentXrayImageUrls, ...uploadedUrlsThisรอบ];
-        setSelectedFiles([]); 
+        uploadedImageUrlsForSubmission = [...uploadedImageUrlsForSubmission, ...newlyUploadedUrls];
+        setSelectedFiles([]);
         setShowUploadOrClearMessage(false);
-        toast({ title: "Files Uploaded", description: `${uploadedUrlsThisรอบ.length} file(s) have been successfully uploaded and attached.` });
+        toast({ title: "Files Uploaded", description: `${newlyUploadedUrls.length} file(s) have been successfully uploaded and will be attached.` });
       } catch (error: any) {
         toast({ variant: "destructive", title: "Upload Error", description: error.message });
         uploadOk = false;
@@ -207,11 +173,11 @@ export default function AddNewPatientPage() {
         setIsUploading(false);
       }
       if (!uploadOk) {
-        setIsSubmitting(false); 
-        return; 
+        setIsSubmitting(false);
+        return;
       }
     }
-    
+
     const patientDataToSubmit = {
       name: formData.name.trim(),
       email: formData.email.trim(),
@@ -219,7 +185,7 @@ export default function AddNewPatientPage() {
       dateOfBirth: formData.dateOfBirth.trim() === '' ? undefined : formData.dateOfBirth.trim(),
       age: formData.age ? parseInt(formData.age, 10) : undefined,
       medicalRecords: formData.medicalRecords.trim() === '' ? undefined : formData.medicalRecords.trim(),
-      xrayImageUrls: currentXrayImageUrls,
+      xrayImageUrls: uploadedImageUrlsForSubmission,
       hasDiabetes: formData.hasDiabetes,
       hasHighBloodPressure: formData.hasHighBloodPressure,
       hasStrokeOrHeartAttackHistory: formData.hasStrokeOrHeartAttackHistory,
@@ -246,12 +212,12 @@ export default function AddNewPatientPage() {
         throw new Error(errorMessage);
       }
 
-      toast({ title: "Patient Added!", description: `${data.name} has been successfully added.` });
+      toast({ title: "Patient Added!", description: `${data.name} has been successfully added to the central clinic records.` });
       setFormData(initialFormData);
       setSelectedFiles([]);
       setShowUploadOrClearMessage(false);
       setErrors({});
-      // router.push('/staff/patients'); // Optional redirect
+      router.push(`/staff/patients`);
     } catch (err: any) {
       toast({ variant: "destructive", title: "Error Adding Patient", description: err.message });
     } finally {
@@ -260,228 +226,233 @@ export default function AddNewPatientPage() {
   };
 
   return (
-    <div className="space-y-6 mb-12">
-      <Card className="w-full max-w-2xl mx-auto shadow-lg">
+    <div className="space-y-8 mb-16">
+      <Card className="w-full max-w-3xl mx-auto shadow-lg">
         <CardHeader>
-          <CardTitle className="text-2xl">Add New Patient</CardTitle>
-          <CardDescription>Enter the patient's details and medical information. Start typing an email to see suggestions for existing users.</CardDescription>
+          <CardTitle className="text-2xl md:text-3xl">Add New Patient Record</CardTitle>
+          <CardDescription>
+            Enter the patient's details. This creates both a clinical record and a user account for the patient portal.
+          </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-6">
-             <div className="grid sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input id="name" name="name" value={formData.name} onChange={handleChange} placeholder="Patient's full name" />
-                {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+          <CardContent className="space-y-10 pt-6">
+
+            {/* Section: Patient Identification */}
+            <section className="space-y-6">
+              <div className="flex items-center gap-3">
+                <User className="h-6 w-6 text-primary" />
+                <h3 className="text-xl font-semibold text-primary">Patient Identification</h3>
               </div>
-              <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                   <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-                        <PopoverTrigger asChild>
-                            <Button
-                                variant="outline"
-                                role="combobox"
-                                aria-expanded={isPopoverOpen}
-                                className="w-full justify-between font-normal"
-                            >
-                                {formData.email || "Select or type email..."}
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                            <Command>
-                                <CommandInput 
-                                    placeholder="Search user by email..."
-                                    value={formData.email}
-                                    onValueChange={(val) => setFormData(prev => ({...prev, email: val}))}
-                                />
-                                <CommandList>
-                                  <CommandEmpty>No user found. You can still enter a new email.</CommandEmpty>
-                                  <CommandGroup>
-                                    {userSuggestions.map((user) => (
-                                      <CommandItem
-                                        key={user.id}
-                                        value={user.email}
-                                        onSelect={() => handleEmailSelect(user)}
-                                      >
-                                        <CheckIcon
-                                          className={cn(
-                                            "mr-2 h-4 w-4",
-                                            formData.email === user.email ? "opacity-100" : "opacity-0"
-                                          )}
-                                        />
-                                        <div className="flex flex-col">
-                                          <span>{user.email}</span>
-                                          <span className="text-xs text-muted-foreground">{user.name}</span>
-                                        </div>
-                                      </CommandItem>
-                                    ))}
-                                  </CommandGroup>
-                                </CommandList>
-                            </Command>
-                        </PopoverContent>
-                    </Popover>
-                  {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
-              </div>
-            </div>
-             <div className="grid sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} placeholder="Optional" />
-              </div>
-               <div className="space-y-2">
-                <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                <Input id="dateOfBirth" name="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={handleChange} placeholder="Optional" />
-              </div>
-            </div>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="age">Age</Label>
-                <Input id="age" name="age" type="number" value={formData.age} onChange={handleChange} placeholder="Optional" />
-                 {errors.age && <p className="text-sm text-destructive">{errors.age}</p>}
-              </div>
+              <div className="grid sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                    <Label htmlFor="password">Set Password (Optional)</Label>
-                    <Input 
-                        id="password" 
-                        name="password" 
-                        type="password" 
-                        value={formData.password || ''} 
-                        onChange={handleChange} 
-                        placeholder="Min. 6 characters if set" 
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input id="name" name="name" value={formData.name} onChange={handleChange} placeholder="e.g., John Doe" />
+                  {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address</Label>
+                  <Input id="email" name="email" type="email" value={formData.email} onChange={handleChange} placeholder="john.doe@example.com" />
+                  {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+                </div>
+              </div>
+            </section>
+
+            <Separator />
+
+            {/* Section: Contact & Demographics */}
+            <section className="space-y-6">
+               <div className="flex items-center gap-3">
+                <PhoneIcon className="h-6 w-6 text-primary" />
+                <h3 className="text-xl font-semibold text-primary">Contact & Demographics</h3>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number (Optional)</Label>
+                  <Input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} placeholder="(123) 456-7890"/>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dateOfBirth">Date of Birth (Optional)</Label>
+                  <Input id="dateOfBirth" name="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={handleChange} />
+                </div>
+                <div className="space-y-2 sm:col-span-1">
+                  <Label htmlFor="age">Age (Optional)</Label>
+                  <Input id="age" name="age" type="number" value={formData.age} onChange={handleChange} placeholder="e.g., 35"/>
+                  {errors.age && <p className="text-sm text-destructive">{errors.age}</p>}
+                </div>
+                 <div className="space-y-2 sm:col-span-1">
+                    <Label htmlFor="password">Set Initial Password (Optional)</Label>
+                    <Input
+                        id="password"
+                        name="password"
+                        type="password"
+                        value={formData.password || ''}
+                        onChange={handleChange}
+                        placeholder="Min. 6 characters"
                     />
                     {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
-                    <p className="text-xs text-muted-foreground">If provided, the patient can use this to log into their portal.</p>
+                    <p className="text-xs text-muted-foreground">If set, patient can log in immediately. If not, they can set it via signup.</p>
                 </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="medicalRecords">Simple Medical Records / Notes</Label>
-              <Textarea id="medicalRecords" name="medicalRecords" value={formData.medicalRecords} onChange={handleChange} placeholder="Brief medical history, current medications, etc." rows={3} />
-            </div>
-
-            <div className="space-y-4">
-              <Label className="font-semibold">Medical Conditions:</Label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
-                {[
-                  { id: 'hasDiabetes', label: 'Diabetes', icon: <HeartPulse className="mr-2 h-4 w-4" /> },
-                  { id: 'hasHighBloodPressure', label: 'High Blood Pressure', icon: <ShieldAlert className="mr-2 h-4 w-4" /> },
-                  { id: 'hasStrokeOrHeartAttackHistory', label: 'History of Stroke/Heart Attack', icon: <HeartPulse className="mr-2 h-4 w-4" /> },
-                  { id: 'hasBleedingDisorders', label: 'Bleeding Disorders', icon: <Droplets className="mr-2 h-4 w-4" /> },
-                  { id: 'hasAllergy', label: 'Allergy', icon: <Info className="mr-2 h-4 w-4" /> },
-                  { id: 'hasAsthma', label: 'Asthma/Respiratory Issues', icon: <Wind className="mr-2 h-4 w-4" /> },
-                ].map(condition => (
-                  <div key={condition.id} className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={condition.id} 
-                      name={condition.id}
-                      checked={formData[condition.id as keyof FormDataState] as boolean} 
-                      onCheckedChange={(checked) => {
-                        const isChecked = typeof checked === 'boolean' ? checked : false;
-                        setFormData(prev => ({ ...prev, [condition.id]: isChecked }));
-                        if (condition.id === 'hasAllergy' && !isChecked) {
-                            setFormData(prev => ({ ...prev, allergySpecifics: '' }));
-                        }
-                      }}
-                    />
-                    <Label htmlFor={condition.id} className="flex items-center cursor-pointer text-sm">
-                        {condition.icon} {condition.label}
-                    </Label>
-                  </div>
-                ))}
               </div>
-              {formData.hasAllergy && (
-                <div className="space-y-1 pl-6">
-                  <Label htmlFor="allergySpecifics">Allergy Specifics</Label>
-                  <Input id="allergySpecifics" name="allergySpecifics" value={formData.allergySpecifics} onChange={handleChange} placeholder="e.g., Penicillin, Latex" />
-                </div>
-              )}
-            </div>
+            </section>
 
-            <div className="space-y-2">
-              <Label htmlFor="xrayImagesInput">X-ray Images or PDFs (Optional)</Label>
-              <div className="flex items-center gap-2">
-                <Button type="button" variant="outline" onClick={() => xrayInputRef.current?.click()}>
-                  <Plus className="h-4 w-4" /> Add Files
-                </Button>
-                <Input 
-                  id="xrayImagesInput"
-                  type="file" 
-                  multiple 
-                  onChange={handleFileChange} 
-                  className="hidden"
-                  ref={xrayInputRef}
-                  accept="image/jpeg,image/png,image/webp,image/gif,application/pdf" 
-                />
+            <Separator />
+
+            {/* Section: Medical Overview */}
+            <section className="space-y-6">
+              <div className="flex items-center gap-3">
+                <NotebookPen className="h-6 w-6 text-primary" />
+                <h3 className="text-xl font-semibold text-primary">Medical Overview</h3>
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="medicalRecords">General Medical Notes (Optional)</Label>
+                <Textarea id="medicalRecords" name="medicalRecords" value={formData.medicalRecords} onChange={handleChange} placeholder="Enter any relevant medical history, current medications, or general notes..." rows={4} />
+              </div>
+            </section>
 
-              {selectedFiles.length > 0 && (
-                <div className="mt-2 space-y-1">
-                  <p className="text-xs text-muted-foreground">Selected files to upload ({selectedFiles.length}):</p>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {selectedFiles.map((file, index) => (
-                      <div key={index} className="relative group w-20 h-20 rounded border p-1 flex items-center justify-center">
-                        {file.type.startsWith('image/') ? (
-                            <Image src={URL.createObjectURL(file)} alt={file.name} layout="fill" objectFit="contain" className="rounded" data-ai-hint="medical scan document" />
-                        ) : (
-                            <FileText className="h-10 w-10 text-muted-foreground" />
-                        )}
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          className="absolute -top-2 -right-2 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                          onClick={() => removeSelectedFile(index)}
-                          aria-label="Remove selected file"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
+            <Separator />
+
+            {/* Section: Specific Medical Conditions */}
+            <section className="space-y-6">
+                <div className="flex items-center gap-3">
+                    <Stethoscope className="h-6 w-6 text-primary" />
+                    <h3 className="text-xl font-semibold text-primary">Specific Medical Conditions</h3>
                 </div>
-              )}
+              <div className="space-y-4">
+                <Label className="font-medium text-muted-foreground">Please check all that apply:</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                  {[
+                    { id: 'hasDiabetes', label: 'Diabetes', icon: <HeartPulse className="h-4 w-4 mr-2" /> },
+                    { id: 'hasHighBloodPressure', label: 'High Blood Pressure', icon: <ShieldAlert className="h-4 w-4 mr-2" /> },
+                    { id: 'hasStrokeOrHeartAttackHistory', label: 'History of Stroke/Heart Attack', icon: <HeartPulse className="h-4 w-4 mr-2" /> },
+                    { id: 'hasBleedingDisorders', label: 'Bleeding Disorders', icon: <Droplets className="h-4 w-4 mr-2" /> },
+                    { id: 'hasAllergy', label: 'Allergy', icon: <Info className="h-4 w-4 mr-2" /> },
+                    { id: 'hasAsthma', label: 'Asthma/Respiratory Issues', icon: <Wind className="h-4 w-4 mr-2" /> },
+                  ].map(condition => (
+                    <div key={condition.id} className="flex items-center space-x-2 p-2 border rounded-md hover:bg-muted/50 transition-colors">
+                      <Checkbox
+                        id={`staff-new-${condition.id}`}
+                        name={condition.id}
+                        checked={formData[condition.id as keyof FormDataState] as boolean}
+                        onCheckedChange={(checked) => {
+                          const isChecked = typeof checked === 'boolean' ? checked : false;
+                          setFormData(prev => ({ ...prev, [condition.id]: isChecked }));
+                          if (condition.id === 'hasAllergy' && !isChecked) {
+                              setFormData(prev => ({ ...prev, allergySpecifics: '' }));
+                          }
+                        }}
+                      />
+                      <Label htmlFor={`staff-new-${condition.id}`} className="flex items-center cursor-pointer text-sm font-normal">
+                          {condition.icon} {condition.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+                {formData.hasAllergy && (
+                  <div className="space-y-2 pl-4 mt-3 border-l-2 border-primary ml-2">
+                    <Label htmlFor="allergySpecifics">Allergy Specifics (if any)</Label>
+                    <Input id="allergySpecifics" name="allergySpecifics" value={formData.allergySpecifics} onChange={handleChange} placeholder="e.g., Penicillin, Latex, Pollen" />
+                  </div>
+                )}
+              </div>
+            </section>
 
-              {formData.xrayImageUrls.length > 0 && (
-                <div className="mt-2 space-y-1">
-                  <p className="text-xs text-muted-foreground">Current attachments:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {formData.xrayImageUrls.map((url, index) => (
-                      <div key={index} className="relative h-20 w-20 rounded border group p-1 flex items-center justify-center">
-                        {url.toLowerCase().endsWith('.pdf') ? (
-                            <FileText className="h-10 w-10 text-destructive" />
-                        ) : (
-                            <Image src={url} alt={`Uploaded file ${index + 1}`} layout="fill" objectFit="contain" className="rounded" data-ai-hint="medical scan document" />
-                        )}
-                        <Button
+            <Separator />
+
+            {/* Section: File Uploads */}
+            <section className="space-y-6">
+               <div className="flex items-center gap-3">
+                <Paperclip className="h-6 w-6 text-primary" />
+                <h3 className="text-xl font-semibold text-primary">Supporting Documents</h3>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="xrayImagesInputStaff">Upload X-ray Images or PDFs (Optional)</Label>
+                <div className="flex items-center gap-3 p-4 border-2 border-dashed rounded-md hover:border-primary transition-colors">
+                  <Button type="button" variant="outline" onClick={() => xrayInputRef.current?.click()} className="bg-transparent hover:bg-accent">
+                    <Plus className="h-5 w-5 mr-2" /> Select Files
+                  </Button>
+                  <Input
+                    id="xrayImagesInputStaff"
+                    type="file"
+                    multiple
+                    onChange={handleFileChange}
+                    className="hidden"
+                    ref={xrayInputRef}
+                    accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+                  />
+                  <span className="text-sm text-muted-foreground">Drag & drop or click to select files.</span>
+                </div>
+
+                {selectedFiles.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground">Selected files ({selectedFiles.length}):</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      {selectedFiles.map((file, index) => (
+                        <div key={index} className="relative group border rounded-md p-2 flex flex-col items-center text-center">
+                          {file.type.startsWith('image/') ? (
+                              <Image src={URL.createObjectURL(file)} alt={file.name} width={80} height={80} className="rounded object-contain h-20 w-20 mb-1" data-ai-hint="medical scan document"/>
+                          ) : (
+                              <FileText className="h-12 w-12 text-muted-foreground mb-1" />
+                          )}
+                          <p className="text-xs text-foreground truncate w-full">{file.name}</p>
+                          <p className="text-xs text-muted-foreground">{Math.round(file.size / 1024)} KB</p>
+                          <Button
                             type="button"
-                            variant="destructive"
+                            variant="ghost"
                             size="icon"
-                            className="absolute top-0 right-0 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                            onClick={() => removeUploadedImage(url)}
-                            aria-label="Remove file"
-                        >
-                            <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
+                            className="absolute top-1 right-1 h-6 w-6 text-destructive opacity-50 group-hover:opacity-100 transition-opacity"
+                            onClick={() => removeSelectedFile(index)}
+                            aria-label="Remove selected file"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+
+                {formData.xrayImageUrls.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground">Current attachments:</p>
+                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      {formData.xrayImageUrls.map((url, index) => (
+                        <div key={index} className="relative group border rounded-md p-2 flex flex-col items-center text-center">
+                          {url.toLowerCase().endsWith('.pdf') ? (
+                              <FileText className="h-12 w-12 text-destructive mb-1" />
+                          ) : (
+                              <Image src={url} alt={`Uploaded file ${index + 1}`} width={80} height={80} className="rounded object-contain h-20 w-20 mb-1" data-ai-hint="medical scan document"/>
+                          )}
+                          <p className="text-xs text-foreground truncate w-full">Attachment {index+1}</p>
+                          <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute top-1 right-1 h-6 w-6 text-destructive opacity-50 group-hover:opacity-100 transition-opacity"
+                              onClick={() => removeUploadedImage(url)}
+                              aria-label="Remove file"
+                          >
+                              <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
           </CardContent>
-          <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-4">
-            <Button variant="outline" type="button" onClick={() => router.back()} disabled={isSubmitting || isUploading}>
+          <CardFooter className="flex flex-col sm:flex-row justify-end items-center gap-4 pt-8 border-t mt-6">
+            <Button variant="outline" type="button" onClick={() => router.back()} disabled={isSubmitting || isUploading} className="w-full sm:w-auto">
               Cancel
             </Button>
             <Button className="w-full sm:w-auto" type="submit" disabled={isSubmitting || isUploading || showUploadOrClearMessage}>
-              {isSubmitting || isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
-              Add Patient
+              {isSubmitting || isUploading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
+              Add Patient Record
             </Button>
           </CardFooter>
             {showUploadOrClearMessage && (
-                <p className="text-xs text-destructive text-center mt-2 px-6">
-                    You have files selected. They will be uploaded when you click "Add Patient". <br/> Or, remove them from the selection above if you don't want to include them.
+                <p className="text-xs text-destructive text-center mt-2 px-6 pb-4">
+                    You have files selected. They will be uploaded when you click "Add Patient Record". <br/> Or, remove them from the selection above if you don't want to include them.
                 </p>
             )}
         </form>
