@@ -134,7 +134,7 @@ export async function DELETE(request: NextRequest, { params }: PatientRouteParam
     // This preserves their login for historical purposes but removes patient-specific data access.
     const scrubStmt = `
         UPDATE users SET
-          role = 'user', -- A generic, non-clinical role
+          role = 'user',
           dateOfBirth = NULL, age = NULL, medicalRecords = NULL, xrayImageUrls = NULL,
           hasDiabetes = NULL, hasHighBloodPressure = NULL, hasStrokeOrHeartAttackHistory = NULL,
           hasBleedingDisorders = NULL, hasAllergy = NULL, allergySpecifics = NULL,
