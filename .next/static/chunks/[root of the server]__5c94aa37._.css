@@ -2160,6 +2160,10 @@ h1, h2, h3, h4, h5, h6 {
   background-color: #ffffff80;
 }
 
+.bg-black\/30 {
+  background-color: #0000004d;
+}
+
 .bg-gradient-to-b {
   background-image: linear-gradient(to bottom, var(--tw-gradient-stops));
 }
@@ -2196,6 +2200,14 @@ h1, h2, h3, h4, h5, h6 {
 
 .to-transparent {
   --tw-gradient-to: transparent var(--tw-gradient-to-position);
+}
+
+.bg-cover {
+  background-size: cover;
+}
+
+.bg-center {
+  background-position: center;
 }
 
 .fill-current {
@@ -2236,6 +2248,10 @@ h1, h2, h3, h4, h5, h6 {
 
 .p-\[1px\] {
   padding: 1px;
+}
+
+.p-1\.5 {
+  padding: .375rem;
 }
 
 .px-1 {
@@ -2695,6 +2711,16 @@ h1, h2, h3, h4, h5, h6 {
 .text-yellow-500 {
   --tw-text-opacity: 1;
   color: rgb(234 179 8 / var(--tw-text-opacity, 1));
+}
+
+.text-black {
+  --tw-text-opacity: 1;
+  color: rgb(0 0 0 / var(--tw-text-opacity, 1));
+}
+
+.text-white {
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity, 1));
 }
 
 .underline-offset-4 {
@@ -3160,6 +3186,18 @@ h1, h2, h3, h4, h5, h6 {
   background-color: hsl(var(--sidebar-accent));
 }
 
+.hover\:bg-black\/80:hover {
+  background-color: #000c;
+}
+
+.hover\:bg-white\/90:hover {
+  background-color: #ffffffe6;
+}
+
+.hover\:bg-black\/50:hover {
+  background-color: #00000080;
+}
+
 .hover\:text-accent-foreground:hover {
   color: hsl(var(--accent-foreground));
 }
@@ -3190,6 +3228,11 @@ h1, h2, h3, h4, h5, h6 {
 
 .hover\:text-sidebar-accent-foreground:hover {
   color: hsl(var(--sidebar-accent-foreground));
+}
+
+.hover\:text-white:hover {
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity, 1));
 }
 
 .hover\:underline:hover {
@@ -4055,6 +4098,10 @@ h1, h2, h3, h4, h5, h6 {
     padding: 2rem;
   }
 
+  .sm\:p-4 {
+    padding: 1rem;
+  }
+
   .sm\:text-left {
     text-align: left;
   }
@@ -4342,6 +4389,10 @@ h1, h2, h3, h4, h5, h6 {
 
   .lg\:max-w-sm {
     max-width: 24rem;
+  }
+
+  .lg\:max-w-4xl {
+    max-width: 56rem;
   }
 
   .lg\:grid-cols-2 {
