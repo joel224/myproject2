@@ -174,14 +174,8 @@ export function HeroSection() {
                   preserveAspectRatio="none"
                 >
                   <path
-                    d="M 5 5 C 50 15, 100 0, 150 5 C 200 10, 250 -5, 295 5"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M 5 7 C 60 2, 110 12, 150 7 C 190 2, 240 12, 295 7"
-                    stroke="hsl(var(--primary) / 0.5)"
+                    d="M5 5 C 75 15, 225 15, 295 5"
+                    stroke="#22C55E"
                     strokeWidth="2"
                     strokeLinecap="round"
                   />
