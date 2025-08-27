@@ -170,7 +170,7 @@ export default function AddNewPatientPage() {
         setIsUploading(false);
       }
       if (!uploadOk) {
-        setIsSubmitting(false);
+        setIsSubmitting(false); 
         return; 
       }
     }
