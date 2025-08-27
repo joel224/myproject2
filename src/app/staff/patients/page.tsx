@@ -47,7 +47,7 @@ export default function StaffPatientsPage() {
 
   useEffect(() => {
     fetchPatients();
-  }, []);
+  }, [toast]);
 
   const filteredPatients = patients.filter(patient =>
     patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -78,8 +78,8 @@ export default function StaffPatientsPage() {
         throw new Error(errorData.message || 'Failed to delete patient');
       }
       toast({
-        title: 'Patient Deleted',
-        description: `${patientToDelete.name} has been removed from the records.`,
+        title: 'Patient Data Scrubbed',
+        description: `Clinical data for ${patientToDelete.name} has been removed.`,
       });
       fetchPatients(); // Refresh the list
     } catch (err: any) {
@@ -176,31 +176,14 @@ export default function StaffPatientsPage() {
                             </a>
                           </>
                         )}
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/80">
-                              <Trash2 className="h-4 w-4"/>
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the patient record for <span className="font-semibold">{patient.name}</span> and remove all associated data.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => {
-                                setPatientToDelete(patient);
-                                handleDeletePatient();
-                              }} disabled={isDeleting}>
-                                {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                                Continue
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="text-destructive hover:text-destructive/80"
+                          onClick={() => setPatientToDelete(patient)}
+                        >
+                          <Trash2 className="h-4 w-4"/>
+                        </Button>
                       </TableCell>
                     </TableRow>
                   )) : (
@@ -216,6 +199,26 @@ export default function StaffPatientsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog open={!!patientToDelete} onOpenChange={(open) => !open && setPatientToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently scrub the clinical data for <span className="font-semibold">{patientToDelete?.name}</span> and revoke their access to the patient portal. Their login account will remain.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPatientToDelete(null)} disabled={isDeleting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeletePatient} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
+              {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+              Confirm Deletion
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
