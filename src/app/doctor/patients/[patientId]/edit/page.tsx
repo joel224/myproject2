@@ -239,7 +239,7 @@ export default function EditPatientPage() {
             {/* Medical Records */}
             <div className="space-y-2">
               <Label htmlFor="medicalRecords">Simple Medical Records / Notes</Label>
-              <Textarea id="medicalRecords" name="medicalRecords" value={formData.medicalRecords || ''} onChange={handleChange} rows={3} />
+              <Textarea id="medicalRecords" name="medicalRecords" value={formData.medicalRecords || ''} onChange={handleChange} rows={4} placeholder="Enter relevant medical history, current medications, or general notes..." />
             </div>
 
             {/* Medical Conditions */}
