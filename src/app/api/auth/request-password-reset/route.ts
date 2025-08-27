@@ -1,8 +1,10 @@
+
 // src/app/api/auth/request-password-reset/route.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { db, generateId } from '@/lib/mockServerDb';
+import { generateId } from '@/lib/mockServerDb';
+import { db } from '@/lib/mockServerDb'; // This needs to be updated to use SQLite
 
 const requestResetSchema = z.object({
   email: z.string().email(),
@@ -18,6 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { email } = validation.data;
+    // This part needs to be updated for SQLite
     const user = db.users.find(u => u.email === email);
 
     if (user) {

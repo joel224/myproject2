@@ -127,4 +127,4 @@ export function generateId(prefix = 'id_') {
 
 export const dbClient = {
   getDb,
-}
+};

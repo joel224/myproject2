@@ -3,8 +3,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { generateId } from '@/lib/db'; 
-import { getDb } from '@/lib/db';
+import { getDb } from '@/lib/db'; 
+import { generateId } from '@/lib/mockServerDb';
 import * as admin from 'firebase-admin';
 import { getFirebaseAdminApp } from '@/lib/firebase-admin';
 

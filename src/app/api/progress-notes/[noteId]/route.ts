@@ -1,8 +1,10 @@
+
 // src/app/api/progress-notes/[noteId]/route.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { db, generateId, authorize } from '@/lib/mockServerDb';
+import { generateId } from '@/lib/mockServerDb';
+import { db, authorize } from '@/lib/mockServerDb';
 import type { ProgressNoteImage } from '@/lib/types';
 
 const progressNoteImageSchema = z.object({

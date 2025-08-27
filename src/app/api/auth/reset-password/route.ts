@@ -1,9 +1,11 @@
+
 // src/app/api/auth/reset-password/route.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
-import { db, generateId } from '@/lib/mockServerDb';
+import { generateId } from '@/lib/mockServerDb';
+import { db } from '@/lib/mockServerDb'; // Needs to be updated to use SQLite
 
 const resetPasswordSchema = z.object({
   token: z.string().min(1, { message: "Token is required" }),
@@ -21,6 +23,7 @@ export async function POST(request: NextRequest) {
 
     const { token, newPassword } = validation.data;
 
+    // This needs to be adapted for SQLite
     const user = db.users.find(u => u.resetToken === token && u.resetTokenExpiry && u.resetTokenExpiry > new Date());
 
     if (!user) {

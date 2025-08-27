@@ -96,5 +96,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "An unexpected error occurred during file upload to GCS" }, { status: 500 });
   }
 }
-
-    

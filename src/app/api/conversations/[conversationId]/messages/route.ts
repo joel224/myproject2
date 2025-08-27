@@ -3,7 +3,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { db, generateId, authorize } from '@/lib/mockServerDb';
+import { generateId } from '@/lib/mockServerDb';
+import { db, authorize } from '@/lib/mockServerDb';
 import type { Message } from '@/lib/types';
 
 interface ConversationMessagesParams {

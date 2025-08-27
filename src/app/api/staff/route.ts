@@ -3,7 +3,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { generateId, authorize, type UserAuth } from '@/lib/mockServerDb';
+import { generateId } from '@/lib/mockServerDb';
+import type { UserAuth } from '@/lib/mockServerDb';
 import type { StaffMember } from '@/lib/types';
 import { getDb } from '@/lib/db';
 
