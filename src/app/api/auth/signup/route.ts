@@ -68,24 +68,25 @@ export async function POST(request: NextRequest) {
         }
 
         if (existingUserInDb) {
-            // User already exists (e.g., created by staff). Update their Firebase account with the new password.
+            // User already exists in our local DB. Check if they exist in Firebase.
             try {
+                // Try to update the user. If they don't exist in Firebase, this will throw an error.
                 await admin.auth().updateUser(existingUserInDb.id, {
                     password: password,
                     displayName: name,
                 });
             } catch (error: any) {
                  if (error.code === 'auth/user-not-found') {
-                    // This is a rare edge case where our DB has a user but Firebase doesn't.
-                    // We can try to recover by creating the Firebase user now.
-                    const firebaseUserRecord = await admin.auth().createUser({
-                        uid: existingUserInDb.id, // Re-use our existing ID
+                    // This is the key fix: The user is in our DB but not Firebase.
+                    // We must CREATE the Firebase user now, linking them by our existing ID.
+                    await admin.auth().createUser({
+                        uid: existingUserInDb.id, // Re-use our existing ID to link accounts
                         email: email,
                         password: password,
                         displayName: name,
                     });
                  } else {
-                    // Re-throw other Firebase errors
+                    // Re-throw other Firebase errors (like email-already-exists if it's linked to a *different* UID)
                     throw error;
                  }
             }
@@ -99,11 +100,13 @@ export async function POST(request: NextRequest) {
             const createdUserId = firebaseUserRecord.uid;
             
             const now = new Date().toISOString();
+            // Create the user record in our local DB
             await db.run(
                 'INSERT INTO users (id, name, email, role, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
                 createdUserId, name, email, 'patient', now, now
             );
             
+            // Create the corresponding clinical patient record
             const newPatientId = generateId('pat_');
             await db.run(
                 'INSERT INTO patients (id, userId, name, email, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
