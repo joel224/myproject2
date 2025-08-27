@@ -47,7 +47,7 @@ export default function StaffPatientsPage() {
 
   useEffect(() => {
     fetchPatients();
-  }, [toast]);
+  }, []);
 
   const filteredPatients = patients.filter(patient =>
     patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -176,11 +176,31 @@ export default function StaffPatientsPage() {
                             </a>
                           </>
                         )}
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/80" onClick={() => setPatientToDelete(patient)}>
-                            <Trash2 className="h-4 w-4"/>
-                          </Button>
-                        </AlertDialogTrigger>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/80">
+                              <Trash2 className="h-4 w-4"/>
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete the patient record for <span className="font-semibold">{patient.name}</span> and remove all associated data.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => {
+                                setPatientToDelete(patient);
+                                handleDeletePatient();
+                              }} disabled={isDeleting}>
+                                {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                                Continue
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </TableCell>
                     </TableRow>
                   )) : (
@@ -196,23 +216,6 @@ export default function StaffPatientsPage() {
           </CardContent>
         </Card>
       </div>
-      <AlertDialog open={!!patientToDelete} onOpenChange={(open) => !open && setPatientToDelete(null)}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the patient record for <span className="font-semibold">{patientToDelete?.name}</span> and remove all associated data from our servers.
-            </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setPatientToDelete(null)} disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeletePatient} disabled={isDeleting}>
-              {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-              Continue
-            </AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }
