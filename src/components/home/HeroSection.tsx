@@ -230,7 +230,7 @@ export function HeroSection() {
               data-ai-hint="dental promotion happy patient"
             />
             {/* Actionable Button inside the pop-up */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 sm:bottom-6 z-10">
+            <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-10">
                 <Link href="/#appointment">
                     <Button size="lg" className="bg-white text-black hover:bg-white/90 shadow-xl">
                         Take Me There <ArrowRight className="ml-2 h-4 w-4"/>
