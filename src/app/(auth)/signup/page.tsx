@@ -7,12 +7,12 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { FormEvent } from 'react';
 
-// Firebase imports
-import { auth } from '@/lib/firebase'; // Ensure this path is correct for your Firebase config
-import { 
-  GoogleAuthProvider,
-  signInWithPopup,
-} from 'firebase/auth';
+// Firebase imports (commented out)
+// import { auth } from '@/lib/firebase'; 
+// import { 
+//   GoogleAuthProvider,
+//   signInWithPopup,
+// } from 'firebase/auth';
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -49,56 +49,57 @@ export default function SignupPage() {
 
 
   const handleSocialSignup = async (providerName: 'google') => {
-    setIsSocialLoading(providerName);
-    setError(null);
-    let provider;
+    setError("Social login is temporarily disabled.");
+    // setIsSocialLoading(providerName);
+    // setError(null);
+    // let provider;
 
-    if (providerName === 'google') {
-      provider = new GoogleAuthProvider();
-    } else {
-      setError("Invalid social provider.");
-      setIsSocialLoading(false);
-      return;
-    }
+    // if (providerName === 'google') {
+    //   provider = new GoogleAuthProvider();
+    // } else {
+    //   setError("Invalid social provider.");
+    //   setIsSocialLoading(false);
+    //   return;
+    // }
 
-    try {
-      const userCredential = await signInWithPopup(auth, provider);
-      const user = userCredential.user;
-      console.log(`User signed up/in with ${providerName}:`, user);
+    // try {
+    //   const userCredential = await signInWithPopup(auth, provider);
+    //   const user = userCredential.user;
+    //   console.log(`User signed up/in with ${providerName}:`, user);
 
-      // Call our backend API to ensure the user is in our local DB
-      const response = await fetch('/api/auth/signup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-              name: user.displayName,
-              email: user.email,
-              firebaseUid: user.uid,
-              provider: providerName,
-          })
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to finalize social signup.");
-      }
+    //   // Call our backend API to ensure the user is in our local DB
+    //   const response = await fetch('/api/auth/signup', {
+    //       method: 'POST',
+    //       headers: { 'Content-Type': 'application/json' },
+    //       body: JSON.stringify({
+    //           name: user.displayName,
+    //           email: user.email,
+    //           firebaseUid: user.uid,
+    //           provider: providerName,
+    //       })
+    //   });
+    //   const data = await response.json();
+    //   if (!response.ok) {
+    //     throw new Error(data.message || "Failed to finalize social signup.");
+    //   }
 
-      toast({
-        title: "Account Created Successfully!",
-        description: `Welcome! You're now signed in with ${providerName}.`,
-      });
-      router.push('/patient/dashboard'); 
-    } catch (socialError: any) {
-      console.error(`Error signing up/in with ${providerName}:`, socialError);
-      if (socialError.code === 'auth/account-exists-with-different-credential') {
-        setError('An account already exists with this email using a different sign-in method. Try logging in.');
-      } else if (socialError.code === 'auth/popup-closed-by-user') {
-        setError('Sign-in popup closed before completion.');
-      } else {
-        setError(`Failed to sign up with ${providerName}. Please try again. ` + socialError.message);
-      }
-    } finally {
-      setIsSocialLoading(false);
-    }
+    //   toast({
+    //     title: "Account Created Successfully!",
+    //     description: `Welcome! You're now signed in with ${providerName}.`,
+    //   });
+    //   router.push('/patient/dashboard'); 
+    // } catch (socialError: any) {
+    //   console.error(`Error signing up/in with ${providerName}:`, socialError);
+    //   if (socialError.code === 'auth/account-exists-with-different-credential') {
+    //     setError('An account already exists with this email using a different sign-in method. Try logging in.');
+    //   } else if (socialError.code === 'auth/popup-closed-by-user') {
+    //     setError('Sign-in popup closed before completion.');
+    //   } else {
+    //     setError(`Failed to sign up with ${providerName}. Please try again. ` + socialError.message);
+    //   }
+    // } finally {
+    //   setIsSocialLoading(false);
+    // }
   };
 
 
