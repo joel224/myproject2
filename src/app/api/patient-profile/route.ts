@@ -3,11 +3,16 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { db } from '@/lib/mockServerDb'; // Using mock DB
-import { auth as adminAuth } from 'firebase-admin';
 import { getFirebaseAdminApp } from '@/lib/firebase-admin';
 
 // Initialize Firebase Admin SDK
-getFirebaseAdminApp();
+// This might throw an error if config is not set, which is expected.
+try {
+  getFirebaseAdminApp();
+} catch (e: any) {
+  console.warn("Firebase Admin SDK not initialized. API routes requiring it will fail. Error: ", e.message);
+}
+
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('Authorization');
@@ -17,8 +22,8 @@ export async function GET(request: NextRequest) {
   const idToken = authHeader.split('Bearer ')[1];
 
   try {
-    // Verify the Firebase ID token
-    const decodedToken = await adminAuth().verifyIdToken(idToken);
+    const admin = await import('firebase-admin');
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
     const userEmail = decodedToken.email;
 
     if (!userEmail) {
@@ -32,6 +37,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: 'No patient record found for this account. Please contact the clinic to have your online account linked.' }, { status: 404 });
     }
     
+    // This patient has an account created via Firebase and a matching record in our mock DB.
+    // The record might have been created by staff or by the user themselves via the signup flow.
     const { passwordHash, ...patientResponse } = patientData;
 
     return NextResponse.json(patientResponse, { status: 200 });
@@ -43,6 +50,10 @@ export async function GET(request: NextRequest) {
     }
      if (error.code?.startsWith('auth/')) {
       return NextResponse.json({ message: 'Forbidden: Invalid authentication token.' }, { status: 403 });
+    }
+    // Handle case where Admin SDK might not be initialized
+    if (error.message.includes("Firebase Admin SDK not initialized")) {
+        return NextResponse.json({ message: "Server configuration error: Could not verify user." }, { status: 500 });
     }
     return NextResponse.json({ message: 'An unexpected error occurred.' }, { status: 500 });
   }

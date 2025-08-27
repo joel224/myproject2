@@ -15,6 +15,8 @@
   "/page": "app/page.js",
   "/patient/dashboard/page": "app/patient/dashboard/page.js",
   "/staff/dashboard/page": "app/staff/dashboard/page.js",
+  "/staff/patients/[patientId]/edit/page": "app/staff/patients/[patientId]/edit/page.js",
+  "/staff/patients/[patientId]/page": "app/staff/patients/[patientId]/page.js",
   "/staff/patients/new/page": "app/staff/patients/new/page.js",
   "/staff/patients/page": "app/staff/patients/page.js"
 }
