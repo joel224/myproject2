@@ -2,7 +2,7 @@
 // src/app/staff/patients/page.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,9 @@ import { PlusCircle, Search, Edit3, Phone, Eye, Loader2, AlertTriangle, MessageS
 import Link from "next/link";
 import type { Patient } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { AlertDialogTrigger } from '@radix-ui/react-alert-dialog';
+
 
 export default function StaffPatientsPage() {
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -22,7 +24,7 @@ export default function StaffPatientsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
 
-  const fetchPatients = async () => {
+  const fetchPatients = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -43,11 +45,11 @@ export default function StaffPatientsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchPatients();
-  }, [toast]);
+  }, [fetchPatients]);
 
   const filteredPatients = patients.filter(patient =>
     patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -78,8 +80,8 @@ export default function StaffPatientsPage() {
         throw new Error(errorData.message || 'Failed to delete patient');
       }
       toast({
-        title: 'Patient Data Scrubbed',
-        description: `Clinical data for ${patientToDelete.name} has been removed.`,
+        title: 'Patient Record Deleted',
+        description: `Clinical record for ${patientToDelete.name} has been removed.`,
       });
       fetchPatients(); // Refresh the list
     } catch (err: any) {
@@ -108,7 +110,7 @@ export default function StaffPatientsPage() {
         <Card>
           <CardHeader>
             <CardTitle>All Patients</CardTitle>
-            <CardDescription>Browse, view, and manage patient records.</CardDescription>
+            <CardDescription>Browse, view, and manage patient clinical records.</CardDescription>
             <div className="flex w-full max-w-md items-center space-x-2 mt-2">
               <Input
                 type="text"
@@ -176,14 +178,31 @@ export default function StaffPatientsPage() {
                             </a>
                           </>
                         )}
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="text-destructive hover:text-destructive/80"
-                          onClick={() => setPatientToDelete(patient)}
-                        >
-                          <Trash2 className="h-4 w-4"/>
-                        </Button>
+                        <AlertDialog onOpenChange={(open) => !open && setPatientToDelete(null)}>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/80" onClick={() => setPatientToDelete(patient)}>
+                                    <Trash2 className="h-4 w-4"/>
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete the clinical record for <span className="font-semibold">{patientToDelete?.name}</span>. Their login account will NOT be affected.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel onClick={() => setPatientToDelete(null)} disabled={isDeleting}>
+                                    Cancel
+                                    </AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleDeletePatient} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
+                                    {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                                    Confirm Deletion
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+
                       </TableCell>
                     </TableRow>
                   )) : (
@@ -199,26 +218,6 @@ export default function StaffPatientsPage() {
           </CardContent>
         </Card>
       </div>
-
-      <AlertDialog open={!!patientToDelete} onOpenChange={(open) => !open && setPatientToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently scrub the clinical data for <span className="font-semibold">{patientToDelete?.name}</span> and revoke their access to the patient portal. Their login account will remain.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setPatientToDelete(null)} disabled={isDeleting}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeletePatient} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
-              {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-              Confirm Deletion
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }

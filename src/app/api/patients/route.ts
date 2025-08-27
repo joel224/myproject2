@@ -3,10 +3,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { generateId } from '@/lib/mockServerDb'; 
-import bcrypt from 'bcryptjs';
-import type { Patient } from '@/lib/types';
-import type { UserAuth } from '@/lib/mockServerDb';
+import { generateId } from '@/lib/db'; 
 import { getDb } from '@/lib/db';
 
 const createPatientSchema = z.object({
@@ -30,14 +27,9 @@ const createPatientSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const db = await getDb();
-    const patientUsers = await db.all("SELECT * FROM users WHERE role = 'patient'");
-    
-    const patientsList: Patient[] = patientUsers.map(user => {
-      const { passwordHash, ...patientData } = user;
-      return patientData as Patient;
-    });
+    const patients = await db.all("SELECT * FROM patients");
 
-    return NextResponse.json(patientsList, { status: 200 });
+    return NextResponse.json(patients, { status: 200 });
   } catch (error) {
     console.error('Error fetching patients:', error);
     return NextResponse.json({ message: 'Error fetching patients' }, { status: 500 });
@@ -56,84 +48,55 @@ export async function POST(request: NextRequest) {
 
     const patientData = validation.data;
     
-    let passwordHash: string | undefined;
-    if (patientData.password) {
-        const saltRounds = 10;
-        passwordHash = await bcrypt.hash(patientData.password, saltRounds);
+    const existingPatient = await db.get('SELECT id FROM patients WHERE email = ?', patientData.email);
+    if (existingPatient) {
+        return NextResponse.json({ message: "A patient with this email already has a clinical record." }, { status: 409 });
     }
+    
+    // Check if a user with this email already exists (e.g., they signed up themselves)
+    let user = await db.get('SELECT id FROM users WHERE email = ?', patientData.email);
+    let userId: string;
 
-    const existingUser = await db.get('SELECT * FROM users WHERE email = ?', patientData.email);
+    const now = new Date().toISOString();
 
-    if (existingUser) {
-      // User exists, update their record with patient details
-      const updateUserStmt = `
-        UPDATE users SET
-          name = ?, role = ?, phone = ?, dateOfBirth = ?, age = ?, medicalRecords = ?, 
-          xrayImageUrls = ?, hasDiabetes = ?, hasHighBloodPressure = ?, 
-          hasStrokeOrHeartAttackHistory = ?, hasBleedingDisorders = ?, hasAllergy = ?, 
-          allergySpecifics = ?, hasAsthma = ?, passwordHash = ?, updatedAt = ?
-        WHERE id = ?
-      `;
-      await db.run(
-        updateUserStmt,
-        patientData.name,
-        'patient', // Ensure role is patient
-        patientData.phone,
-        patientData.dateOfBirth,
-        patientData.age,
-        patientData.medicalRecords,
-        JSON.stringify(patientData.xrayImageUrls || []),
-        patientData.hasDiabetes,
-        patientData.hasHighBloodPressure,
-        patientData.hasStrokeOrHeartAttackHistory,
-        patientData.hasBleedingDisorders,
-        patientData.hasAllergy,
-        patientData.allergySpecifics,
-        patientData.hasAsthma,
-        passwordHash || existingUser.passwordHash,
-        new Date().toISOString(),
-        existingUser.id
-      );
-
-      const updatedUser = await db.get('SELECT * FROM users WHERE id = ?', existingUser.id);
-      const { passwordHash: _, ...userToReturn } = updatedUser;
-      return NextResponse.json({ message: "Existing user updated to patient", user: userToReturn }, { status: 200 });
-
+    if (user) {
+        // User exists, link to them
+        userId = user.id;
     } else {
-      // User does not exist, create a new record
-      const newUser: UserAuth = {
-          id: generateId('user_'),
-          role: 'patient',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          ...patientData,
-          passwordHash,
-          xrayImageUrls: patientData.xrayImageUrls || [],
-      };
-      
-      const insertUserStmt = `
-        INSERT INTO users (
-          id, name, email, phone, dateOfBirth, age, medicalRecords, xrayImageUrls,
-          hasDiabetes, hasHighBloodPressure, hasStrokeOrHeartAttackHistory, hasBleedingDisorders,
-          hasAllergy, allergySpecifics, hasAsthma, passwordHash, role, createdAt, updatedAt
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
-      
-      await db.run(
-        insertUserStmt,
-        newUser.id, newUser.name, newUser.email, newUser.phone, newUser.dateOfBirth, newUser.age,
-        newUser.medicalRecords, JSON.stringify(newUser.xrayImageUrls), newUser.hasDiabetes,
-        newUser.hasHighBloodPressure, newUser.hasStrokeOrHeartAttackHistory, newUser.hasBleedingDisorders,
-        newUser.hasAllergy, newUser.allergySpecifics, newUser.hasAsthma, newUser.passwordHash,
-        newUser.role, newUser.createdAt, newUser.updatedAt
-      );
-
-      const { passwordHash: _, ...newPatientResponse } = newUser;
-      return NextResponse.json(newPatientResponse, { status: 201 });
+        // No user exists, create one
+        userId = generateId('user_');
+        // Note: Password cannot be set here without Firebase Admin. 
+        // This flow assumes staff creating a user record doesn't set a password.
+        // The user would need to use "Forgot Password" to set one.
+        await db.run(
+            'INSERT INTO users (id, name, email, role, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
+            userId, patientData.name, patientData.email, 'patient', now, now
+        );
     }
+    
+    // Create the patient clinical record
+    const newPatientId = generateId('pat_');
+    const insertPatientStmt = `
+      INSERT INTO patients (
+        id, userId, name, email, phone, dateOfBirth, age, medicalRecords, xrayImageUrls,
+        hasDiabetes, hasHighBloodPressure, hasStrokeOrHeartAttackHistory, hasBleedingDisorders,
+        hasAllergy, allergySpecifics, hasAsthma, createdAt, updatedAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    
+    await db.run(
+      insertPatientStmt,
+      newPatientId, userId, patientData.name, patientData.email, patientData.phone, patientData.dateOfBirth, patientData.age,
+      patientData.medicalRecords, JSON.stringify(patientData.xrayImageUrls), patientData.hasDiabetes,
+      patientData.hasHighBloodPressure, patientData.hasStrokeOrHeartAttackHistory, patientData.hasBleedingDisorders,
+      patientData.hasAllergy, patientData.allergySpecifics, patientData.hasAsthma, now, now
+    );
+
+    const newPatientResponse = await db.get('SELECT * FROM patients WHERE id = ?', newPatientId);
+    return NextResponse.json(newPatientResponse, { status: 201 });
 
   } catch (error) {
-    console.error('Error creating/updating patient:', error);
+    console.error('Error creating patient:', error);
     return NextResponse.json({ message: 'Error creating patient' }, { status: 500 });
   }
 }

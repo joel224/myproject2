@@ -32,21 +32,20 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ message: 'Forbidden: Invalid or expired token' }, { status: 403 });
     }
 
-    const userEmail = decodedToken.email;
+    const userId = decodedToken.uid;
 
-    if (!userEmail) {
-        return NextResponse.json({ message: 'Forbidden: No email associated with this token.' }, { status: 403 });
+    if (!userId) {
+        return NextResponse.json({ message: 'Forbidden: No user ID associated with this token.' }, { status: 403 });
     }
-
-    const patientData = await db.get('SELECT * FROM users WHERE email = ? AND role = ?', [userEmail, 'patient']);
+    
+    // Find the patient record linked to this user ID
+    const patientData = await db.get('SELECT * FROM patients WHERE userId = ?', userId);
     
     if (!patientData) {
       return NextResponse.json({ message: 'No patient record found for this account. Please contact the clinic to have your online account linked.' }, { status: 404 });
     }
-    
-    const { passwordHash, ...patientResponse } = patientData;
 
-    return NextResponse.json(patientResponse, { status: 200 });
+    return NextResponse.json(patientData, { status: 200 });
 
   } catch (error: any) {
     console.error('Error fetching patient profile:', error);
