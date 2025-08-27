@@ -162,20 +162,25 @@ export default function EditPatientPage() {
       }
     }
 
-    const patientDataToSubmit: any = {
-      ...formData,
-      age: formData.age ? parseInt(formData.age, 10) : undefined,
-      allergySpecifics: formData.hasAllergy ? formData.allergySpecifics : undefined,
-      xrayImageUrls: finalXrayImageUrls,
+    const dataToSubmit = { ...formData };
+    
+    const patientDataToSubmit = {
+        name: dataToSubmit.name,
+        email: dataToSubmit.email,
+        phone: dataToSubmit.phone?.trim() === '' ? null : dataToSubmit.phone,
+        dateOfBirth: dataToSubmit.dateOfBirth?.trim() === '' ? null : dataToSubmit.dateOfBirth,
+        age: dataToSubmit.age === '' || dataToSubmit.age === null ? null : parseInt(dataToSubmit.age, 10),
+        medicalRecords: dataToSubmit.medicalRecords?.trim() === '' ? null : dataToSubmit.medicalRecords,
+        xrayImageUrls: finalXrayImageUrls,
+        hasDiabetes: dataToSubmit.hasDiabetes,
+        hasHighBloodPressure: dataToSubmit.hasHighBloodPressure,
+        hasStrokeOrHeartAttackHistory: dataToSubmit.hasStrokeOrHeartAttackHistory,
+        hasBleedingDisorders: dataToSubmit.hasBleedingDisorders,
+        hasAllergy: dataToSubmit.hasAllergy,
+        allergySpecifics: dataToSubmit.hasAllergy ? (dataToSubmit.allergySpecifics?.trim() === '' ? null : dataToSubmit.allergySpecifics) : null,
+        hasAsthma: dataToSubmit.hasAsthma,
     };
-    if (patientDataToSubmit.dateOfBirth === '') delete patientDataToSubmit.dateOfBirth;
-
-    // Clean up fields that are not part of the update schema
-    delete patientDataToSubmit.id;
-    delete patientDataToSubmit.userId;
-    delete patientDataToSubmit.createdAt;
-    delete patientDataToSubmit.updatedAt;
-
+    
     try {
       const response = await fetch(`/api/patients/${patientId}`, {
         method: 'PUT',
