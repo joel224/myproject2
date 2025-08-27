@@ -30,6 +30,18 @@ interface ComboboxProps {
 
 export function Combobox({ options, value, onSelect, placeholder, notFoundText, className }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
+  const [inputValue, setInputValue] = React.useState(value || "");
+
+  React.useEffect(() => {
+    setInputValue(value);
+  }, [value]);
+
+
+  const handleSelect = (currentValue: string) => {
+    const selectedOption = options.find(option => option.label.toLowerCase() === currentValue.toLowerCase());
+    onSelect(selectedOption ? selectedOption.value : currentValue);
+    setOpen(false);
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -41,36 +53,37 @@ export function Combobox({ options, value, onSelect, placeholder, notFoundText, 
           className={cn("w-full justify-between font-normal", className)}
         >
           {value
-            ? options.find((option) => option.value === value)?.label
+            ? options.find((option) => option.value === value)?.label || value
             : placeholder || "Select option..."}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" align="start">
-        <Command>
-          <CommandInput placeholder={placeholder || "Search..."} />
+        <Command shouldFilter={false}>
+          <CommandInput 
+            placeholder={placeholder || "Search..."} 
+            value={inputValue}
+            onValueChange={setInputValue}
+          />
           <CommandList>
             <CommandEmpty>{notFoundText || "No option found."}</CommandEmpty>
             <CommandGroup>
-              {options.map((option) => (
-                <CommandItem
-                  key={option.value}
-                  value={option.label} // Search by label
-                  onSelect={(currentLabel) => {
-                    // Find the value from the label
-                    const selectedValue = options.find(opt => opt.label.toLowerCase() === currentLabel.toLowerCase())?.value || "";
-                    onSelect(selectedValue === value ? "" : selectedValue);
-                    setOpen(false)
-                  }}
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === option.value ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  {option.label}
-                </CommandItem>
+              {options
+                .filter(option => option.label.toLowerCase().includes(inputValue.toLowerCase()))
+                .map((option) => (
+                  <CommandItem
+                    key={option.value}
+                    value={option.label} 
+                    onSelect={handleSelect}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value === option.value ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {option.label}
+                  </CommandItem>
               ))}
             </CommandGroup>
           </CommandList>
