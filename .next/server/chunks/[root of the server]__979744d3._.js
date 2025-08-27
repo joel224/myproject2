@@ -464,7 +464,7 @@ __turbopack_context__.s({
 });
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/server.js [app-route] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$lib$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/zod/lib/index.mjs [app-route] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/mockServerDb.ts [app-route] (ecmascript)"); // Use mock DB
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/mockServerDb.ts [app-route] (ecmascript)");
 ;
 ;
 ;
@@ -487,36 +487,21 @@ const updatePatientSchema = __TURBOPACK__imported__module__$5b$project$5d2f$node
 async function GET(request, { params }) {
     const { patientId } = params;
     try {
-        const user = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].users.find((u)=>u.id === patientId);
-        if (!user || user.role !== 'patient') {
+        const patientUser = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].users.find((u)=>u.id === patientId && u.role === 'patient');
+        if (!patientUser) {
             return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
                 message: "Patient not found"
             }, {
                 status: 404
             });
         }
-        const patientResponse = {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            phone: user.phone,
-            dateOfBirth: user.dateOfBirth,
-            age: user.age,
-            medicalRecords: user.medicalRecords,
-            xrayImageUrls: user.xrayImageUrls || [],
-            hasDiabetes: user.hasDiabetes,
-            hasHighBloodPressure: user.hasHighBloodPressure,
-            hasStrokeOrHeartAttackHistory: user.hasStrokeOrHeartAttackHistory,
-            hasBleedingDisorders: user.hasBleedingDisorders,
-            hasAllergy: user.hasAllergy,
-            allergySpecifics: user.allergySpecifics,
-            hasAsthma: user.hasAsthma
-        };
+        // Exclude passwordHash before sending
+        const { passwordHash, ...patientResponse } = patientUser;
         return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json(patientResponse, {
             status: 200
         });
     } catch (error) {
-        console.error(`Error fetching patient ${patientId} from mock DB:`, error);
+        console.error(`Error fetching patient ${patientId}:`, error);
         return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
             message: 'Error fetching patient details'
         }, {
@@ -546,10 +531,9 @@ async function PUT(request, { params }) {
                 status: 404
             });
         }
-        const currentPatient = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].users[patientIndex];
-        // Check for email collision if email is being updated
-        if (updateData.email && updateData.email !== currentPatient.email) {
-            if (__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].users.some((u)=>u.email === updateData.email && u.id !== patientId)) {
+        if (updateData.email && updateData.email !== __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].users[patientIndex].email) {
+            const emailCollisionCheck = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].users.some((u)=>u.email === updateData.email && u.id !== patientId);
+            if (emailCollisionCheck) {
                 return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
                     message: "Email already in use by another user."
                 }, {
@@ -557,44 +541,20 @@ async function PUT(request, { params }) {
                 });
             }
         }
+        const currentPatient = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].users[patientIndex];
         const updatedPatient = {
             ...currentPatient,
             ...updateData,
-            // Ensure nullable fields are handled correctly (set to undefined if null)
-            phone: updateData.phone === null ? undefined : updateData.phone || currentPatient.phone,
-            dateOfBirth: updateData.dateOfBirth === null ? undefined : updateData.dateOfBirth || currentPatient.dateOfBirth,
-            age: updateData.age === null ? undefined : updateData.age || currentPatient.age,
-            medicalRecords: updateData.medicalRecords === null ? undefined : updateData.medicalRecords || currentPatient.medicalRecords,
-            allergySpecifics: updateData.hasAllergy === false ? undefined : updateData.allergySpecifics === null ? undefined : updateData.allergySpecifics || currentPatient.allergySpecifics,
+            age: updateData.age ?? currentPatient.age,
             updatedAt: new Date().toISOString()
         };
-        // Ensure allergySpecifics is cleared if hasAllergy is set to false
-        if (updateData.hasAllergy === false) {
-            updatedPatient.allergySpecifics = undefined;
-        }
         __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].users[patientIndex] = updatedPatient;
-        const patientResponse = {
-            id: updatedPatient.id,
-            name: updatedPatient.name,
-            email: updatedPatient.email,
-            phone: updatedPatient.phone,
-            dateOfBirth: updatedPatient.dateOfBirth,
-            age: updatedPatient.age,
-            medicalRecords: updatedPatient.medicalRecords,
-            xrayImageUrls: updatedPatient.xrayImageUrls || [],
-            hasDiabetes: updatedPatient.hasDiabetes,
-            hasHighBloodPressure: updatedPatient.hasHighBloodPressure,
-            hasStrokeOrHeartAttackHistory: updatedPatient.hasStrokeOrHeartAttackHistory,
-            hasBleedingDisorders: updatedPatient.hasBleedingDisorders,
-            hasAllergy: updatedPatient.hasAllergy,
-            allergySpecifics: updatedPatient.allergySpecifics,
-            hasAsthma: updatedPatient.hasAsthma
-        };
+        const { passwordHash, ...patientResponse } = updatedPatient;
         return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json(patientResponse, {
             status: 200
         });
     } catch (error) {
-        console.error(`Error updating patient ${patientId} in mock DB:`, error);
+        console.error(`Error updating patient ${patientId}:`, error);
         return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
             message: 'Error updating patient'
         }, {
@@ -605,27 +565,57 @@ async function PUT(request, { params }) {
 async function DELETE(request, { params }) {
     const { patientId } = params;
     try {
-        const patientIndex = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].users.findIndex((u)=>u.id === patientId && u.role === 'patient');
-        if (patientIndex === -1) {
+        const patientUserIndex = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].users.findIndex((u)=>u.id === patientId);
+        if (patientUserIndex === -1) {
             return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
                 message: "Patient not found"
             }, {
                 status: 404
             });
         }
-        __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].users.splice(patientIndex, 1);
-        // Consider what to do with related mock data (appointments, invoices, etc.)
-        // For now, just deleting the patient user record.
-        // db.appointments = db.appointments.filter(apt => apt.patientId !== patientId);
-        // db.invoices = db.invoices.filter(inv => inv.patientId !== patientId);
-        // etc.
-        return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
-            message: "Patient deleted successfully"
-        }, {
-            status: 200
-        });
+        // Instead of deleting the user, we downgrade them from a 'patient'.
+        // This preserves their login (Firebase Auth) record but revokes access to patient data.
+        // We remove clinical information.
+        const userToModify = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].users[patientUserIndex];
+        if (userToModify.role === 'patient') {
+            const { dateOfBirth, age, medicalRecords, xrayImageUrls, hasDiabetes, hasHighBloodPressure, hasStrokeOrHeartAttackHistory, hasBleedingDisorders, hasAllergy, allergySpecifics, hasAsthma, ...restOfUser } = userToModify;
+            const downgradedUser = {
+                ...restOfUser,
+                // You might want to change role to something else, or just leave as is
+                // depending on business logic. For now, we just remove the data.
+                // role: 'user' // or some other non-patient role
+                updatedAt: new Date().toISOString()
+            };
+            __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].users[patientUserIndex] = downgradedUser;
+            // Also remove their appointments, treatment plans etc.
+            __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].appointments = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].appointments.filter((a)=>a.patientId !== patientId);
+            __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].treatmentPlans = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].treatmentPlans.filter((tp)=>tp.patientId !== patientId);
+            __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].progressNotes = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].progressNotes.filter((pn)=>pn.patientId !== patientId);
+            __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].invoices = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].invoices.filter((i)=>i.patientId !== patientId);
+            // Find and remove conversation
+            const convoIndex = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].conversations.findIndex((c)=>c.patientId === patientId);
+            if (convoIndex > -1) {
+                const convoId = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].conversations[convoIndex].id;
+                __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].conversations.splice(convoIndex, 1);
+                // Remove messages from that conversation
+                __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].messages = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].messages.filter((m)=>m.conversationId !== convoId);
+            }
+            return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
+                message: "Patient clinical data deleted successfully. User login account remains."
+            }, {
+                status: 200
+            });
+        } else {
+            // If they are not a patient, just delete the user record entirely (e.g. staff)
+            __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].users.splice(patientUserIndex, 1);
+            return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
+                message: "User deleted successfully"
+            }, {
+                status: 200
+            });
+        }
     } catch (error) {
-        console.error(`Error deleting patient ${patientId} from mock DB:`, error);
+        console.error(`Error deleting patient ${patientId}:`, error);
         return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
             message: 'Error deleting patient'
         }, {

@@ -27,9 +27,22 @@ export async function POST(request: NextRequest) {
 
     const existingUser = db.users.find(u => u.email === email);
     if (existingUser) {
-      return NextResponse.json({ message: "User with this email already exists" }, { status: 409 });
+      // If user exists but has no password, let them "claim" the account by setting a password.
+      if (!existingUser.passwordHash) {
+         const saltRounds = 10;
+         existingUser.passwordHash = await bcrypt.hash(password, saltRounds);
+         existingUser.name = name; // Update name as they might have been pre-registered with a different one
+         existingUser.updatedAt = new Date().toISOString();
+         
+         const { passwordHash: _, ...userToReturn } = existingUser;
+         return NextResponse.json({ message: "Account activated successfully", user: userToReturn }, { status: 200 });
+      } else {
+        // User exists and already has a password.
+        return NextResponse.json({ message: "User with this email already exists" }, { status: 409 });
+      }
     }
 
+    // User does not exist, create a new one.
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
