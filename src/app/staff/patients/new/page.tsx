@@ -1,4 +1,3 @@
-
 // src/app/staff/patients/new/page.tsx
 'use client';
 
@@ -15,6 +14,7 @@ import { Loader2, FileText, ShieldAlert, HeartPulse, Droplets, Info, Wind, Plus,
 import Image from 'next/image';
 import { Separator } from '@/components/ui/separator';
 import type { UserAuth } from '@/lib/mockServerDb';
+import { Combobox } from '@/components/ui/combobox';
 
 
 interface FormDataState {
@@ -64,6 +64,33 @@ export default function StaffAddNewPatientPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof FormDataState, string>>>({});
   const [showUploadOrClearMessage, setShowUploadOrClearMessage] = useState(false);
+  
+  const [userSuggestions, setUserSuggestions] = useState<{ value: string; label: string; name: string }[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(true);
+
+  const fetchUserSuggestions = useCallback(async () => {
+    setIsLoadingSuggestions(true);
+    try {
+      const response = await fetch('/api/staff?allUsers=true');
+      if (!response.ok) throw new Error('Could not fetch user list.');
+      const users: UserAuth[] = await response.json();
+      const suggestions = users.map(user => ({
+        value: user.email.toLowerCase(),
+        label: `${user.name} (${user.email})`,
+        name: user.name,
+      }));
+      setUserSuggestions(suggestions);
+    } catch (error) {
+      console.error(error);
+      toast({ variant: "destructive", title: "Error", description: "Could not load user suggestions." });
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    fetchUserSuggestions();
+  }, [fetchUserSuggestions]);
 
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -245,14 +272,29 @@ export default function StaffAddNewPatientPage() {
               </div>
               <div className="grid sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
+                    <Label htmlFor="email">User Email (Optional)</Label>
+                    <Combobox
+                        options={userSuggestions}
+                        value={formData.email.toLowerCase()}
+                        onSelect={(currentValue) => {
+                            const selectedUser = userSuggestions.find(u => u.value === currentValue);
+                            setFormData(prev => ({
+                                ...prev,
+                                email: selectedUser?.value || currentValue,
+                                name: selectedUser?.name || prev.name,
+                            }));
+                        }}
+                        placeholder="Search existing users..."
+                        notFoundText={isLoadingSuggestions ? "Loading users..." : "No user found. You can still enter a new email."}
+                        className="w-full"
+                    />
+                    <p className="text-xs text-muted-foreground">Select an existing user or type a new email.</p>
+                    {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+                </div>
+                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
                   <Input id="name" name="name" value={formData.name} onChange={handleChange} placeholder="e.g., John Doe" />
                   {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input id="email" name="email" type="email" value={formData.email} onChange={handleChange} placeholder="john.doe@example.com" />
-                  {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                 </div>
               </div>
             </section>
@@ -308,7 +350,7 @@ export default function StaffAddNewPatientPage() {
                 <Textarea id="medicalRecords" name="medicalRecords" value={formData.medicalRecords} onChange={handleChange} placeholder="Enter any relevant medical history, current medications, or general notes..." rows={4} />
               </div>
             </section>
-
+            
             <Separator />
 
             {/* Section: Specific Medical Conditions */}
