@@ -62,7 +62,6 @@ export default function LoginPage() {
     // try {
     //   const userCredential = await signInWithPopup(auth, provider);
     //   const user = userCredential.user;
-    //   console.log(`User signed in with ${providerName}:`, user);
       
     //   // Also ensure user exists in our backend
     //   await fetch('/api/auth/signup', {
