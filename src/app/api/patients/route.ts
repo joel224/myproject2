@@ -1,10 +1,13 @@
 
 // src/app/api/patients/route.ts
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { generateId } from '@/lib/mockServerDb'; 
-import { getDb } from '@/lib/db'; 
+
+import type { NextRequest } from 'next/server';
+
+import { generateId } from '@/lib/mockServerDb';
+
+import { getDb } from '@/lib/db';  
 import * as admin from 'firebase-admin';
 import { getFirebaseAdminApp } from '@/lib/firebase-admin';
 
@@ -76,11 +79,15 @@ export async function POST(request: NextRequest) {
         firebaseUid = user.id;
     } else {
         // No user exists, create one in both Firebase and our DB
-        const firebaseUserRecord = await admin.auth().createUser({
+        const userToCreate: admin.auth.CreateRequest = {
             email: patientData.email,
-            password: patientData.password, // This can be undefined if staff doesn't set one
             displayName: patientData.name,
-        });
+        };
+        if (patientData.password) {
+            userToCreate.password = patientData.password;
+        }
+
+        const firebaseUserRecord = await admin.auth().createUser(userToCreate);
         firebaseUid = firebaseUserRecord.uid;
         userId = firebaseUid; // Use the UID from Firebase as our user ID
 

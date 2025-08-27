@@ -1,5 +1,6 @@
 
-import { open } from 'sqlite';
+
+import { open, Database } from 'sqlite'; // <--- Import Database type from here
 import sqlite3 from 'sqlite3';
 import path from 'path';
 import {
@@ -10,7 +11,7 @@ import {
 import type { UserAuth } from './mockServerDb';
 import type { Patient } from './types';
 
-let db = null;
+let db: Database | null = null;
 
 export async function getDb() {
     if (!db) {
