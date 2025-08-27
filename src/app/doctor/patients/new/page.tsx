@@ -1,4 +1,3 @@
-
 // src/app/doctor/patients/new/page.tsx
 'use client';
 
@@ -430,7 +429,7 @@ export default function DoctorAddNewPatientPage() {
           </CardFooter>
             {showUploadOrClearMessage && (
                 <p className="text-xs text-destructive text-center mt-2 px-6 pb-4">
-                    You have files selected. They will be uploaded when you click "Add Patient". <br/> Or, remove them from the selection above if you don't want to include them.
+                    You have files selected. They will be uploaded when you click "Add Patient Record". <br/> Or, remove them from the selection above if you don't want to include them.
                 </p>
             )}
         </form>
