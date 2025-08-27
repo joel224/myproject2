@@ -91,6 +91,36 @@ export default function StaffAddNewPatientPage() {
   useEffect(() => {
     fetchUserSuggestions();
   }, [fetchUserSuggestions]);
+  
+  const generateNoteTemplate = (name: string, dob: string, phone: string) => {
+    const today = new Date().toLocaleDateString('en-US'); // Format: MM/DD/YYYY
+    const dobFormatted = dob ? new Date(dob).toLocaleDateString('en-US') : 'N/A';
+    
+    return `Patient: ${name || '[Patient Name]'}
+Date of Birth: ${dobFormatted}
+Phone: ${phone || 'N/A'}
+
+Date: ${today}
+
+Reason for Visit: 
+
+Findings:
+
+Treatment:
+
+Plan:
+`;
+  };
+
+  useEffect(() => {
+    // Generate template only if the user hasn't started typing their own notes
+    if (formData.medicalRecords.trim() === '' || formData.medicalRecords.startsWith('Patient:')) {
+        const newTemplate = generateNoteTemplate(formData.name, formData.dateOfBirth, formData.phone);
+        if (formData.medicalRecords !== newTemplate) {
+            setFormData(prev => ({ ...prev, medicalRecords: newTemplate }));
+        }
+    }
+  }, [formData.name, formData.dateOfBirth, formData.phone]);
 
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -275,13 +305,13 @@ export default function StaffAddNewPatientPage() {
                     <Label htmlFor="email">User Email (Optional)</Label>
                     <Combobox
                         options={userSuggestions}
-                        value={formData.email.toLowerCase()}
+                        value={formData.email}
                         onSelect={(currentValue) => {
-                            const selectedUser = userSuggestions.find(u => u.value === currentValue);
+                            const selectedUser = userSuggestions.find(u => u.value === currentValue.toLowerCase());
                             setFormData(prev => ({
                                 ...prev,
-                                email: selectedUser?.value || currentValue,
-                                name: selectedUser?.name || prev.name,
+                                email: currentValue,
+                                name: selectedUser ? selectedUser.name : prev.name,
                             }));
                         }}
                         placeholder="Search existing users..."
@@ -347,7 +377,7 @@ export default function StaffAddNewPatientPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="medicalRecords">General Medical Notes (Optional)</Label>
-                <Textarea id="medicalRecords" name="medicalRecords" value={formData.medicalRecords} onChange={handleChange} placeholder="Enter any relevant medical history, current medications, or general notes..." rows={4} />
+                <Textarea id="medicalRecords" name="medicalRecords" value={formData.medicalRecords} onChange={handleChange} rows={12} />
               </div>
             </section>
             
