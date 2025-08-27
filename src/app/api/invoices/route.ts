@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { generateId } from '@/lib/mockServerDb';
-import { db, authorize } from '@/lib/mockServerDb';
+import { getDb } from '@/lib/db';
 import type { Invoice } from '@/lib/types';
 
 const invoiceItemSchema = z.object({
@@ -27,14 +27,14 @@ const invoiceSchema = z.object({
 export async function GET(request: NextRequest) {
   // const authResult = await authorize(request, 'staff');
   // if (!authResult.authorized || !authResult.user) { return authResult.error; }
-
-  // Add filtering later (e.g., by patientId, status)
-  return NextResponse.json(db.invoices, { status: 200 });
+  
+  // As there is no invoices table, we return an empty array to prevent crashes.
+  // This should be implemented when the feature is fully built.
+  return NextResponse.json([], { status: 200 });
 }
 
 export async function POST(request: NextRequest) {
-  // const authResult = await authorize(request, 'staff');
-  // if (!authResult.authorized || !authResult.user) { return authResult.error; }
+  const db = await getDb();
   
   try {
     const body = await request.json();
@@ -46,7 +46,8 @@ export async function POST(request: NextRequest) {
     
     const data = validation.data;
 
-    if (!db.users.some(u => u.id === data.patientId && u.role === 'patient')) {
+    const patientExists = await db.get('SELECT id FROM patients WHERE id = ?', data.patientId);
+    if (!patientExists) {
         return NextResponse.json({ message: "Patient not found" }, { status: 404 });
     }
     
@@ -61,14 +62,19 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ message: `Calculated total amount (${calculatedTotal}) does not match provided totalAmount (${data.totalAmount}).`}, { status: 400});
     }
 
-
+    // This part is commented out because there's no `invoices` table yet.
+    // When the table is added, this logic can be uncommented.
+    /*
     const newInvoice: Invoice = {
       id: generateId('inv_'),
       ...data,
     };
-
-    db.invoices.push(newInvoice);
+    await db.run('INSERT INTO invoices ...', ...);
     return NextResponse.json(newInvoice, { status: 201 });
+    */
+
+    // For now, return a success-like message without writing to DB.
+    return NextResponse.json({ message: "Invoice creation endpoint hit, but no DB table exists.", invoiceData: data }, { status: 200 });
 
   } catch (error) {
     console.error('Error creating invoice:', error);

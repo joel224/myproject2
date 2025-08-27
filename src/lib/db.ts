@@ -13,6 +13,9 @@ import type { Patient } from './types';
 
 let db: Database | null = null;
 
+// The file path for the wait time JSON file
+const waitTimeFilePath = path.join(process.cwd(), 'wait-time.json');
+
 export async function getDb() {
     if (!db) {
         const dbPath = path.join(process.cwd(), 'dev.db');
@@ -32,10 +35,12 @@ async function setupDb(db) {
   if (!userTableExists || !patientTableExists) {
     console.log("Database schema not found or incomplete. Re-creating and seeding...");
     
-    // Drop old tables if they exist to ensure a clean slate
     await db.exec(`DROP TABLE IF EXISTS appointments;`);
     await db.exec(`DROP TABLE IF EXISTS patients;`);
     await db.exec(`DROP TABLE IF EXISTS users;`);
+    await db.exec(`DROP TABLE IF EXISTS conversations;`);
+    await db.exec(`DROP TABLE IF EXISTS messages;`);
+
 
     console.log("Creating new database schema...");
     await db.exec(`
@@ -45,13 +50,14 @@ async function setupDb(db) {
           email TEXT UNIQUE NOT NULL,
           passwordHash TEXT,
           role TEXT NOT NULL CHECK(role IN ('patient', 'doctor', 'staff', 'hygienist', 'admin', 'assistant', 'user')),
+          phone TEXT,
           createdAt TEXT,
           updatedAt TEXT
       );
 
       CREATE TABLE patients (
           id TEXT PRIMARY KEY,
-          userId TEXT UNIQUE, -- Can be NULL if patient record created by staff w/o login
+          userId TEXT UNIQUE, 
           name TEXT NOT NULL,
           email TEXT UNIQUE NOT NULL,
           dateOfBirth TEXT,
@@ -68,7 +74,7 @@ async function setupDb(db) {
           hasAsthma BOOLEAN,
           createdAt TEXT,
           updatedAt TEXT,
-          FOREIGN KEY (userId) REFERENCES users(id)
+          FOREIGN KEY (userId) REFERENCES users(id) ON DELETE SET NULL
       );
 
       CREATE TABLE appointments (
@@ -82,8 +88,30 @@ async function setupDb(db) {
           type TEXT NOT NULL,
           status TEXT NOT NULL,
           notes TEXT,
-          FOREIGN KEY (patientId) REFERENCES patients(id),
+          FOREIGN KEY (patientId) REFERENCES patients(id) ON DELETE CASCADE,
           FOREIGN KEY (doctorId) REFERENCES users(id)
+      );
+
+      CREATE TABLE conversations (
+        id TEXT PRIMARY KEY,
+        patientId TEXT NOT NULL,
+        staffId TEXT,
+        patientName TEXT,
+        patientAvatarUrl TEXT,
+        lastMessageText TEXT,
+        lastMessageTimestamp TEXT,
+        unreadCountForStaff INTEGER DEFAULT 0,
+        FOREIGN KEY (patientId) REFERENCES patients(id) ON DELETE CASCADE
+      );
+
+      CREATE TABLE messages (
+        id TEXT PRIMARY KEY,
+        conversationId TEXT NOT NULL,
+        senderId TEXT NOT NULL,
+        senderRole TEXT NOT NULL,
+        text TEXT NOT NULL,
+        timestamp TEXT NOT NULL,
+        FOREIGN KEY (conversationId) REFERENCES conversations(id) ON DELETE CASCADE
       );
     `);
     console.log("Schema created. Seeding database...");
@@ -93,7 +121,6 @@ async function setupDb(db) {
 }
 
 async function seedDb(db) {
-    // Seed Users (Staff)
     const userInsert = await db.prepare('INSERT INTO users (id, name, email, role, passwordHash, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?)');
     for (const staff of mockStaff) {
         let userAuthRole: UserAuth['role'] = 'staff';
@@ -102,28 +129,20 @@ async function seedDb(db) {
         await userInsert.run(staff.id, staff.name, staff.email, userAuthRole, `$2a$10$mockPasswordFor${staff.id}`, new Date().toISOString(), new Date().toISOString());
     }
     
-    // Seed Patients - each patient is also a user for login purposes
     const patientInsert = await db.prepare('INSERT INTO patients (id, userId, name, email, phone, dateOfBirth, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
     for (const patient of mockPatients) {
-        // Create a corresponding user record for the patient to allow login
         const userForPatientId = `user_${patient.id}`;
         await userInsert.run(userForPatientId, patient.name, patient.email, 'patient', null, new Date().toISOString(), new Date().toISOString());
-        // Create the patient clinical record, linking it to the user record
         await patientInsert.run(patient.id, userForPatientId, patient.name, patient.email, patient.phone, patient.dateOfBirth, new Date().toISOString(), new Date().toISOString());
     }
     await userInsert.finalize();
     await patientInsert.finalize();
 
-    // Seed Appointments
     const apptInsert = await db.prepare('INSERT INTO appointments (id, patientId, patientName, doctorId, doctorName, date, time, type, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
     for (const appt of mockAppointments) {
         await apptInsert.run(appt.id, appt.patientId, appt.patientName, appt.doctorId, appt.doctorName, appt.date, appt.time, appt.type, appt.status);
     }
     await apptInsert.finalize();
-}
-
-export function generateId(prefix = 'id_') {
-  return prefix + Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
 }
 
 export const dbClient = {

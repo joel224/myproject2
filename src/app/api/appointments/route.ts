@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { generateId } from '@/lib/mockServerDb';
-import { db, authorize } from '@/lib/mockServerDb';
+import { getDb } from '@/lib/db';
 import type { Appointment } from '@/lib/types';
 
 const appointmentSchema = z.object({
@@ -18,49 +18,43 @@ const appointmentSchema = z.object({
 });
 
 export async function GET(request: NextRequest) {
-  // const authResult = await authorize(request, 'staff'); // or 'doctor'
-  // if (!authResult.authorized || !authResult.user) {
-  //   return authResult.error;
-  // }
-
-  // Implement filtering based on query params (e.g., ?date=YYYY-MM-DD&doctorId=doc1&patientId=pat1&status=Scheduled)
+  const db = await getDb();
   const { searchParams } = new URL(request.url);
-  let filteredAppointments = [...db.appointments];
+  
+  let query = "SELECT * FROM appointments";
+  const params: any[] = [];
+  const conditions: string[] = [];
 
   if (searchParams.has('date')) {
-    filteredAppointments = filteredAppointments.filter(apt => apt.date === searchParams.get('date'));
+    conditions.push("date = ?");
+    params.push(searchParams.get('date'));
   }
   if (searchParams.has('doctorId')) {
-    filteredAppointments = filteredAppointments.filter(apt => apt.doctorId === searchParams.get('doctorId'));
+    conditions.push("doctorId = ?");
+    params.push(searchParams.get('doctorId'));
   }
   if (searchParams.has('patientId')) {
-    filteredAppointments = filteredAppointments.filter(apt => apt.patientId === searchParams.get('patientId'));
+    conditions.push("patientId = ?");
+    params.push(searchParams.get('patientId'));
   }
   if (searchParams.has('status')) {
-    filteredAppointments = filteredAppointments.filter(apt => apt.status === searchParams.get('status'));
+    conditions.push("status = ?");
+    params.push(searchParams.get('status'));
   }
 
-  // Add patientName and doctorName for convenience if not already present
-  const populatedAppointments = filteredAppointments.map(apt => {
-    const patient = db.users.find(u => u.id === apt.patientId && u.role === 'patient'); // Check role for patient
-    const doctor = db.users.find(u => u.id === apt.doctorId && (u.role === 'doctor' || u.role === 'staff' || u.role === 'hygienist')); // doctor can be staff or hygienist too
-    return {
-      ...apt,
-      patientName: patient?.name || apt.patientName || 'Unknown Patient',
-      doctorName: doctor?.name || apt.doctorName || 'Unknown Doctor',
-    };
-  });
+  if (conditions.length > 0) {
+    query += " WHERE " + conditions.join(" AND ");
+  }
 
-
-  return NextResponse.json(populatedAppointments, { status: 200 });
+  const appointments = await db.all(query, ...params);
+  
+  // NOTE: Populating patientName and doctorName from the users table would be ideal
+  // but for now, we rely on the names stored at creation time to avoid complex joins.
+  return NextResponse.json(appointments, { status: 200 });
 }
 
 export async function POST(request: NextRequest) {
-  // const authResult = await authorize(request, 'staff');
-  // if (!authResult.authorized || !authResult.user) {
-  //   return authResult.error;
-  // }
-
+  const db = await getDb();
   try {
     const body = await request.json();
     const validation = appointmentSchema.safeParse(body);
@@ -70,36 +64,35 @@ export async function POST(request: NextRequest) {
     }
 
     const { patientId, doctorId, date, time, type, status, notes } = validation.data;
-
-    // Validate patient and doctor exist
-    const patientExists = db.users.some(u => u.id === patientId && u.role === 'patient');
-    const doctorExists = db.users.some(u => u.id === doctorId && (u.role === 'doctor' || u.role === 'staff' || u.role === 'hygienist' || u.role === 'assistant' || u.role === 'admin'));
-
+    
+    const patientExists = await db.get('SELECT id, name FROM patients WHERE id = ?', patientId);
     if (!patientExists) {
       return NextResponse.json({ message: `Patient with ID ${patientId} not found.` }, { status: 404 });
     }
+
+    const doctorExists = await db.get('SELECT id, name FROM users WHERE id = ? AND role IN (?, ?, ?, ?, ?)', doctorId, 'doctor', 'staff', 'hygienist', 'assistant', 'admin');
     if (!doctorExists) {
       return NextResponse.json({ message: `Doctor/Staff with ID ${doctorId} not found.` }, { status: 404 });
     }
 
-    const patientName = db.users.find(u => u.id === patientId)?.name;
-    const doctorName = db.users.find(u => u.id === doctorId)?.name;
-
-
     const newAppointment: Appointment = {
       id: generateId('apt_'),
       patientId,
-      patientName,
+      patientName: patientExists.name,
       doctorId,
-      doctorName,
+      doctorName: doctorExists.name,
       date,
       time,
       type,
       status: status || 'Scheduled',
       notes,
     };
+    
+    await db.run(
+      'INSERT INTO appointments (id, patientId, patientName, doctorId, doctorName, date, time, type, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      newAppointment.id, newAppointment.patientId, newAppointment.patientName, newAppointment.doctorId, newAppointment.doctorName, newAppointment.date, newAppointment.time, newAppointment.type, newAppointment.status, newAppointment.notes
+    );
 
-    db.appointments.push(newAppointment);
     return NextResponse.json(newAppointment, { status: 201 });
 
   } catch (error) {
