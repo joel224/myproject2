@@ -4,11 +4,19 @@
       "static/media/xn7gYHE41ni1AdIRggexSvfedN4-s.p.2b9b556b.woff2",
       "static/media/memvYaGs126MiZpBA_UvWbX2vVnXBbObj2OVTS_mu0SC55I-s.p.47b51c64.woff2"
     ],
+    "[project]/src/app/(auth)/signup/page": [
+      "static/media/xn7gYHE41ni1AdIRggexSvfedN4-s.p.2b9b556b.woff2",
+      "static/media/memvYaGs126MiZpBA_UvWbX2vVnXBbObj2OVTS_mu0SC55I-s.p.47b51c64.woff2"
+    ],
     "[project]/src/app/page": [
       "static/media/xn7gYHE41ni1AdIRggexSvfedN4-s.p.2b9b556b.woff2",
       "static/media/memvYaGs126MiZpBA_UvWbX2vVnXBbObj2OVTS_mu0SC55I-s.p.47b51c64.woff2"
     ],
     "[project]/src/app/patient/dashboard/page": [
+      "static/media/xn7gYHE41ni1AdIRggexSvfedN4-s.p.2b9b556b.woff2",
+      "static/media/memvYaGs126MiZpBA_UvWbX2vVnXBbObj2OVTS_mu0SC55I-s.p.47b51c64.woff2"
+    ],
+    "[project]/src/app/staff/communication/page": [
       "static/media/xn7gYHE41ni1AdIRggexSvfedN4-s.p.2b9b556b.woff2",
       "static/media/memvYaGs126MiZpBA_UvWbX2vVnXBbObj2OVTS_mu0SC55I-s.p.47b51c64.woff2"
     ],

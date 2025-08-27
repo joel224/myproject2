@@ -311,7 +311,7 @@ let appointments = JSON.parse(JSON.stringify(__TURBOPACK__imported__module__$5b$
 let treatmentPlans = JSON.parse(JSON.stringify(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockData$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["mockTreatmentPlans"]));
 let progressNotes = JSON.parse(JSON.stringify(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockData$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["mockProgressNotes"]));
 let invoices = JSON.parse(JSON.stringify(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockData$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["mockInvoices"]));
-let staff = JSON.parse(JSON.stringify(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockData$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["mockStaff"]));
+// Removed: let staff: StaffMember[] = JSON.parse(JSON.stringify(initialStaff));
 let paymentTransactions = [];
 let clinicWaitTime = {
     text: "<10 mins",
@@ -399,7 +399,7 @@ const db = {
     progressNotes,
     invoices,
     clinicWaitTime,
-    staff,
+    // staff, // Removed staff from here
     paymentTransactions,
     conversations,
     messages

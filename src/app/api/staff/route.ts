@@ -92,6 +92,13 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const roleQuery = searchParams.get('role') as StaffMember['role'] | null;
+  const allUsersQuery = searchParams.get('allUsers');
+
+  // If ?allUsers=true is passed, return all users regardless of role (for suggestions)
+  if (allUsersQuery === 'true') {
+    return NextResponse.json(db.users, { status: 200 });
+  }
+
 
   const staffUsers = db.users.filter(user => {
     const staffMemberRole = mapUserAuthRoleToStaffMemberRole(user.role);
