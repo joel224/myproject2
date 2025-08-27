@@ -218,19 +218,23 @@ export function HeroSection() {
         >
           <div
             className={cn(
-              "relative w-full max-w-2xl lg:max-w-4xl aspect-video transition-all duration-300 ease-out rounded-lg shadow-2xl overflow-hidden",
+              "relative w-full max-w-2xl lg:max-w-4xl transition-all duration-300 ease-out",
               showPromoPopup ? "scale-100 opacity-100" : "scale-95 opacity-0"
             )}
           >
-            <Image
-              src={PROMO_IMAGE_URL}
-              alt="Promotional Offer: Happy Patient"
-              fill
-              className="object-cover"
-              data-ai-hint="dental promotion happy patient"
-            />
+            {/* Framed Image Container */}
+            <div className="aspect-video w-full rounded-lg shadow-2xl overflow-hidden">
+               <Image
+                src={PROMO_IMAGE_URL}
+                alt="Promotional Offer: Happy Patient"
+                fill
+                className="object-cover"
+                data-ai-hint="dental promotion happy patient"
+              />
+            </div>
+           
             {/* Actionable Button inside the pop-up */}
-            <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-10">
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10">
                 <Link href="/#appointment">
                     <Button size="lg" className="bg-white text-black hover:bg-white/90 shadow-xl">
                         Take Me There <ArrowRight className="ml-2 h-4 w-4"/>

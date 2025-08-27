@@ -1823,21 +1823,28 @@ function HeroSection() {
                         onMouseEnter: handlePromoPopupMouseEnter,
                         onMouseLeave: handlePromoPopupMouseLeave,
                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                            className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$utils$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["cn"])("relative w-full max-w-2xl lg:max-w-4xl aspect-video transition-all duration-300 ease-out rounded-lg shadow-2xl overflow-hidden", showPromoPopup ? "scale-100 opacity-100" : "scale-95 opacity-0"),
+                            className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$utils$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["cn"])("relative w-full max-w-2xl lg:max-w-4xl transition-all duration-300 ease-out", showPromoPopup ? "scale-100 opacity-100" : "scale-95 opacity-0"),
                             children: [
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$image$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
-                                    src: PROMO_IMAGE_URL,
-                                    alt: "Promotional Offer: Happy Patient",
-                                    fill: true,
-                                    className: "object-cover",
-                                    "data-ai-hint": "dental promotion happy patient"
+                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                    className: "aspect-video w-full rounded-lg shadow-2xl overflow-hidden",
+                                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$image$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
+                                        src: PROMO_IMAGE_URL,
+                                        alt: "Promotional Offer: Happy Patient",
+                                        fill: true,
+                                        className: "object-cover",
+                                        "data-ai-hint": "dental promotion happy patient"
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/components/home/HeroSection.tsx",
+                                        lineNumber: 227,
+                                        columnNumber: 16
+                                    }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/home/HeroSection.tsx",
-                                    lineNumber: 225,
+                                    lineNumber: 226,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                    className: "absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-10",
+                                    className: "absolute bottom-6 left-1/2 -translate-x-1/2 z-10",
                                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
                                         href: "/#appointment",
                                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -1849,23 +1856,23 @@ function HeroSection() {
                                                     className: "ml-2 h-4 w-4"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/home/HeroSection.tsx",
-                                                    lineNumber: 236,
+                                                    lineNumber: 240,
                                                     columnNumber: 39
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/home/HeroSection.tsx",
-                                            lineNumber: 235,
+                                            lineNumber: 239,
                                             columnNumber: 21
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/home/HeroSection.tsx",
-                                        lineNumber: 234,
+                                        lineNumber: 238,
                                         columnNumber: 17
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/home/HeroSection.tsx",
-                                    lineNumber: 233,
+                                    lineNumber: 237,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -1878,12 +1885,12 @@ function HeroSection() {
                                         className: "h-5 w-5"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/home/HeroSection.tsx",
-                                        lineNumber: 248,
+                                        lineNumber: 252,
                                         columnNumber: 17
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/home/HeroSection.tsx",
-                                    lineNumber: 241,
+                                    lineNumber: 245,
                                     columnNumber: 13
                                 }, this)
                             ]
@@ -1899,7 +1906,7 @@ function HeroSection() {
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$home$2f$WaitTimeWidget$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WaitTimeWidget"], {}, void 0, false, {
                         fileName: "[project]/src/components/home/HeroSection.tsx",
-                        lineNumber: 253,
+                        lineNumber: 257,
                         columnNumber: 9
                     }, this)
                 ]
@@ -1914,7 +1921,7 @@ function HeroSection() {
                 onOpenChange: setShowBookingPopup
             }, void 0, false, {
                 fileName: "[project]/src/components/home/HeroSection.tsx",
-                lineNumber: 256,
+                lineNumber: 260,
                 columnNumber: 7
             }, this)
         ]
