@@ -1,8 +1,7 @@
-
 // src/app/staff/patients/new/page.tsx
 'use client';
 
-import { useState, type FormEvent, ChangeEvent, useRef } from 'react';
+import { useState, type FormEvent, ChangeEvent, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,8 +10,14 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, FileText, ShieldAlert, HeartPulse, Droplets, Info, Wind, Plus, X, Trash2 } from 'lucide-react';
+import { Loader2, FileText, ShieldAlert, HeartPulse, Droplets, Info, Wind, Plus, Trash2 } from 'lucide-react';
 import Image from 'next/image';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Check as CheckIcon, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import type { UserAuth } from '@/lib/mockServerDb';
+
 
 interface FormDataState {
   name: string;
@@ -61,6 +66,39 @@ export default function AddNewPatientPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof FormDataState, string>>>({});
   const [showUploadOrClearMessage, setShowUploadOrClearMessage] = useState(false);
+
+  // For email combobox
+  const [userSuggestions, setUserSuggestions] = useState<UserAuth[]>([]);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  
+
+  const fetchUsers = useCallback(async () => {
+    // In a real app, this would be a secure endpoint to fetch users who've signed up
+    // but don't yet have a full patient profile. For now, we fetch all users from mock DB.
+    try {
+        const response = await fetch('/api/staff?allUsers=true'); // A hypothetical endpoint to get all users
+        if (!response.ok) throw new Error('Failed to fetch user suggestions');
+        const data = await response.json();
+        setUserSuggestions(data);
+    } catch (error) {
+        console.error("Could not fetch user suggestions:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+
+  const handleEmailSelect = (user: UserAuth) => {
+    setFormData(prev => ({
+        ...prev,
+        email: user.email,
+        name: user.name || prev.name,
+        phone: user.phone || prev.phone,
+    }));
+    setIsPopoverOpen(false);
+  };
 
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -227,20 +265,64 @@ export default function AddNewPatientPage() {
       <Card className="w-full max-w-2xl mx-auto shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl">Add New Patient</CardTitle>
-          <CardDescription>Fill in the patient's details and medical information.</CardDescription>
+          <CardDescription>Enter the patient's details and medical information. Start typing an email to see suggestions for existing users.</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-6">
-            <div className="grid sm:grid-cols-2 gap-4">
+             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
                 <Input id="name" name="name" value={formData.name} onChange={handleChange} placeholder="Patient's full name" />
                 {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" value={formData.email} onChange={handleChange} placeholder="patient@example.com" />
-                {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+                  <Label htmlFor="email">Email</Label>
+                   <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={isPopoverOpen}
+                                className="w-full justify-between font-normal"
+                            >
+                                {formData.email || "Select or type email..."}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                            <Command>
+                                <CommandInput 
+                                    placeholder="Search user by email..."
+                                    value={formData.email}
+                                    onValueChange={(val) => setFormData(prev => ({...prev, email: val}))}
+                                />
+                                <CommandList>
+                                  <CommandEmpty>No user found. You can still enter a new email.</CommandEmpty>
+                                  <CommandGroup>
+                                    {userSuggestions.map((user) => (
+                                      <CommandItem
+                                        key={user.id}
+                                        value={user.email}
+                                        onSelect={() => handleEmailSelect(user)}
+                                      >
+                                        <CheckIcon
+                                          className={cn(
+                                            "mr-2 h-4 w-4",
+                                            formData.email === user.email ? "opacity-100" : "opacity-0"
+                                          )}
+                                        />
+                                        <div className="flex flex-col">
+                                          <span>{user.email}</span>
+                                          <span className="text-xs text-muted-foreground">{user.name}</span>
+                                        </div>
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
+                  {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
               </div>
             </div>
              <div className="grid sm:grid-cols-2 gap-4">
@@ -273,7 +355,6 @@ export default function AddNewPatientPage() {
                     <p className="text-xs text-muted-foreground">If provided, the patient can use this to log into their portal.</p>
                 </div>
             </div>
-
 
             <div className="space-y-2">
               <Label htmlFor="medicalRecords">Simple Medical Records / Notes</Label>
@@ -409,6 +490,3 @@ export default function AddNewPatientPage() {
     </div>
   );
 }
-    
-
-    

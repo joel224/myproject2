@@ -100,18 +100,55 @@ export async function DELETE(request: NextRequest, { params }: PatientRouteParam
   const { patientId } = params;
 
   try {
-    const patientIndex = db.users.findIndex(u => u.id === patientId && u.role === 'patient');
+    const patientUserIndex = db.users.findIndex(u => u.id === patientId);
     
-    if (patientIndex === -1) {
+    if (patientUserIndex === -1) {
       return NextResponse.json({ message: "Patient not found" }, { status: 404 });
     }
 
-    db.users.splice(patientIndex, 1);
-    
-    // In a real app, you'd cascade deletes or handle related data (appointments, etc.)
-    // For mock DB, this is simpler. We can filter related data on the fly if needed.
+    // Instead of deleting the user, we downgrade them from a 'patient'.
+    // This preserves their login (Firebase Auth) record but revokes access to patient data.
+    // We remove clinical information.
+    const userToModify = db.users[patientUserIndex];
 
-    return NextResponse.json({ message: "Patient deleted successfully" }, { status: 200 });
+    if (userToModify.role === 'patient') {
+        const { 
+            dateOfBirth, age, medicalRecords, xrayImageUrls, hasDiabetes, 
+            hasHighBloodPressure, hasStrokeOrHeartAttackHistory, hasBleedingDisorders, 
+            hasAllergy, allergySpecifics, hasAsthma, ...restOfUser 
+        } = userToModify;
+
+        const downgradedUser: UserAuth = {
+            ...restOfUser,
+            // You might want to change role to something else, or just leave as is
+            // depending on business logic. For now, we just remove the data.
+            // role: 'user' // or some other non-patient role
+            updatedAt: new Date().toISOString(),
+        };
+
+        db.users[patientUserIndex] = downgradedUser;
+        
+        // Also remove their appointments, treatment plans etc.
+        db.appointments = db.appointments.filter(a => a.patientId !== patientId);
+        db.treatmentPlans = db.treatmentPlans.filter(tp => tp.patientId !== patientId);
+        db.progressNotes = db.progressNotes.filter(pn => pn.patientId !== patientId);
+        db.invoices = db.invoices.filter(i => i.patientId !== patientId);
+        // Find and remove conversation
+        const convoIndex = db.conversations.findIndex(c => c.patientId === patientId);
+        if (convoIndex > -1) {
+          const convoId = db.conversations[convoIndex].id;
+          db.conversations.splice(convoIndex, 1);
+          // Remove messages from that conversation
+          db.messages = db.messages.filter(m => m.conversationId !== convoId);
+        }
+
+        return NextResponse.json({ message: "Patient clinical data deleted successfully. User login account remains." }, { status: 200 });
+
+    } else {
+        // If they are not a patient, just delete the user record entirely (e.g. staff)
+        db.users.splice(patientUserIndex, 1);
+        return NextResponse.json({ message: "User deleted successfully" }, { status: 200 });
+    }
 
   } catch (error) {
     console.error(`Error deleting patient ${patientId}:`, error);

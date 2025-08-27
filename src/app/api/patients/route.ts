@@ -1,4 +1,3 @@
-
 // src/app/api/patients/route.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
@@ -53,48 +52,59 @@ export async function POST(request: NextRequest) {
     }
 
     const patientData = validation.data;
-
-    const existingUser = db.users.find(u => u.email === patientData.email);
-    if (existingUser) {
-      return NextResponse.json({ message: "A user with this email already exists." }, { status: 409 });
-    }
-
+    
     let passwordHash: string | undefined;
     if (patientData.password) {
         const saltRounds = 10;
         passwordHash = await bcrypt.hash(patientData.password, saltRounds);
     }
-    
-    const newUser: UserAuth = {
-        id: generateId('user_'),
-        name: patientData.name,
-        email: patientData.email,
-        passwordHash,
-        role: 'patient',
-        phone: patientData.phone,
-        dateOfBirth: patientData.dateOfBirth,
-        age: patientData.age,
-        medicalRecords: patientData.medicalRecords,
-        xrayImageUrls: patientData.xrayImageUrls,
-        hasDiabetes: patientData.hasDiabetes,
-        hasHighBloodPressure: patientData.hasHighBloodPressure,
-        hasStrokeOrHeartAttackHistory: patientData.hasStrokeOrHeartAttackHistory,
-        hasBleedingDisorders: patientData.hasBleedingDisorders,
-        hasAllergy: patientData.hasAllergy,
-        allergySpecifics: patientData.allergySpecifics,
-        hasAsthma: patientData.hasAsthma,
-        createdAt: new Date().toISOString(),
+
+    const existingUserIndex = db.users.findIndex(u => u.email === patientData.email);
+
+    if (existingUserIndex !== -1) {
+      // User exists, update their record with patient details
+      const existingUser = db.users[existingUserIndex];
+      const updatedUser: UserAuth = {
+        ...existingUser,
+        role: 'patient', // Ensure role is patient
+        ...patientData, // Overwrite with new patient data
+        passwordHash: passwordHash || existingUser.passwordHash, // Use new password if set
         updatedAt: new Date().toISOString(),
-    };
+      };
+      db.users[existingUserIndex] = updatedUser;
+      const { passwordHash: _, ...userToReturn } = updatedUser;
+      return NextResponse.json({ message: "Existing user updated to patient", user: userToReturn }, { status: 200 });
 
-    db.users.push(newUser);
-
-    const { passwordHash: _, ...newPatientResponse } = newUser;
-
-    return NextResponse.json(newPatientResponse, { status: 201 });
+    } else {
+      // User does not exist, create a new record
+      const newUser: UserAuth = {
+          id: generateId('user_'),
+          name: patientData.name,
+          email: patientData.email,
+          passwordHash,
+          role: 'patient',
+          phone: patientData.phone,
+          dateOfBirth: patientData.dateOfBirth,
+          age: patientData.age,
+          medicalRecords: patientData.medicalRecords,
+          xrayImageUrls: patientData.xrayImageUrls,
+          hasDiabetes: patientData.hasDiabetes,
+          hasHighBloodPressure: patientData.hasHighBloodPressure,
+          hasStrokeOrHeartAttackHistory: patientData.hasStrokeOrHeartAttackHistory,
+          hasBleedingDisorders: patientData.hasBleedingDisorders,
+          hasAllergy: patientData.hasAllergy,
+          allergySpecifics: patientData.allergySpecifics,
+          hasAsthma: patientData.hasAsthma,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+      };
+      db.users.push(newUser);
+      const { passwordHash: _, ...newPatientResponse } = newUser;
+      return NextResponse.json(newPatientResponse, { status: 201 });
+    }
 
   } catch (error) {
-    console.error('Error creating patient:', error);
+    console.error('Error creating/updating patient:', error);
     return NextResponse.json({ message: 'Error creating patient' }, { status: 500 });
   }
 }
