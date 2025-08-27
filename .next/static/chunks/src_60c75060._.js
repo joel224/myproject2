@@ -312,7 +312,7 @@ function Logo(props) {
                 children: "Dr. Loji's Dental Hub Logo"
             }, void 0, false, {
                 fileName: "[project]/src/components/icons/Logo.tsx",
-                lineNumber: 13,
+                lineNumber: 14,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("rect", {
@@ -321,7 +321,7 @@ function Logo(props) {
                 fill: "none"
             }, void 0, false, {
                 fileName: "[project]/src/components/icons/Logo.tsx",
-                lineNumber: 14,
+                lineNumber: 15,
                 columnNumber: 7
             }, this),
             " ",
@@ -330,7 +330,7 @@ function Logo(props) {
                 fill: "hsl(var(--primary))"
             }, void 0, false, {
                 fileName: "[project]/src/components/icons/Logo.tsx",
-                lineNumber: 16,
+                lineNumber: 17,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("path", {
@@ -339,7 +339,7 @@ function Logo(props) {
                 transform: "translate(10, 0) scale(-1, 1) translate(-40, 0)" // Mirror the right part for symmetry
             }, void 0, false, {
                 fileName: "[project]/src/components/icons/Logo.tsx",
-                lineNumber: 20,
+                lineNumber: 21,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("text", {
@@ -349,11 +349,11 @@ function Logo(props) {
                 fontFamily: "var(--font-open-sans), sans-serif",
                 fontSize: "20",
                 fontWeight: "bold",
-                fill: "hsl(var(--foreground))",
+                fill: "hsl(var(--navbar-foreground-main))",
                 children: "Dr. Loji's"
             }, void 0, false, {
                 fileName: "[project]/src/components/icons/Logo.tsx",
-                lineNumber: 25,
+                lineNumber: 26,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("text", {
@@ -362,17 +362,18 @@ function Logo(props) {
                 ,
                 fontFamily: "var(--font-open-sans), sans-serif",
                 fontSize: "12",
-                fill: "hsl(var(--muted-foreground))",
+                fill: "hsl(var(--navbar-foreground-main))",
+                fillOpacity: "0.8",
                 children: "D E N T A L H U B"
             }, void 0, false, {
                 fileName: "[project]/src/components/icons/Logo.tsx",
-                lineNumber: 35,
+                lineNumber: 36,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/components/icons/Logo.tsx",
-        lineNumber: 5,
+        lineNumber: 6,
         columnNumber: 5
     }, this);
 }

@@ -1248,6 +1248,10 @@ h1, h2, h3, h4, h5, h6 {
   height: 100svh;
 }
 
+.h-\[60vh\] {
+  height: 60vh;
+}
+
 .max-h-96 {
   max-height: 24rem;
 }
@@ -1478,6 +1482,10 @@ h1, h2, h3, h4, h5, h6 {
 
 .max-w-xs {
   max-width: 20rem;
+}
+
+.max-w-5xl {
+  max-width: 64rem;
 }
 
 .flex-1 {
@@ -1896,6 +1904,10 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: .75rem;
 }
 
+.rounded-none {
+  border-radius: 0;
+}
+
 .rounded-l-lg {
   border-top-left-radius: var(--radius);
   border-bottom-left-radius: var(--radius);
@@ -2158,6 +2170,10 @@ h1, h2, h3, h4, h5, h6 {
 
 .bg-white\/50 {
   background-color: #ffffff80;
+}
+
+.bg-black\/30 {
+  background-color: #0000004d;
 }
 
 .bg-gradient-to-b {
@@ -3176,6 +3192,10 @@ h1, h2, h3, h4, h5, h6 {
 
 .hover\:bg-white\/90:hover {
   background-color: #ffffffe6;
+}
+
+.hover\:bg-black\/50:hover {
+  background-color: #00000080;
 }
 
 .hover\:text-accent-foreground:hover {
@@ -4208,6 +4228,10 @@ h1, h2, h3, h4, h5, h6 {
 
   .md\:grid-cols-4 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .md\:grid-cols-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .md\:flex-row {
