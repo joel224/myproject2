@@ -102,7 +102,7 @@ export default function SignupPage() {
         title: "Account Created Successfully!",
         description: `Welcome! You're now signed in with ${providerName}.`,
       });
-      router.push('/'); 
+      router.push('/patient/dashboard'); 
     } catch (socialError: any) {
       console.error(`Error signing up/in with ${providerName}:`, socialError);
       if (socialError.code === 'auth/account-exists-with-different-credential') {
@@ -273,4 +273,3 @@ export default function SignupPage() {
     </div>
   );
 }
-

@@ -101,7 +101,7 @@ export default function LoginPage() {
         title: "Login Successful!",
         description: `Welcome back via ${providerName}!`,
       });
-      router.push('/'); 
+      router.push('/patient/dashboard'); 
     } catch (socialError: any) {
       console.error(`Error signing in with ${providerName}:`, socialError);
       if (socialError.code === 'auth/account-exists-with-different-credential') {
@@ -132,7 +132,7 @@ export default function LoginPage() {
         description: "Welcome back!",
       });
       
-      router.push('/'); 
+      router.push('/patient/dashboard'); 
 
     } catch (firebaseError: any) {
       console.error("Error signing in with email/password:", firebaseError);
@@ -236,4 +236,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
