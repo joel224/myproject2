@@ -6,6 +6,7 @@
   "/api/patient-profile/messages/route": "app/api/patient-profile/messages/route.js",
   "/api/patient-profile/route": "app/api/patient-profile/route.js",
   "/api/patient-profile/treatment-plans/route": "app/api/patient-profile/treatment-plans/route.js",
+  "/api/patients/[patientId]/route": "app/api/patients/[patientId]/route.js",
   "/api/patients/route": "app/api/patients/route.js",
   "/api/staff/route": "app/api/staff/route.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",

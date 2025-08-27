@@ -42,8 +42,16 @@ export async function GET(request: NextRequest, { params }: PatientRouteParams) 
     
     // Deserialize JSON string for xrayImageUrls
     if (patientUser.xrayImageUrls) {
-        patientUser.xrayImageUrls = JSON.parse(patientUser.xrayImageUrls);
+        try {
+            patientUser.xrayImageUrls = JSON.parse(patientUser.xrayImageUrls);
+        } catch (e) {
+            console.error(`Invalid JSON in xrayImageUrls for patient ${patientId}:`, patientUser.xrayImageUrls);
+            patientUser.xrayImageUrls = []; // Default to empty array on parse error
+        }
+    } else {
+        patientUser.xrayImageUrls = [];
     }
+
 
     const { passwordHash, ...patientResponse } = patientUser;
     return NextResponse.json(patientResponse, { status: 200 });
@@ -124,29 +132,31 @@ export async function DELETE(request: NextRequest, { params }: PatientRouteParam
 
     // Instead of deleting the user record, we scrub the clinical data and demote their role.
     // This preserves their login for historical purposes but removes patient-specific data access.
-    if (patientUser.role === 'patient') {
-        const scrubStmt = `
-            UPDATE users SET
-              role = 'user', -- A generic, non-clinical role
-              dateOfBirth = NULL, age = NULL, medicalRecords = NULL, xrayImageUrls = NULL,
-              hasDiabetes = NULL, hasHighBloodPressure = NULL, hasStrokeOrHeartAttackHistory = NULL,
-              hasBleedingDisorders = NULL, hasAllergy = NULL, allergySpecifics = NULL,
-              hasAsthma = NULL, updatedAt = ?
-            WHERE id = ?
-        `;
-        await db.run(scrubStmt, new Date().toISOString(), patientId);
-        
-        // Also remove their appointments, treatment plans, etc. from related tables.
-        // This is a cascade-like operation done manually.
-        await db.run('DELETE FROM appointments WHERE patientId = ?', patientId);
-        // Add similar DELETE statements for treatmentPlans, progressNotes, invoices, conversations, messages...
+    const scrubStmt = `
+        UPDATE users SET
+          role = 'user', -- A generic, non-clinical role
+          dateOfBirth = NULL, age = NULL, medicalRecords = NULL, xrayImageUrls = NULL,
+          hasDiabetes = NULL, hasHighBloodPressure = NULL, hasStrokeOrHeartAttackHistory = NULL,
+          hasBleedingDisorders = NULL, hasAllergy = NULL, allergySpecifics = NULL,
+          hasAsthma = NULL, updatedAt = ?
+        WHERE id = ?
+    `;
+    await db.run(scrubStmt, new Date().toISOString(), patientId);
+    
+    // Also remove their appointments, treatment plans, etc. from related tables.
+    // This is a cascade-like operation done manually.
+    await db.run('DELETE FROM appointments WHERE patientId = ?', patientId);
+    // Add similar DELETE statements for treatmentPlans, progressNotes, invoices, conversations, messages...
+    // Note: These tables don't exist in the current schema but would be needed in a full app
+    // await db.run('DELETE FROM treatment_plans WHERE patientId = ?', patientId);
+    // await db.run('DELETE FROM invoices WHERE patientId = ?', patientId);
+    // const conversation = await db.get('SELECT id FROM conversations WHERE patientId = ?', patientId);
+    // if (conversation) {
+    //     await db.run('DELETE FROM messages WHERE conversationId = ?', conversation.id);
+    //     await db.run('DELETE FROM conversations WHERE id = ?', conversation.id);
+    // }
 
-        return NextResponse.json({ message: "Patient clinical data deleted successfully. User login account remains." }, { status: 200 });
-    } else {
-        // If they are not a patient (e.g., staff), just delete the user record entirely.
-        await db.run('DELETE FROM users WHERE id = ?', patientId);
-        return NextResponse.json({ message: "User deleted successfully" }, { status: 200 });
-    }
+    return NextResponse.json({ message: "Patient clinical data deleted successfully. User login account remains." }, { status: 200 });
 
   } catch (error) {
     console.error(`Error deleting patient ${patientId}:`, error);
