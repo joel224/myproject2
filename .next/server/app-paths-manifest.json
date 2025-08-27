@@ -1,5 +1,17 @@
 {
   "/(auth)/login/page": "app/(auth)/login/page.js",
+  "/api/appointments/route": "app/api/appointments/route.js",
   "/api/clinic/wait-time/route": "app/api/clinic/wait-time/route.js",
-  "/page": "app/page.js"
+  "/api/conversations/route": "app/api/conversations/route.js",
+  "/api/invoices/route": "app/api/invoices/route.js",
+  "/api/patient-profile/appointments/route": "app/api/patient-profile/appointments/route.js",
+  "/api/patient-profile/invoices/route": "app/api/patient-profile/invoices/route.js",
+  "/api/patient-profile/messages/route": "app/api/patient-profile/messages/route.js",
+  "/api/patient-profile/route": "app/api/patient-profile/route.js",
+  "/api/patient-profile/treatment-plans/route": "app/api/patient-profile/treatment-plans/route.js",
+  "/api/patients/route": "app/api/patients/route.js",
+  "/page": "app/page.js",
+  "/patient/dashboard/page": "app/patient/dashboard/page.js",
+  "/staff/dashboard/page": "app/staff/dashboard/page.js",
+  "/staff/patients/page": "app/staff/patients/page.js"
 }

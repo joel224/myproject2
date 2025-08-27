@@ -3,8 +3,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { dbClient } from '@/lib/db'; 
-import { generateId } from '@/lib/mockServerDb'; 
+import { db, generateId } from '@/lib/mockServerDb'; 
 import bcrypt from 'bcryptjs';
 import type { Patient } from '@/lib/types';
 import type { UserAuth } from '@/lib/mockServerDb';
@@ -29,36 +28,16 @@ const createPatientSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const patientUsersResult = await dbClient.query(`
-      SELECT id, name, email, phone, date_of_birth, age, medical_records, 
-             xray_image_urls, has_diabetes, has_high_blood_pressure, 
-             has_stroke_or_heart_attack_history, has_bleeding_disorders, 
-             has_allergy, allergy_specifics, has_asthma 
-      FROM users WHERE role = 'patient' ORDER BY created_at DESC
-    `);
-    const patientsList: Patient[] = patientUsersResult.rows.map(data => ({
-      id: data.id,
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      dateOfBirth: data.date_of_birth,
-      age: data.age,
-      medicalRecords: data.medical_records,
-      xrayImageUrls: data.xray_image_urls || [],
-      hasDiabetes: data.has_diabetes,
-      hasHighBloodPressure: data.has_high_blood_pressure,
-      hasStrokeOrHeartAttackHistory: data.has_stroke_or_heart_attack_history,
-      hasBleedingDisorders: data.has_bleeding_disorders,
-      hasAllergy: data.has_allergy,
-      allergySpecifics: data.allergy_specifics,
-      hasAsthma: data.has_asthma,
-    }));
+    const patientUsers = db.users.filter(u => u.role === 'patient');
+    
+    const patientsList: Patient[] = patientUsers.map(user => {
+      const { passwordHash, ...patientData } = user;
+      return patientData as Patient; // Cast to Patient type after removing password hash
+    });
+
     return NextResponse.json(patientsList, { status: 200 });
   } catch (error) {
     console.error('Error fetching patients:', error);
-    if (error instanceof Error && error.message.includes("Database client not initialized")) {
-        return NextResponse.json({ message: "Server configuration error: Database not connected." }, { status: 503 });
-    }
     return NextResponse.json({ message: 'Error fetching patients' }, { status: 500 });
   }
 }
@@ -75,81 +54,47 @@ export async function POST(request: NextRequest) {
 
     const patientData = validation.data;
 
-    const existingUserResult = await dbClient.query('SELECT id FROM users WHERE email = $1', [patientData.email]);
-    if (existingUserResult.rows.length > 0) {
+    const existingUser = db.users.find(u => u.email === patientData.email);
+    if (existingUser) {
       return NextResponse.json({ message: "A user with this email already exists." }, { status: 409 });
     }
 
-    let passwordHash: string | null = null;
+    let passwordHash: string | undefined;
     if (patientData.password) {
         const saltRounds = 10;
         passwordHash = await bcrypt.hash(patientData.password, saltRounds);
     }
     
-    // Note the change to snake_case for database columns
-    const insertQuery = `
-      INSERT INTO users (
-        name, email, password_hash, role, phone, date_of_birth, age, medical_records, 
-        xray_image_urls, has_diabetes, has_high_blood_pressure, 
-        has_stroke_or_heart_attack_history, has_bleeding_disorders, 
-        has_allergy, allergy_specifics, has_asthma
-      ) VALUES (
-        $1, $2, $3, 'patient', $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
-      ) RETURNING id, name, email, phone, date_of_birth, age, medical_records, 
-             xray_image_urls, has_diabetes, has_high_blood_pressure, 
-             has_stroke_or_heart_attack_history, has_bleeding_disorders, 
-             has_allergy, allergy_specifics, has_asthma;
-    `;
-    
-    const queryParams = [
-        patientData.name,
-        patientData.email,
+    const newUser: UserAuth = {
+        id: generateId('user_'),
+        name: patientData.name,
+        email: patientData.email,
         passwordHash,
-        patientData.phone,
-        patientData.dateOfBirth,
-        patientData.age,
-        patientData.medicalRecords,
-        patientData.xrayImageUrls,
-        patientData.hasDiabetes,
-        patientData.hasHighBloodPressure,
-        patientData.hasStrokeOrHeartAttackHistory,
-        patientData.hasBleedingDisorders,
-        patientData.hasAllergy,
-        patientData.allergySpecifics,
-        patientData.hasAsthma,
-    ];
-
-    const newUserResult = await dbClient.query(insertQuery, queryParams);
-    const newPatientDbRecord = newUserResult.rows[0];
-
-    const newPatientResponse: Patient = {
-      id: newPatientDbRecord.id,
-      name: newPatientDbRecord.name,
-      email: newPatientDbRecord.email,
-      phone: newPatientDbRecord.phone,
-      dateOfBirth: newPatientDbRecord.date_of_birth,
-      age: newPatientDbRecord.age,
-      medicalRecords: newPatientDbRecord.medical_records,
-      xrayImageUrls: newPatientDbRecord.xray_image_urls || [],
-      hasDiabetes: newPatientDbRecord.has_diabetes,
-      hasHighBloodPressure: newPatientDbRecord.has_high_blood_pressure,
-      hasStrokeOrHeartAttackHistory: newPatientDbRecord.has_stroke_or_heart_attack_history,
-      hasBleedingDisorders: newPatientDbRecord.has_bleeding_disorders,
-      hasAllergy: newPatientDbRecord.has_allergy,
-      allergySpecifics: newPatientDbRecord.allergy_specifics,
-      hasAsthma: newPatientDbRecord.has_asthma,
+        role: 'patient',
+        phone: patientData.phone,
+        dateOfBirth: patientData.dateOfBirth,
+        age: patientData.age,
+        medicalRecords: patientData.medicalRecords,
+        xrayImageUrls: patientData.xrayImageUrls,
+        hasDiabetes: patientData.hasDiabetes,
+        hasHighBloodPressure: patientData.hasHighBloodPressure,
+        hasStrokeOrHeartAttackHistory: patientData.hasStrokeOrHeartAttackHistory,
+        hasBleedingDisorders: patientData.hasBleedingDisorders,
+        hasAllergy: patientData.hasAllergy,
+        allergySpecifics: patientData.allergySpecifics,
+        hasAsthma: patientData.hasAsthma,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
     };
+
+    db.users.push(newUser);
+
+    const { passwordHash: _, ...newPatientResponse } = newUser;
 
     return NextResponse.json(newPatientResponse, { status: 201 });
 
   } catch (error) {
     console.error('Error creating patient:', error);
-    if (error instanceof Error && 'code' in error && (error as any).code === '23505') {
-       return NextResponse.json({ message: "A user with this email may already exist." }, { status: 409 });
-    }
-     if (error instanceof Error && error.message.includes("Database client not initialized")) {
-        return NextResponse.json({ message: "Server configuration error: Database not connected." }, { status: 503 });
-    }
     return NextResponse.json({ message: 'Error creating patient' }, { status: 500 });
   }
 }

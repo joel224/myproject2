@@ -623,7 +623,7 @@ function LoginPage() {
                 title: "Login Successful!",
                 description: `Welcome back via ${providerName}!`
             });
-            router.push('/');
+            router.push('/patient/dashboard');
         } catch (socialError) {
             console.error(`Error signing in with ${providerName}:`, socialError);
             if (socialError.code === 'auth/account-exists-with-different-credential') {
@@ -649,7 +649,7 @@ function LoginPage() {
                 title: "Login Successful!",
                 description: "Welcome back!"
             });
-            router.push('/');
+            router.push('/patient/dashboard');
         } catch (firebaseError) {
             console.error("Error signing in with email/password:", firebaseError);
             if (firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/invalid-credential') {
