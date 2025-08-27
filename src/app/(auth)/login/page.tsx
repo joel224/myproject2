@@ -7,14 +7,12 @@ import { useRouter } from 'next/navigation';
 import type { FormEvent } from 'react';
 
 // Firebase imports
-import { auth, db } from '@/lib/firebase'; // Ensure this path is correct
+import { auth } from '@/lib/firebase'; // Ensure this path is correct
 import { 
   signInWithEmailAndPassword, 
   GoogleAuthProvider, 
   signInWithPopup,
-  type User
 } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 
 
 // UI Components
@@ -47,39 +45,6 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSocialLoading, setIsSocialLoading] = useState<false | 'google'>(false);
 
-  // Helper to save/update user data in Firestore
-  const saveUserToFirestore = async (user: User) => {
-    const userRef = doc(db, "users", user.uid);
-    const userSnap = await getDoc(userRef);
-
-    const finalName = user.displayName || 'New User'; // Use display name from social provider or fallback
-
-    if (!userSnap.exists()) { 
-      // This logic primarily runs if a user signs in with a social account
-      // that has no pre-existing record created by staff.
-      const userData = {
-        uid: user.uid,
-        email: user.email,
-        fullName: finalName,
-        role: 'patient', // Default role for new social sign-ins
-        createdAt: serverTimestamp(),
-        provider: user.providerData?.[0]?.providerId || 'social', 
-      };
-      await setDoc(userRef, userData);
-      console.log("New user profile for social sign-in saved to Firestore:", user.uid);
-    } else {
-      // User exists, this is the key logic for merging.
-      // E.g., A staff member created a record, and now the patient is logging in with Google.
-      // We update their record to link the social provider.
-      console.log("User already exists in Firestore, merging data for social sign-in:", user.uid);
-      await setDoc(userRef, {
-        fullName: finalName, // Update name in case it changed in social profile
-        email: user.email, // Ensure email is up-to-date
-        provider: user.providerData?.[0]?.providerId || userSnap.data()?.provider, // Update provider
-      }, { merge: true }); // Merge to avoid overwriting existing fields like 'role' or 'createdAt'
-    }
-  };
-
   const handleSocialLogin = async (providerName: 'google') => {
     setIsSocialLoading(providerName);
     setError(null);
@@ -97,10 +62,7 @@ export default function LoginPage() {
       const userCredential = await signInWithPopup(auth, provider);
       const user = userCredential.user;
       console.log(`User signed in with ${providerName}:`, user);
-
-      // This will now correctly find the staff-created record (if it exists) and merge it.
-      await saveUserToFirestore(user);
-
+      
       toast({
         title: "Login Successful!",
         description: `Welcome back via ${providerName}!`,

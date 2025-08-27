@@ -8,15 +8,13 @@ import { useRouter } from 'next/navigation';
 import type { FormEvent } from 'react';
 
 // Firebase imports
-import { auth, db } from '@/lib/firebase'; // Ensure this path is correct for your Firebase config
+import { auth } from '@/lib/firebase'; // Ensure this path is correct for your Firebase config
 import { 
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
   updateProfile, // To set displayName for email/password users
-  type User
 } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -51,38 +49,6 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSocialLoading, setIsSocialLoading] = useState<false | 'google'>(false);
 
-   // Helper to save/update user data in Firestore
-  const saveUserToFirestore = async (user: User, name?: string) => {
-    const userRef = doc(db, "users", user.uid);
-    const userSnap = await getDoc(userRef);
-
-    // Use name from signup form, then from social provider, then fallback
-    const finalName = name || user.displayName || 'New User';
-
-    if (!userSnap.exists()) { 
-      // This will run for new email signups OR social signups where the email is not already in the system.
-      const userData = {
-        uid: user.uid,
-        email: user.email,
-        fullName: finalName,
-        role: 'patient', // All signups are patients by default
-        createdAt: serverTimestamp(),
-        provider: user.providerData?.[0]?.providerId || 'password', 
-      };
-      await setDoc(userRef, userData);
-      console.log("New user profile saved to Firestore:", user.uid);
-    } else {
-      // This runs if a user record already exists (e.g., created by staff).
-      // We merge the new auth info with the existing record.
-      console.log("User already exists in Firestore, merging data:", user.uid);
-      await setDoc(userRef, {
-        fullName: finalName, // Update name from social profile if available
-        provider: user.providerData?.[0]?.providerId || userSnap.data()?.provider, // Update provider
-        // We DON'T update role, allowing the staff-set role to persist.
-      }, { merge: true });
-    }
-  };
-
   const handleSocialSignup = async (providerName: 'google') => {
     setIsSocialLoading(providerName);
     setError(null);
@@ -101,9 +67,6 @@ export default function SignupPage() {
       const user = userCredential.user;
       console.log(`User signed up/in with ${providerName}:`, user);
       
-      // This will now correctly find the staff-created record (if it exists) and merge it.
-      await saveUserToFirestore(user); 
-
       toast({
         title: "Account Ready!",
         description: `Welcome! You're now signed in with ${providerName}.`,
@@ -141,22 +104,14 @@ export default function SignupPage() {
     }
 
     try {
-      // We first check if a user with this email was pre-registered by staff
-      // This is a simplified check; a more robust way would be a backend check.
-      // For this app, we'll let Firebase handle the "email-already-in-use" error,
-      // which is secure and effective.
-
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       console.log("User created with Firebase Auth:", user);
       
-      // We still update their profile and save to Firestore to ensure consistency
-      // and add any details like the full name.
+      // Update their Firebase profile displayName
       if (user) {
         await updateProfile(user, { displayName: fullName });
       }
-
-      await saveUserToFirestore(user, fullName);
 
       toast({
         title: "Account Created!",
