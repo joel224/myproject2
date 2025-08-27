@@ -37,7 +37,6 @@ const createPatientSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const db = await getDb();
-    // Corrected query: Select all columns from the patients table.
     const patients = await db.all("SELECT * FROM patients");
 
     return NextResponse.json(patients, { status: 200 });
