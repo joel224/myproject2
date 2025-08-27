@@ -257,12 +257,12 @@ export default function EditPatientPageStaff() {
               <Label className="font-semibold">Medical Conditions:</Label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
                 {[
-                  { id: 'hasDiabetes', label: 'Diabetes', icon: <HeartPulse className="mr-2 h-4 w-4" /> },
-                  { id: 'hasHighBloodPressure', label: 'High Blood Pressure', icon: <ShieldAlert className="mr-2 h-4 w-4" /> },
-                  { id: 'hasStrokeOrHeartAttackHistory', label: 'History of Stroke/Heart Attack', icon: <HeartPulse className="mr-2 h-4 w-4" /> },
-                  { id: 'hasBleedingDisorders', label: 'Bleeding Disorders', icon: <Droplets className="mr-2 h-4 w-4" /> },
-                  { id: 'hasAllergy', label: 'Allergy', icon: <Info className="mr-2 h-4 w-4" /> },
-                  { id: 'hasAsthma', label: 'Asthma/Respiratory Issues', icon: <Wind className="mr-2 h-4 w-4" /> },
+                  { id: 'hasDiabetes', label: 'Diabetes', icon: <HeartPulse className="h-4 w-4 mr-2" /> },
+                  { id: 'hasHighBloodPressure', label: 'High Blood Pressure', icon: <ShieldAlert className="h-4 w-4 mr-2" /> },
+                  { id: 'hasStrokeOrHeartAttackHistory', label: 'History of Stroke/Heart Attack', icon: <HeartPulse className="h-4 w-4 mr-2" /> },
+                  { id: 'hasBleedingDisorders', label: 'Bleeding Disorders', icon: <Droplets className="h-4 w-4 mr-2" /> },
+                  { id: 'hasAllergy', label: 'Allergy', icon: <Info className="h-4 w-4 mr-2" /> },
+                  { id: 'hasAsthma', label: 'Asthma/Respiratory Issues', icon: <Wind className="h-4 w-4 mr-2" /> },
                 ].map(condition => (
                   <div key={condition.id} className="flex items-center space-x-2">
                     <Checkbox 
@@ -381,7 +381,3 @@ export default function EditPatientPageStaff() {
     </div>
   );
 }
-
-    
-
-    
