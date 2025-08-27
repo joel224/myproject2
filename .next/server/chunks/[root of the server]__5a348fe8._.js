@@ -563,6 +563,13 @@ async function GET(request) {
     // if (!authResult.authorized || !authResult.user) { return authResult.error; }
     const { searchParams } = new URL(request.url);
     const roleQuery = searchParams.get('role');
+    const allUsersQuery = searchParams.get('allUsers');
+    // If ?allUsers=true is passed, return all users regardless of role (for suggestions)
+    if (allUsersQuery === 'true') {
+        return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].users, {
+            status: 200
+        });
+    }
     const staffUsers = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$mockServerDb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].users.filter((user)=>{
         const staffMemberRole = mapUserAuthRoleToStaffMemberRole(user.role);
         if (!staffMemberRole) return false; // Not a staff role
