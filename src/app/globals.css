@@ -13,8 +13,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 196 46% 64%; /* #72BCD4 Gentle Blue */
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 30 85% 60%; /* Warm, inviting orange */
+    --primary-foreground: 25 85% 10%; /* Very dark brown for contrast */
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 215.4 16.3% 46.9%;
@@ -30,7 +30,7 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 196 46% 64%; /* Ring color same as primary */
+    --ring: 30 85% 60%; /* Ring color same as primary */
 
     --radius: 0.5rem;
 
@@ -41,9 +41,9 @@
     --sidebar-background: 220 12% 15%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-border: 220 12% 25%;
-    --sidebar-accent: 196 46% 64%;
-    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
-    --sidebar-ring: 196 46% 70%;
+    --sidebar-accent: 30 85% 60%; /* Use new primary */
+    --sidebar-accent-foreground: 25 85% 10%; /* Use new primary foreground */
+    --sidebar-ring: 30 85% 65%;
     
     /* Staff Content Area Background */
     --staff-content-background: 210 40% 98%;
@@ -63,8 +63,8 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 196 46% 64%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 30 80% 65%; /* Slightly brighter warm orange for dark mode */
+    --primary-foreground: 25 85% 10%; /* Very dark brown for contrast */
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -80,7 +80,7 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 196 46% 64%;
+    --ring: 30 80% 65%; /* Ring color same as primary */
 
     --medical-accent: 350 78% 60%;
     --medical-accent-foreground: 355 100% 97%;
@@ -89,9 +89,9 @@
     --sidebar-background: 222.2 84% 4.9%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-border: 217.2 32.6% 17.5%;
-    --sidebar-accent: 196 46% 64%;
-    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
-    --sidebar-ring: 196 46% 70%;
+    --sidebar-accent: 30 80% 65%; /* Use new primary */
+    --sidebar-accent-foreground: 25 85% 10%; /* Use new primary foreground */
+    --sidebar-ring: 30 80% 70%;
     
      /* Staff Content Area Dark Background */
     --staff-content-background: 220 14% 10%;
