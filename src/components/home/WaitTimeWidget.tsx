@@ -51,24 +51,30 @@ export function WaitTimeWidget() {
           <Clock className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-primary-foreground/80" />
         </CardHeader>
         <CardContent className="pt-1 pb-3 px-4 lg:pt-2 lg:pb-4 lg:px-5">
-          {isLoading && !waitTime ? (
+          {isLoading ? (
             <div className="flex items-center justify-center h-8 lg:h-10">
               <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 animate-spin text-primary-foreground/70" />
             </div>
           ) : error ? (
             <div className="flex flex-col items-center text-center text-primary-foreground/80 py-1">
               <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 mb-0.5" />
-              <p className="text-[11px] sm:text-xs lg:text-sm">{error}</p>
-            </div>
-          ) : waitTime ? (
-            <>
-              <div className="text-xl sm:text-2xl lg:text-3xl font-bold">{waitTime.text}</div>
-              <p className="text-[10px] sm:text-xs lg:text-sm text-primary-foreground/70 mt-0.5">
-                Last updated: {waitTime.updatedAt ? new Date(waitTime.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+              <p className="text-[11px] sm:text-xs lg:text-sm">
+                {error}
               </p>
-            </>
+            </div>
           ) : (
-             <div className="text-xl sm:text-2xl lg:text-3xl font-bold">-</div>
+            <>
+              {waitTime && waitTime.text ? (
+                <>
+                  <div className="text-xl sm:text-2xl lg:text-3xl font-bold">{waitTime.text.replace('<', 'Less than ')}</div>
+                  <p className="text-[10px] sm:text-xs lg:text-sm text-primary-foreground/70 mt-0.5">
+                    Last updated: {waitTime.updatedAt ? new Date(waitTime.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                  </p>
+                </>
+              ) : (
+                <div className="text-xl sm:text-2xl lg:text-3xl font-bold">-</div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

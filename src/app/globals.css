@@ -1,126 +1,105 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 35 100% 97%; /* Very light creamy peach */
-    --foreground: 25 50% 25%; /* Dark warm brown */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
 
-    --card: 35 100% 99%; /* Almost white, very light cream */
-    --card-foreground: 25 50% 25%; /* Dark warm brown */
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
 
-    --popover: 35 100% 99%; /* Almost white, very light cream */
-    --popover-foreground: 25 50% 25%; /* Dark warm brown */
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 30 85% 60%; /* Warm, inviting orange */
-    --primary-foreground: 25 85% 10%; /* Very dark brown for contrast */
+    --primary: 196 46% 64%; /* #72BCD4 Gentle Blue */
+    --primary-foreground: 222.2 47.4% 11.2%;
 
-    --secondary: 35 90% 75%; /* Lighter, softer peach/orange */
-    --secondary-foreground: 30 70% 30%; /* Medium warm brown */
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 215.4 16.3% 46.9%;
 
-    --muted: 35 75% 90%; /* Very light, muted peach */
-    --muted-foreground: 30 40% 45%; /* Muted brown */
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 45 90% 60%; /* Warm golden yellow */
-    --accent-foreground: 25 70% 15%; /* Dark brown for contrast on yellow */
+    --accent: 175 44% 64%; /* #80CBC4 Muted Green */
+    --accent-foreground: 222.2 47.4% 11.2%;
 
-    --destructive: 0 70% 55%; /* Standard red */
-    --destructive-foreground: 0 0% 100%; /* White */
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 35 50% 85%; /* Soft warm beige border */
-    --input: 35 50% 85%; /* Soft warm beige input */
-    --ring: 30 85% 60%; /* Primary orange for ring */
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 196 46% 64%; /* Ring color same as primary */
 
     --radius: 0.5rem;
 
-    /* Chart colors - warm palette */
-    --chart-1: 30 85% 60%; /* Primary Orange */
-    --chart-2: 45 90% 60%; /* Accent Golden Yellow */
-    --chart-3: 20 60% 50%; /* Terracotta/Brown */
-    --chart-4: 35 90% 75%; /* Light Peach (Secondary-like) */
-    --chart-5: 25 80% 55%; /* Deeper Orange */
+    --medical-accent: 350 78% 60%;
+    --medical-accent-foreground: 355 100% 97%;
 
-    /* Sidebar specific theme */
-    --sidebar-background: 35 80% 95%; /* Light warm beige */
-    --sidebar-foreground: 25 50% 30%; /* Warm brown */
-    --sidebar-primary: 30 85% 60%; /* Main primary for active link */
-    --sidebar-primary-foreground: 25 85% 10%; /* Main primary foreground */
-    --sidebar-accent: 35 90% 88%; /* Very light peach for hover background */
-    --sidebar-accent-foreground: 30 80% 50%; /* Primary-like color for text on hover */
-    --sidebar-border: 35 50% 80%; /* Soft warm beige border */
-    --sidebar-ring: 30 85% 60%; /* Main ring color */
+    /* Custom sidebar colors */
+    --sidebar-background: 220 12% 15%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-border: 220 12% 25%;
+    --sidebar-accent: 196 46% 64%;
+    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+    --sidebar-ring: 196 46% 70%;
+    
+    /* Staff Content Area Background */
+    --staff-content-background: 210 40% 98%;
 
-    /* Staff page specific background */
-    --staff-content-background: 50 80% 96%; /* Light, soft cream */
-
-    /* Navbar specific background */
-    --navbar-background-main: 0 0% 100%; 
-    --navbar-foreground-main: 25 50% 25%;
-
-    /* Medical Freshness Accent */
-    --medical-accent: 181 40% 62%; /* Light Teal/Cyan #78C2C4 */
-    --medical-accent-foreground: 181 30% 20%; /* Dark Desaturated Cyan */
- }
+     /* Main Navbar Colors */
+    --navbar-background-main: 255 100% 100%; /* Example: white */
+    --navbar-foreground-main: 222.2 84% 4.9%; /* Example: same as main foreground */
+  }
 
   .dark {
-    --background: 30 20% 12%; /* Very dark warm brown/gray */
-    --foreground: 35 70% 88%; /* Light creamy off-white */
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
 
-    --card: 30 20% 15%; /* Slightly lighter dark warm brown/gray */
-    --card-foreground: 35 70% 88%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 30 15% 10%; /* Even darker for popover */
-    --popover-foreground: 35 70% 88%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 30 80% 65%; /* Slightly brighter warm orange for dark mode */
-    --primary-foreground: 25 80% 15%; /* Very dark brown */
+    --primary: 196 46% 64%;
+    --primary-foreground: 222.2 47.4% 11.2%;
 
-    --secondary: 35 60% 30%; /* Muted dark peach/orange */
-    --secondary-foreground: 35 80% 85%; /* Light peach/cream */
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 30 15% 22%; /* Darker muted warm gray */
-    --muted-foreground: 35 60% 70%; /* Muted light cream */
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 45 85% 65%; /* Slightly brighter golden yellow for dark mode */
-    --accent-foreground: 30 60% 15%; /* Dark brown */
+    --accent: 175 44% 64%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 196 46% 64%;
+
+    --medical-accent: 350 78% 60%;
+    --medical-accent-foreground: 355 100% 97%;
+
+    /* Custom sidebar dark colors */
+    --sidebar-background: 222.2 84% 4.9%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-accent: 196 46% 64%;
+    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+    --sidebar-ring: 196 46% 70%;
     
-    --destructive: 0 65% 58%; /* Slightly brighter red for dark mode */
-    --destructive-foreground: 0 0% 100%;
+     /* Staff Content Area Dark Background */
+    --staff-content-background: 220 14% 10%;
 
-    --border: 30 20% 25%; /* Dark warm beige/gray border */
-    --input: 30 20% 25%;
-    --ring: 30 80% 65%; /* Primary orange for ring in dark mode */
-
-    /* Chart colors for dark mode - warm palette adjusted */
-    --chart-1: 30 80% 65%;
-    --chart-2: 45 85% 65%;
-    --chart-3: 20 55% 55%;
-    --chart-4: 35 75% 70%;
-    --chart-5: 25 75% 60%;
-
-    /* Sidebar specific theme for dark mode */
-    --sidebar-background: 30 20% 10%; /* Very dark warm brown, slightly darker */
-    --sidebar-foreground: 35 70% 85%; 
-    --sidebar-primary: 30 80% 65%; /* Same as app dark primary */
-    --sidebar-primary-foreground: 25 80% 15%;
-    --sidebar-accent: 30 20% 20%; /* Darker muted warm gray for hover */
-    --sidebar-accent-foreground: 30 75% 70%; /* Lighter warm color for text on hover */
-    --sidebar-border: 30 15% 20%;
-    --sidebar-ring: 30 80% 65%;
-
-    /* Staff page specific background for dark mode */
-    --staff-content-background: 45 15% 16%; /* Dark, slightly warm off-black/grey */
-    
-    /* Navbar specific background */
-    --navbar-background-main: 30 20% 12%; 
-    --navbar-foreground-main: 0 0% 95%;
-
-    /* Medical Freshness Accent */
-    --medical-accent: 181 45% 50%; /* Dark mode version of #78C2C4 */
-    --medical-accent-foreground: 181 30% 90%; /* Very Light Cyan */
- }
+    /* Main Navbar Dark Colors */
+    --navbar-background-main: 222.2 84% 4.9%; /* Example: dark */
+    --navbar-foreground-main: 210 40% 98%; /* Example: light text */
+  }
 }
 
 @layer base {
@@ -130,104 +109,77 @@
   body {
     @apply bg-background text-foreground;
   }
-}
-
-.animate-marquee-bg {
-  position: relative; 
-  overflow: hidden;   
-}
-
-.animate-marquee-bg::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%; 
-  height: 100%;
-  background-color: hsl(var(--accent) / 0.3); 
-  transform: translateX(-100%); 
-  animation: marquee-bg-animation 1s ease-out; 
-  z-index: -1; 
-  pointer-events: none; 
-}
-
-@keyframes marquee-bg-animation {
-  0% {
-    transform: translateX(-100%);
-  }
-  40%, 60% { 
-    transform: translateX(0%);
-  }
-  100% {
-    transform: translateX(100%); 
-  }
-}
-
-@keyframes text-shine-animation {
-  0% {
-    background-position: 200% center;
-  }
-  100% {
-    background-position: -200% center;
-  }
-}
-
-.text-shine {
-  background: linear-gradient(
-    to right,
-    hsl(var(--card-foreground)) 20%,
-    hsl(var(--muted-foreground)) 40%,
-    hsl(var(--card-foreground)) 50%,
-    hsl(var(--muted-foreground)) 60%,
-    hsl(var(--card-foreground)) 80%
-  );
-  background-size: 200% auto;
-  color: transparent;
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.text-shine:hover {
-  animation: text-shine-animation 1s ease-in-out;
-}
-
-
-@layer utilities {
-  /* Initial states for animations */
-  .initial-fade-in-up {
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-  }
-  .initial-fade-in-left {
-    opacity: 0;
-    transform: translateX(-20px);
-    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-  }
-  .initial-fade-in-right {
-    opacity: 0;
-    transform: translateX(20px);
-    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-manrope;
   }
   .initial-fade-in {
     opacity: 0;
-    transition: opacity 0.8s ease-out;
+    transition: opacity 1s ease-out;
   }
-
-  /* Visible state */
-  .is-visible {
+  .initial-fade-in.is-visible {
     opacity: 1;
-    transform: translateY(0) translateX(0);
   }
-
-  /* Staggering utility (if needed, applied via JS) */
-  .delay-100 { transition-delay: 100ms; }
-  .delay-200 { transition-delay: 200ms; }
-  .delay-300 { transition-delay: 300ms; }
+  .initial-fade-in-up {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+  .initial-fade-in-up.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+  }
 }
 
-/* Hide sidebar menu labels on mobile */
-[data-mobile="true"] [data-sidebar="menu-button"] [data-sidebar="menu-label"] {
-  display: none;
+@layer utilities {
+  @keyframes shine {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+
+  .text-shine {
+    background: linear-gradient(
+      110deg,
+      hsl(var(--primary-foreground)) 33%,
+      #a8a8a8 50%,
+      hsl(var(--primary-foreground)) 66%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    background-size: 300% 100%;
+    animation: shine 5s linear infinite;
+    animation-play-state: paused;
+    transition: animation-play-state 1s ease;
+  }
+
+  .text-shine:hover {
+    animation-play-state: running;
+  }
+
+  @keyframes marquee-bg {
+    0% {
+      background-position: 100% 0;
+    }
+    100% {
+      background-position: -100% 0;
+    }
+  }
+
+  .animate-marquee-bg {
+    background-image: linear-gradient(to right,
+      hsl(var(--primary)),
+      hsl(var(--accent)),
+      hsl(var(--primary))
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: marquee-bg 1s linear;
+  }
 }

@@ -1,4 +1,3 @@
-
 // src/components/home/HeroSection.tsx
 'use client';
 
@@ -36,7 +35,7 @@ export function HeroSection() {
 
   const [showBookingPopup, setShowBookingPopup] = useState(false);
   const [showPromoPopup, setShowPromoPopup] = useState(false);
-  
+
   const currentPlaybackId = isMobile ? HERO_VIDEO_PLAYBACK_ID_MOBILE : HERO_VIDEO_PLAYBACK_ID_DESKTOP;
 
   const handleScroll = useCallback(() => {
@@ -54,12 +53,12 @@ export function HeroSection() {
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll, { passive: true });
-    const timer = setTimeout(() => handleScroll(), 100); 
+    const timer = setTimeout(() => handleScroll(), 100);
     return () => {
       window.removeEventListener('scroll', handleScroll);
       clearTimeout(timer);
     };
-  }, [handleScroll, isPlayerReady]); 
+  }, [handleScroll, isPlayerReady]);
 
   useEffect(() => {
     const observerOptions = { threshold: 0.1 };
@@ -104,7 +103,7 @@ export function HeroSection() {
   const handlePromoTriggerMouseLeave = () => {
     hidePromoTimerRef.current = setTimeout(() => {
       setShowPromoPopup(false);
-    }, 200); 
+    }, 200);
   };
 
   const handlePromoPopupMouseEnter = () => {
@@ -112,13 +111,13 @@ export function HeroSection() {
       clearTimeout(hidePromoTimerRef.current);
       hidePromoTimerRef.current = null;
     }
-    setShowPromoPopup(true); 
+    setShowPromoPopup(true);
   };
-  
+
   const handlePromoPopupMouseLeave = () => {
      hidePromoTimerRef.current = setTimeout(() => {
-        setShowPromoPopup(false); 
-    }, 100); 
+        setShowPromoPopup(false);
+    }, 100);
   };
 
 
@@ -130,7 +129,7 @@ export function HeroSection() {
       >
         <div
           ref={playerContainerRef}
-          className="absolute top-0 left-0 w-full h-[165%] z-[1] bg-black"
+          className="absolute top-0 left-0 w-full h-[152%] z-[1] bg-black"
           style={{ transition: 'transform 0.1s linear' }}
         >
           <MuxPlayer
@@ -141,9 +140,10 @@ export function HeroSection() {
             muted
             playsInline
             noControls
-            className="absolute inset-0 w-full h-full object-cover min-w-full min-h-full transform -translate-y-6"
+            className="absolute inset-0 w-full h-full object-cover min-w-full min-h-full"
             onLoadedMetadata={() => { setIsPlayerReady(true); handleScroll(); }}
             onPlayerReady={() => { setIsPlayerReady(true); handleScroll(); }}
+            onError={(evt) => { console.error("Hero MuxPlayer Raw Error Event:", evt); }}
           />
         </div>
 
@@ -157,24 +157,26 @@ export function HeroSection() {
                 "space-y-6",
                 "initial-fade-in-up",
                 textVisible && "is-visible",
-                "text-neutral-100", 
+                "text-neutral-100",
                 "max-w-2xl"
               )}
             >
-              <div className="relative inline-block">
-                 <h1 className="text-shine font-sans text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-                  Your <span className="inline-block transition-transform duration-300 ease-in-out hover:scale-105 [text-shadow:0_0_8px_hsl(var(--primary)/0.7)]">Smile</span>, Our <span className="inline-block transition-transform duration-300 ease-in-out hover:scale-105 [text-shadow:0_0_8px_hsl(var(--primary)/0.7)]">Passion!</span>
-                </h1>
+              <div className="relative inline-block" style={{ fontFamily: 'var(--font-quicksand), sans-serif' }}>
+                <h1 className="font-quicksand text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl" style={{ fontFamily: 'var(--font-quicksand), sans-serif' }}>
+                  Your <span className="inline-block transition-transform duration-300 ease-in-out hover:scale-105 [text-shadow:0_0_8px_hsl(var(--primary)/0.7)]">Smile</span>, Our Passion!
+ </h1>
                 <svg
-                  className="absolute -bottom-1 left-0 w-full h-[12px]"
-                  viewBox="0 0 500 12"
+                  className="absolute bottom-0 left-0 w-full"
+                  viewBox="0 0 300 10"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
-                  preserveAspectRatio="none"
-                  aria-hidden="true"
                 >
-                  <path d="M5 5C 50 15, 200 0, 245 6" stroke="#86EFAC" strokeWidth="4" strokeLinecap="round" />
-                  <path d="M280 6C 350 12, 450 0, 495 5" stroke="#86EFAC" strokeWidth="4" strokeLinecap="round" />
+                  <path
+                    d="M5 5 C 75 15, 225 15, 295 5"
+                    stroke="#22C55E" // Vibrant green color
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
                 </svg>
               </div>
               <p className="max-w-[600px] text-neutral-200 md:text-xl mx-auto">
@@ -182,10 +184,10 @@ export function HeroSection() {
               </p>
               <div className="flex flex-col gap-2 min-[400px]:flex-row justify-center">
                 <div
-                  className="relative" 
+                  className="relative"
                   onMouseEnter={handlePromoTriggerMouseEnter}
                   onMouseLeave={handlePromoTriggerMouseLeave}
-                >
+>
                   <Link href="/#appointment">
                     <Button
                       size="lg"
@@ -201,8 +203,8 @@ export function HeroSection() {
         </div>
 
         {/* Promotional Image Pop-up */}
-        {showPromoPopup && (
-         <div
+       {showPromoPopup && (
+ <div
           ref={promoImageContainerRef}
           className={cn(
             "fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-8 md:p-12 lg:p-16",
@@ -211,9 +213,9 @@ export function HeroSection() {
             showPromoPopup ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
           )}
           onMouseEnter={handlePromoPopupMouseEnter}
-          onMouseLeave={handlePromoPopupMouseLeave}
+ onMouseLeave={handlePromoPopupMouseLeave}
         >
-         <div
+ <div
             className={cn(
               "relative w-[80vw] max-w-4xl aspect-video transition-all duration-300 ease-out",
               showPromoPopup ? "scale-100 opacity-100" : "scale-95 opacity-0"
@@ -222,14 +224,13 @@ export function HeroSection() {
             <Image
               src={PROMO_IMAGE_URL}
               alt="Promotional Offer: Happy Patient"
-              layout="fill"
-              objectFit="contain"
+              fill
               className="rounded-lg shadow-2xl"
               data-ai-hint="dental promotion happy patient"
             />
           </div>
         </div>
-        )}
+ )}
         <WaitTimeWidget />
       </section>
 
