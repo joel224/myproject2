@@ -3,12 +3,12 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getDb } from '@/lib/db';
-// import { getFirebaseAdminApp } from '@/lib/firebase-admin';
-// import * as admin from 'firebase-admin';
+import { getFirebaseAdminApp } from '@/lib/firebase-admin';
+import * as admin from 'firebase-admin';
 import { z } from 'zod';
 import { generateId } from '@/lib/mockServerDb';
 
-// getFirebaseAdminApp(); // Commented out
+getFirebaseAdminApp();
 
 // Helper to find or create a conversation
 async function findOrCreateConversation(patientId: string, patientName?: string) {
@@ -42,17 +42,21 @@ export async function GET(request: NextRequest) {
 
   try {
     const db = await getDb();
-    // const decodedToken = await admin.auth().verifyIdToken(idToken);
-    // const userEmail = decodedToken.email;
-    const userEmail = idToken; // MOCK
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const userId = decodedToken.uid;
+    const userName = decodedToken.name;
 
-    if (!userEmail) return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    if (!userId) return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     
-    const userResult = await db.get('SELECT id, name FROM users WHERE email = ? AND role = ?', [userEmail, 'patient']);
-    if (!userResult) return NextResponse.json({ message: 'Patient not found' }, { status: 404 });
+    const patientResult = await db.get('SELECT id, name FROM patients WHERE userId = ?', userId);
+    if (!patientResult) {
+        // No clinical record yet, but they have a login. Create a shell conversation.
+        const conversation = await findOrCreateConversation(userId, userName); // Use userId as patientId for now
+        return NextResponse.json({ conversation, messages: [] }, { status: 200 });
+    }
     
-    const patientId = userResult.id;
-    const patientName = userResult.name;
+    const patientId = patientResult.id;
+    const patientName = patientResult.name;
 
     const conversation = await findOrCreateConversation(patientId, patientName);
     const messages = await db.all('SELECT * FROM messages WHERE conversationId = ? ORDER BY timestamp ASC', conversation.id);
@@ -61,7 +65,7 @@ export async function GET(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Error fetching patient messages:', error);
-    // if (error.code?.startsWith('auth/')) return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    if (error.code?.startsWith('auth/')) return NextResponse.json({ message: 'Forbidden: Invalid token' }, { status: 403 });
     return NextResponse.json({ message: 'An unexpected error occurred' }, { status: 500 });
   }
 }
@@ -80,15 +84,13 @@ export async function POST(request: NextRequest) {
 
   try {
     const db = await getDb();
-    // const decodedToken = await admin.auth().verifyIdToken(idToken);
-    // const userEmail = decodedToken.email;
-    const userEmail = idToken; // MOCK
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const userId = decodedToken.uid;
 
-    if (!userEmail) return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    if (!userId) return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     
-    const userResult = await db.get('SELECT id FROM users WHERE email = ? AND role = ?', [userEmail, 'patient']);
-    if (!userResult) return NextResponse.json({ message: 'Patient not found' }, { status: 404 });
-    const patientId = userResult.id;
+    const patientResult = await db.get('SELECT id FROM patients WHERE userId = ?', userId);
+    const patientId = patientResult?.id || userId; // Use clinical ID if exists, otherwise fall back to user ID
 
     const body = await request.json();
     const validation = messageSchema.safeParse(body);
@@ -102,7 +104,7 @@ export async function POST(request: NextRequest) {
     const newMessage = {
       id: generateId('msg_'),
       conversationId,
-      senderId: patientId,
+      senderId: patientId, // Always use the patient's clinical/user ID as sender
       senderRole: 'patient' as 'patient',
       text,
       timestamp: now,
@@ -122,7 +124,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Error sending message:', error);
-    // if (error.code?.startsWith('auth/')) return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    if (error.code?.startsWith('auth/')) return NextResponse.json({ message: 'Forbidden: Invalid token' }, { status: 403 });
     return NextResponse.json({ message: 'An unexpected error occurred' }, { status: 500 });
   }
 }

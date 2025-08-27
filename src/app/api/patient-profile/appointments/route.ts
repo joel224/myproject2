@@ -3,11 +3,11 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getDb } from '@/lib/db';
-// import { getFirebaseAdminApp } from '@/lib/firebase-admin';
-// import * as admin from 'firebase-admin';
+import { getFirebaseAdminApp } from '@/lib/firebase-admin';
+import * as admin from 'firebase-admin';
 
 // Initialize Firebase Admin SDK
-// getFirebaseAdminApp(); // Commented out as per instructions
+getFirebaseAdminApp();
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('Authorization');
@@ -17,26 +17,23 @@ export async function GET(request: NextRequest) {
   const idToken = authHeader.split('Bearer ')[1];
 
   try {
-    // --- Firebase Admin SDK logic commented out ---
-    // const decodedToken = await admin.auth().verifyIdToken(idToken);
-    // const userEmail = decodedToken.email;
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const userId = decodedToken.uid;
     
-    // Mock logic: Assume token is the user's email for this example.
-    // This is NOT secure and for demonstration purposes only.
-    const userEmail = idToken;
-
-    if (!userEmail) {
+    if (!userId) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
     const db = await getDb();
     
-    const userResult = await db.get('SELECT id FROM users WHERE email = ? AND role = ?', [userEmail, 'patient']);
+    // First, find the patient's clinical ID (from the patients table) using their user ID
+    const patientResult = await db.get('SELECT id FROM patients WHERE userId = ?', userId);
 
-    if (!userResult) {
-      return NextResponse.json({ message: 'Patient record not found' }, { status: 404 });
+    if (!patientResult) {
+      // This user has a valid login but no associated clinical patient record.
+      return NextResponse.json([], { status: 200 }); // Return empty array, not an error
     }
-    const patientId = userResult.id;
+    const patientId = patientResult.id;
     
     const appointments = await db.all('SELECT * FROM appointments WHERE patientId = ? ORDER BY date DESC, time ASC', patientId);
 
@@ -44,9 +41,9 @@ export async function GET(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Error fetching patient appointments:', error);
-    // if (error.code?.startsWith('auth/')) {
-    //   return NextResponse.json({ message: 'Forbidden: Invalid token' }, { status: 403 });
-    // }
+    if (error.code?.startsWith('auth/')) {
+      return NextResponse.json({ message: 'Forbidden: Invalid token' }, { status: 403 });
+    }
     return NextResponse.json({ message: 'An unexpected error occurred' }, { status: 500 });
   }
 }

@@ -44,6 +44,19 @@ export async function GET(request: NextRequest) {
     if (!patientData) {
       return NextResponse.json({ message: 'No patient record found for this account. Please contact the clinic to have your online account linked.' }, { status: 404 });
     }
+    
+    // Deserialize JSON string for xrayImageUrls before sending
+    if (patientData.xrayImageUrls) {
+        try {
+            patientData.xrayImageUrls = JSON.parse(patientData.xrayImageUrls);
+        } catch (e) {
+            console.error(`Invalid JSON in xrayImageUrls for patient ${patientData.id}:`, patientData.xrayImageUrls);
+            patientData.xrayImageUrls = []; // Default to empty array on parse error
+        }
+    } else {
+        patientData.xrayImageUrls = [];
+    }
+
 
     return NextResponse.json(patientData, { status: 200 });
 

@@ -3,10 +3,10 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getDb } from '@/lib/db';
-// import { getFirebaseAdminApp } from '@/lib/firebase-admin';
-// import * as admin from 'firebase-admin';
+import { getFirebaseAdminApp } from '@/lib/firebase-admin';
+import * as admin from 'firebase-admin';
 
-// getFirebaseAdminApp(); // Commented out
+getFirebaseAdminApp();
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('Authorization');
@@ -16,33 +16,36 @@ export async function GET(request: NextRequest) {
   const idToken = authHeader.split('Bearer ')[1];
 
   try {
-    // --- Firebase Admin SDK logic commented out ---
-    // const decodedToken = await admin.auth().verifyIdToken(idToken);
-    // const userEmail = decodedToken.email;
-    const userEmail = idToken; // MOCK: Using token as email
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const userId = decodedToken.uid;
 
-    if (!userEmail) {
+    if (!userId) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
     
     const db = await getDb();
-    const userResult = await db.get('SELECT id FROM users WHERE email = ? AND role = ?', [userEmail, 'patient']);
+    const patientResult = await db.get('SELECT id FROM patients WHERE userId = ?', userId);
 
-    if (!userResult) {
-      return NextResponse.json({ message: 'Patient record not found' }, { status: 404 });
+    if (!patientResult) {
+      return NextResponse.json([], { status: 200 });
     }
-    const patientId = userResult.id;
+    const patientId = patientResult.id;
     
     // This part needs to be implemented once the treatment_plans table is added to the DB schema
+    const tableExists = await db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='treatment_plans'");
+    if (!tableExists) {
+        return NextResponse.json([], { status: 200 });
+    }
+
     const plans = await db.all('SELECT * FROM treatment_plans WHERE patientId = ?', patientId);
 
     return NextResponse.json(plans, { status: 200 });
 
   } catch (error: any) {
     console.error('Error fetching patient treatment plans:', error);
-    // if (error.code?.startsWith('auth/')) {
-    //   return NextResponse.json({ message: 'Forbidden: Invalid token' }, { status: 403 });
-    // }
+    if (error.code?.startsWith('auth/')) {
+      return NextResponse.json({ message: 'Forbidden: Invalid token' }, { status: 403 });
+    }
     return NextResponse.json({ message: 'An unexpected error occurred' }, { status: 500 });
   }
 }
