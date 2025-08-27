@@ -26,7 +26,7 @@ export default function EditPatientPage() {
   const { toast } = useToast();
   const xrayInputRef = useRef<HTMLInputElement>(null);
 
-  const [formData, setFormData] = useState<Partial<FormData>>({
+  const [formData, setFormData] = useState<Partial<FormData & { id: string; userId: string }>>({
     name: '',
     email: '',
     phone: '',
@@ -162,7 +162,7 @@ export default function EditPatientPage() {
       }
     }
 
-    const patientDataToSubmit = {
+    const patientDataToSubmit: any = {
       ...formData,
       age: formData.age ? parseInt(formData.age, 10) : undefined,
       allergySpecifics: formData.hasAllergy ? formData.allergySpecifics : undefined,
@@ -170,6 +170,11 @@ export default function EditPatientPage() {
     };
     if (patientDataToSubmit.dateOfBirth === '') delete patientDataToSubmit.dateOfBirth;
 
+    // Clean up fields that are not part of the update schema
+    delete patientDataToSubmit.id;
+    delete patientDataToSubmit.userId;
+    delete patientDataToSubmit.createdAt;
+    delete patientDataToSubmit.updatedAt;
 
     try {
       const response = await fetch(`/api/patients/${patientId}`, {
@@ -258,7 +263,7 @@ export default function EditPatientPage() {
                     <Checkbox 
                       id={condition.id} 
                       name={condition.id}
-                      checked={!!formData[condition.id as keyof FormData]} 
+                      checked={!!(formData as any)[condition.id]} 
                       onCheckedChange={(checked) => {
                         const isChecked = typeof checked === 'boolean' ? checked : false;
                         setFormData(prev => ({ ...prev, [condition.id]: isChecked }));
@@ -371,4 +376,6 @@ export default function EditPatientPage() {
     </div>
   );
 }
+    
+
     

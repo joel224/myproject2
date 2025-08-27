@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, FileText, ShieldAlert, HeartPulse, Droplets, Info, Wind, Save, Plus, Trash2 } from 'lucide-react';
+import { Loader2, FileText, ShieldAlert, HeartPulse, Droplets, Info, Wind, Save, Plus, X, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import type { Patient } from '@/lib/types';
 
@@ -26,7 +26,7 @@ export default function EditPatientPageStaff() {
   const { toast } = useToast();
   const xrayInputRef = useRef<HTMLInputElement>(null);
 
-  const [formData, setFormData] = useState<Partial<FormData>>({
+  const [formData, setFormData] = useState<Partial<FormData & { id: string; userId: string }>>({
     name: '',
     email: '',
     phone: '',
@@ -162,7 +162,7 @@ export default function EditPatientPageStaff() {
       }
     }
 
-    const patientDataToSubmit = {
+    const patientDataToSubmit: any = {
       ...formData,
       age: formData.age ? parseInt(formData.age, 10) : undefined,
       allergySpecifics: formData.hasAllergy ? formData.allergySpecifics : undefined,
@@ -170,6 +170,11 @@ export default function EditPatientPageStaff() {
     };
     if (patientDataToSubmit.dateOfBirth === '') delete patientDataToSubmit.dateOfBirth;
 
+    // Clean up fields that are not part of the update schema
+    delete patientDataToSubmit.id;
+    delete patientDataToSubmit.userId;
+    delete patientDataToSubmit.createdAt;
+    delete patientDataToSubmit.updatedAt;
 
     try {
       const response = await fetch(`/api/patients/${patientId}`, {
@@ -239,7 +244,7 @@ export default function EditPatientPageStaff() {
             {/* Medical Records */}
             <div className="space-y-2">
               <Label htmlFor="medicalRecords">Simple Medical Records / Notes</Label>
-              <Textarea id="medicalRecords" name="medicalRecords" value={formData.medicalRecords || ''} onChange={handleChange} rows={3} />
+              <Textarea id="medicalRecords" name="medicalRecords" value={formData.medicalRecords || ''} onChange={handleChange} rows={3} placeholder="Enter relevant medical history, current medications, or general notes..." />
             </div>
 
             {/* Medical Conditions */}
@@ -258,7 +263,7 @@ export default function EditPatientPageStaff() {
                     <Checkbox 
                       id={condition.id} 
                       name={condition.id}
-                      checked={!!formData[condition.id as keyof FormData]} 
+                      checked={!!(formData as any)[condition.id]} 
                       onCheckedChange={(checked) => {
                         const isChecked = typeof checked === 'boolean' ? checked : false;
                         setFormData(prev => ({ ...prev, [condition.id]: isChecked }));
@@ -371,3 +376,5 @@ export default function EditPatientPageStaff() {
     </div>
   );
 }
+
+    
