@@ -3198,6 +3198,10 @@ h1, h2, h3, h4, h5, h6 {
   background-color: #00000080;
 }
 
+.hover\:bg-white\/20:hover {
+  background-color: #fff3;
+}
+
 .hover\:text-accent-foreground:hover {
   color: hsl(var(--accent-foreground));
 }

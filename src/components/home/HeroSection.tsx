@@ -11,7 +11,7 @@ import { BookingPopupDialog } from './BookingPopupDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import Image from 'next/image';
 import { WaitTimeWidget } from './WaitTimeWidget';
-import { X } from 'lucide-react'; // Import X icon for the close button
+import { X, ArrowRight } from 'lucide-react'; // Import X and ArrowRight icons
 
 const MuxPlayer = dynamic<MuxPlayerProps>(
   () => import('@mux/mux-player-react').then((mod) => mod.default),
@@ -163,7 +163,7 @@ export function HeroSection() {
               )}
             >
               <div className="relative inline-block">
-                <h1 className="font-manrope text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
+                <h1 className="font-sans text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
                   Your <span className="inline-block transition-transform duration-300 ease-in-out hover:scale-105 [text-shadow:0_0_8px_hsl(var(--primary)/0.7)]">Smile</span>, Our Passion!
                 </h1>
                 <svg
@@ -232,8 +232,8 @@ export function HeroSection() {
             {/* Actionable Button inside the pop-up */}
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 sm:bottom-6 z-10">
                 <Link href="/#appointment">
-                    <Button size="lg" className="bg-medicalAccent text-medicalAccent-foreground hover:bg-medicalAccent/90 shadow-xl">
-                        Take Me There
+                    <Button size="lg" className="bg-white text-black hover:bg-white/90 shadow-xl">
+                        Take Me There <ArrowRight className="ml-2 h-4 w-4"/>
                     </Button>
                 </Link>
             </div>
@@ -242,7 +242,7 @@ export function HeroSection() {
                 variant="ghost" 
                 size="icon" 
                 onClick={() => setShowPromoPopup(false)}
-                className="absolute top-2 right-2 z-10 h-8 w-8 rounded-full bg-black/30 text-white hover:bg-black/50 hover:text-white"
+                className="absolute top-2 right-2 z-10 h-8 w-8 text-white hover:bg-white/20 hover:text-white"
                 aria-label="Close promotional pop-up"
             >
                 <X className="h-5 w-5" />
