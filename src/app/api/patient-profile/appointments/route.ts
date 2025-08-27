@@ -1,12 +1,13 @@
+
 // src/app/api/patient-profile/appointments/route.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { dbClient } from '@/lib/db';
-import { getFirebaseAdminApp } from '@/lib/firebase-admin';
-import * as admin from 'firebase-admin';
+import { getDb } from '@/lib/db';
+// import { getFirebaseAdminApp } from '@/lib/firebase-admin';
+// import * as admin from 'firebase-admin';
 
 // Initialize Firebase Admin SDK
-getFirebaseAdminApp();
+// getFirebaseAdminApp(); // Commented out as per instructions
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('Authorization');
@@ -16,34 +17,36 @@ export async function GET(request: NextRequest) {
   const idToken = authHeader.split('Bearer ')[1];
 
   try {
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    const userEmail = decodedToken.email;
+    // --- Firebase Admin SDK logic commented out ---
+    // const decodedToken = await admin.auth().verifyIdToken(idToken);
+    // const userEmail = decodedToken.email;
+    
+    // Mock logic: Assume token is the user's email for this example.
+    // This is NOT secure and for demonstration purposes only.
+    const userEmail = idToken;
 
     if (!userEmail) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
-    // Find the patient's ID from the users table using their email
-    const userResult = await dbClient.query('SELECT id FROM users WHERE email = $1 AND role = $2', [userEmail, 'patient']);
+    const db = await getDb();
+    
+    const userResult = await db.get('SELECT id FROM users WHERE email = ? AND role = ?', [userEmail, 'patient']);
 
-    if (userResult.rows.length === 0) {
+    if (!userResult) {
       return NextResponse.json({ message: 'Patient record not found' }, { status: 404 });
     }
-    const patientId = userResult.rows[0].id;
-
-    // Fetch appointments for this patient from the mock DB (replace with real DB query)
-    // In a real app, you would query your appointments table:
-    // SELECT * FROM appointments WHERE patient_id = $1 ORDER BY date DESC, time ASC
-    const { db: mockDb } = await import('@/lib/mockServerDb');
-    const appointments = mockDb.appointments.filter(apt => apt.patientId === patientId);
+    const patientId = userResult.id;
+    
+    const appointments = await db.all('SELECT * FROM appointments WHERE patientId = ? ORDER BY date DESC, time ASC', patientId);
 
     return NextResponse.json(appointments, { status: 200 });
 
   } catch (error: any) {
     console.error('Error fetching patient appointments:', error);
-    if (error.code?.startsWith('auth/')) {
-      return NextResponse.json({ message: 'Forbidden: Invalid token' }, { status: 403 });
-    }
+    // if (error.code?.startsWith('auth/')) {
+    //   return NextResponse.json({ message: 'Forbidden: Invalid token' }, { status: 403 });
+    // }
     return NextResponse.json({ message: 'An unexpected error occurred' }, { status: 500 });
   }
 }

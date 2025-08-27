@@ -1,74 +1,107 @@
 
-// src/lib/db.ts
-import { Pool } from 'pg';
+import { open } from 'sqlite';
+import sqlite3 from 'sqlite3';
+import path from 'path';
+import {
+  mockAppointments,
+  mockPatients,
+  mockStaff,
+  mockTreatmentPlans,
+  mockProgressNotes,
+  mockInvoices,
+} from './mockData';
+import type { UserAuth } from './mockServerDb';
 
-// IMPORTANT: Configure your database connection details here,
-// preferably using environment variables.
-// Example for local development (ensure you have a .env.local file):
-// DATABASE_URL=postgres://youruser:yourpassword@localhost:5432/yourdatabase
+let db = null;
 
-let pool: Pool;
-
-function getDbClient() {
-  if (!pool) {
-    console.log("Attempting to create new DB connection pool...");
-    const connectionString = process.env.DATABASE_URL;
-
-    if (!connectionString) {
-      console.error("DATABASE_URL environment variable is not set.");
-      // In a real app, you might throw an error here or handle it gracefully.
-      // For now, we'll let operations fail if the DB isn't configured.
-      // This mock client will allow the code to run without crashing immediately
-      // if DATABASE_URL is not set, but DB operations will fail.
-      return {
-        query: async (text: string, params?: any[]) => {
-          console.error("Database client not initialized. Query will fail:", text, params);
-          throw new Error("Database client not initialized. Set DATABASE_URL.");
-        },
-        connect: async () => {
-          console.error("Database client not initialized. Cannot connect.");
-          throw new Error("Database client not initialized. Set DATABASE_URL.");
-        }
-      } as unknown as Pool; // Type assertion for mock
+export async function getDb() {
+    if (!db) {
+        const dbPath = path.join(process.cwd(), 'dev.db');
+        db = await open({
+            filename: dbPath,
+            driver: sqlite3.Database,
+        });
+        await setupDb(db);
     }
-
-    pool = new Pool({
-      connectionString,
-      // You might want to add SSL configuration for production connections to Cloud SQL
-      // ssl: {
-      //   rejectUnauthorized: false, // Or configure CA certs
-      // },
-    });
-
-    pool.on('connect', () => {
-      console.log('Connected to PostgreSQL database!');
-    });
-
-    pool.on('error', (err) => {
-      console.error('Unexpected error on idle client', err);
-      // process.exit(-1); // Or handle more gracefully
-    });
-  }
-  return pool;
+    return db;
 }
 
-// Export a client object that can be used to query the database
-export const dbClient = {
-  query: (text: string, params?: any[]) => {
-    const client = getDbClient();
-    return client.query(text, params);
-  },
-  // You can add more specific helper functions here if needed
-  // e.g., for transactions
-};
+async function setupDb(db) {
+  const userTableExists = await db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name='users'`);
 
-// Test connection (optional, call this at app startup if needed)
-export async function testDbConnection() {
-  try {
-    const client = getDbClient();
-    await client.query('SELECT NOW()');
-    console.log('Database connection test successful.');
-  } catch (error) {
-    console.error('Database connection test failed:', error);
+  if (!userTableExists) {
+    console.log("Creating database schema...");
+    await db.exec(`
+      CREATE TABLE users (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          email TEXT UNIQUE NOT NULL,
+          passwordHash TEXT,
+          role TEXT NOT NULL CHECK(role IN ('patient', 'doctor', 'staff', 'hygienist', 'admin', 'assistant')),
+          dateOfBirth TEXT,
+          phone TEXT,
+          age INTEGER,
+          medicalRecords TEXT,
+          xrayImageUrls TEXT,
+          hasDiabetes BOOLEAN,
+          hasHighBloodPressure BOOLEAN,
+          hasStrokeOrHeartAttackHistory BOOLEAN,
+          hasBleedingDisorders BOOLEAN,
+          hasAllergy BOOLEAN,
+          allergySpecifics TEXT,
+          hasAsthma BOOLEAN,
+          createdAt TEXT,
+          updatedAt TEXT,
+          resetToken TEXT,
+          resetTokenExpiry TEXT
+      );
+
+      CREATE TABLE appointments (
+          id TEXT PRIMARY KEY,
+          patientId TEXT NOT NULL,
+          patientName TEXT,
+          doctorId TEXT NOT NULL,
+          doctorName TEXT,
+          date TEXT NOT NULL,
+          time TEXT NOT NULL,
+          type TEXT NOT NULL,
+          status TEXT NOT NULL,
+          notes TEXT,
+          FOREIGN KEY (patientId) REFERENCES users(id),
+          FOREIGN KEY (doctorId) REFERENCES users(id)
+      );
+      
+      -- Add more table creation statements here as needed
+    `);
+    console.log("Schema created. Seeding database...");
+    await seedDb(db);
+    console.log("Database seeded.");
+  }
+}
+
+async function seedDb(db) {
+    const userInsert = await db.prepare('INSERT INTO users (id, name, email, role, passwordHash, phone, dateOfBirth, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    for (const staff of mockStaff) {
+        let userAuthRole: UserAuth['role'] = 'staff';
+        if (staff.role === 'Dentist') userAuthRole = 'doctor';
+        else if (staff.role === 'Hygienist') userAuthRole = 'hygienist';
+        await userInsert.run(staff.id, staff.name, staff.email, userAuthRole, `$2a$10$mockPasswordFor${staff.id}`, null, null, new Date().toISOString(), new Date().toISOString());
+    }
+    for (const patient of mockPatients) {
+        await userInsert.run(patient.id, patient.name, patient.email, 'patient', null, patient.phone, patient.dateOfBirth, new Date().toISOString(), new Date().toISOString());
+    }
+    await userInsert.finalize();
+
+    const apptInsert = await db.prepare('INSERT INTO appointments (id, patientId, patientName, doctorId, doctorName, date, time, type, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    for (const appt of mockAppointments) {
+        await apptInsert.run(appt.id, appt.patientId, appt.patientName, appt.doctorId, appt.doctorName, appt.date, appt.time, appt.type, appt.status);
+    }
+    await apptInsert.finalize();
+}
+
+export const dbClient = {
+  getDb,
+  generateId: (prefix = 'id_') => {
+    return prefix + Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
   }
 }

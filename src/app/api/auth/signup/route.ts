@@ -4,7 +4,9 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
-import { db, generateId, type UserAuth } from '@/lib/mockServerDb'; 
+import { generateId } from '@/lib/mockServerDb'; 
+import type { UserAuth } from '@/lib/mockServerDb';
+import { getDb } from '@/lib/db';
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters long" }),
@@ -16,6 +18,7 @@ const signupSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    const db = await getDb();
     const body = await request.json();
     const validation = signupSchema.safeParse(body);
 
@@ -24,42 +27,45 @@ export async function POST(request: NextRequest) {
     }
 
     const { name, email, password, phone, dateOfBirth } = validation.data;
+    
+    const existingUser = await db.get('SELECT * FROM users WHERE email = ?', email);
 
-    const existingUser = db.users.find(u => u.email === email);
     if (existingUser) {
-      // If user exists but has no password, let them "claim" the account by setting a password.
       if (!existingUser.passwordHash) {
          const saltRounds = 10;
-         existingUser.passwordHash = await bcrypt.hash(password, saltRounds);
-         existingUser.name = name; // Update name as they might have been pre-registered with a different one
-         existingUser.updatedAt = new Date().toISOString();
+         const passwordHash = await bcrypt.hash(password, saltRounds);
+         await db.run(
+           'UPDATE users SET passwordHash = ?, name = ?, updatedAt = ? WHERE id = ?',
+           passwordHash, name, new Date().toISOString(), existingUser.id
+         );
          
-         const { passwordHash: _, ...userToReturn } = existingUser;
+         const updatedUser = await db.get('SELECT * FROM users WHERE id = ?', existingUser.id);
+         const { passwordHash: _, ...userToReturn } = updatedUser;
          return NextResponse.json({ message: "Account activated successfully", user: userToReturn }, { status: 200 });
       } else {
-        // User exists and already has a password.
         return NextResponse.json({ message: "User with this email already exists" }, { status: 409 });
       }
     }
 
-    // User does not exist, create a new one.
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
-    const role = 'patient'; 
     const newUser: UserAuth = {
       id: generateId('user_'),
       name,
       email,
       passwordHash,
-      role,
+      role: 'patient', 
       phone,
       dateOfBirth,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
-    db.users.push(newUser);
+    await db.run(
+        'INSERT INTO users (id, name, email, passwordHash, role, phone, dateOfBirth, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        newUser.id, newUser.name, newUser.email, newUser.passwordHash, newUser.role, newUser.phone, newUser.dateOfBirth, newUser.createdAt, newUser.updatedAt
+    );
 
     const { passwordHash: _, ...userToReturn } = newUser;
 

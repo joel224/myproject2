@@ -3,9 +3,9 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { db, generateId, authorize } from '@/lib/mockServerDb';
-import type { UserAuth } from '@/lib/mockServerDb';
+import { generateId, authorize, type UserAuth } from '@/lib/mockServerDb';
 import type { StaffMember } from '@/lib/types';
+import { getDb } from '@/lib/db';
 
 const staffRoleEnum = z.enum(['Dentist', 'Hygienist', 'Assistant', 'Receptionist', 'Admin']);
 
@@ -31,6 +31,8 @@ export async function POST(request: NextRequest) {
   // if (!authResult.authorized || !authResult.user) {
   //   return authResult.error;
   // }
+  
+  const db = await getDb();
 
   try {
     const body = await request.json();
@@ -44,9 +46,12 @@ export async function POST(request: NextRequest) {
 
     const emailSuffix = "@dentalhub.com";
     const simpleName = name.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/gi, '');
-    const email = `${simpleName}${db.users.filter(u => u.role !== 'patient').length + 1}${emailSuffix}`;
+    
+    const staffCount = await db.get("SELECT COUNT(*) as count FROM users WHERE role != 'patient'");
+    const email = `${simpleName}${staffCount.count + 1}${emailSuffix}`;
 
-    if (db.users.some(u => u.email === email)) {
+    const existingUser = await db.get("SELECT id FROM users WHERE email = ?", email);
+    if (existingUser) {
         return NextResponse.json({ message: "Generated email already exists, try a slightly different name." }, { status: 409 });
     }
 
@@ -68,14 +73,17 @@ export async function POST(request: NextRequest) {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    db.users.push(newUser);
-
-    // Return data in the StaffMember format
+    
+    await db.run(
+        'INSERT INTO users (id, name, email, passwordHash, role, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        newUser.id, newUser.name, newUser.email, newUser.passwordHash, newUser.role, newUser.createdAt, newUser.updatedAt
+    );
+    
     const newStaffMemberResponse: StaffMember = {
         id: newStaffUserId,
         name,
         email,
-        role: staffMemberRole, // Use the role provided in the request for the response
+        role: staffMemberRole,
     };
 
     return NextResponse.json(newStaffMemberResponse, { status: 201 });
@@ -93,28 +101,42 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const roleQuery = searchParams.get('role') as StaffMember['role'] | null;
   const allUsersQuery = searchParams.get('allUsers');
+  const db = await getDb();
 
   // If ?allUsers=true is passed, return all users regardless of role (for suggestions)
   if (allUsersQuery === 'true') {
-    return NextResponse.json(db.users, { status: 200 });
+    const allUsers = await db.all("SELECT id, name, email, role, phone FROM users");
+    return NextResponse.json(allUsers, { status: 200 });
   }
 
+  let staffUsers: UserAuth[];
 
-  const staffUsers = db.users.filter(user => {
-    const staffMemberRole = mapUserAuthRoleToStaffMemberRole(user.role);
-    if (!staffMemberRole) return false; // Not a staff role
-    if (roleQuery) {
-      return staffMemberRole.toLowerCase() === roleQuery.toLowerCase();
-    }
-    return true; // Include all staff/doctor roles if no specific role is queried
-  });
-
-  let staffList: StaffMember[] = staffUsers.map(user => ({
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: mapUserAuthRoleToStaffMemberRole(user.role) as StaffMember['role'], // Type assertion after filtering nulls
-  }));
+  if (roleQuery) {
+      let roleInDb: UserAuth['role'] | null = null;
+      if (roleQuery === 'Dentist') roleInDb = 'doctor';
+      else if (roleQuery === 'Hygienist') roleInDb = 'hygienist';
+      
+      if (roleInDb) {
+        staffUsers = await db.all("SELECT * FROM users WHERE role = ?", roleInDb);
+      } else {
+        staffUsers = await db.all("SELECT * FROM users WHERE role NOT IN ('patient') AND role = ?", roleQuery.toLowerCase());
+      }
+  } else {
+    staffUsers = await db.all("SELECT * FROM users WHERE role != 'patient'");
+  }
+  
+  let staffList: StaffMember[] = staffUsers
+    .map(user => {
+      const staffRole = mapUserAuthRoleToStaffMemberRole(user.role);
+      if (!staffRole) return null;
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: staffRole,
+      };
+    })
+    .filter((s): s is StaffMember => s !== null);
   
   staffList.sort((a, b) => a.name.localeCompare(b.name));
 

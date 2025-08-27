@@ -1,11 +1,13 @@
+
 // src/app/api/patients/route.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { db, generateId } from '@/lib/mockServerDb'; 
+import { generateId } from '@/lib/mockServerDb'; 
 import bcrypt from 'bcryptjs';
 import type { Patient } from '@/lib/types';
 import type { UserAuth } from '@/lib/mockServerDb';
+import { getDb } from '@/lib/db';
 
 const createPatientSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -27,11 +29,12 @@ const createPatientSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const patientUsers = db.users.filter(u => u.role === 'patient');
+    const db = await getDb();
+    const patientUsers = await db.all("SELECT * FROM users WHERE role = 'patient'");
     
     const patientsList: Patient[] = patientUsers.map(user => {
       const { passwordHash, ...patientData } = user;
-      return patientData as Patient; // Cast to Patient type after removing password hash
+      return patientData as Patient;
     });
 
     return NextResponse.json(patientsList, { status: 200 });
@@ -41,9 +44,9 @@ export async function GET(request: NextRequest) {
   }
 }
 
-
 export async function POST(request: NextRequest) {
   try {
+    const db = await getDb();
     const body = await request.json();
     const validation = createPatientSchema.safeParse(body);
 
@@ -59,19 +62,40 @@ export async function POST(request: NextRequest) {
         passwordHash = await bcrypt.hash(patientData.password, saltRounds);
     }
 
-    const existingUserIndex = db.users.findIndex(u => u.email === patientData.email);
+    const existingUser = await db.get('SELECT * FROM users WHERE email = ?', patientData.email);
 
-    if (existingUserIndex !== -1) {
+    if (existingUser) {
       // User exists, update their record with patient details
-      const existingUser = db.users[existingUserIndex];
-      const updatedUser: UserAuth = {
-        ...existingUser,
-        role: 'patient', // Ensure role is patient
-        ...patientData, // Overwrite with new patient data
-        passwordHash: passwordHash || existingUser.passwordHash, // Use new password if set
-        updatedAt: new Date().toISOString(),
-      };
-      db.users[existingUserIndex] = updatedUser;
+      const updateUserStmt = `
+        UPDATE users SET
+          name = ?, role = ?, phone = ?, dateOfBirth = ?, age = ?, medicalRecords = ?, 
+          xrayImageUrls = ?, hasDiabetes = ?, hasHighBloodPressure = ?, 
+          hasStrokeOrHeartAttackHistory = ?, hasBleedingDisorders = ?, hasAllergy = ?, 
+          allergySpecifics = ?, hasAsthma = ?, passwordHash = ?, updatedAt = ?
+        WHERE id = ?
+      `;
+      await db.run(
+        updateUserStmt,
+        patientData.name,
+        'patient', // Ensure role is patient
+        patientData.phone,
+        patientData.dateOfBirth,
+        patientData.age,
+        patientData.medicalRecords,
+        JSON.stringify(patientData.xrayImageUrls || []),
+        patientData.hasDiabetes,
+        patientData.hasHighBloodPressure,
+        patientData.hasStrokeOrHeartAttackHistory,
+        patientData.hasBleedingDisorders,
+        patientData.hasAllergy,
+        patientData.allergySpecifics,
+        patientData.hasAsthma,
+        passwordHash || existingUser.passwordHash,
+        new Date().toISOString(),
+        existingUser.id
+      );
+
+      const updatedUser = await db.get('SELECT * FROM users WHERE id = ?', existingUser.id);
       const { passwordHash: _, ...userToReturn } = updatedUser;
       return NextResponse.json({ message: "Existing user updated to patient", user: userToReturn }, { status: 200 });
 
@@ -79,26 +103,31 @@ export async function POST(request: NextRequest) {
       // User does not exist, create a new record
       const newUser: UserAuth = {
           id: generateId('user_'),
-          name: patientData.name,
-          email: patientData.email,
-          passwordHash,
           role: 'patient',
-          phone: patientData.phone,
-          dateOfBirth: patientData.dateOfBirth,
-          age: patientData.age,
-          medicalRecords: patientData.medicalRecords,
-          xrayImageUrls: patientData.xrayImageUrls,
-          hasDiabetes: patientData.hasDiabetes,
-          hasHighBloodPressure: patientData.hasHighBloodPressure,
-          hasStrokeOrHeartAttackHistory: patientData.hasStrokeOrHeartAttackHistory,
-          hasBleedingDisorders: patientData.hasBleedingDisorders,
-          hasAllergy: patientData.hasAllergy,
-          allergySpecifics: patientData.allergySpecifics,
-          hasAsthma: patientData.hasAsthma,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          ...patientData,
+          passwordHash,
+          xrayImageUrls: patientData.xrayImageUrls || [],
       };
-      db.users.push(newUser);
+      
+      const insertUserStmt = `
+        INSERT INTO users (
+          id, name, email, phone, dateOfBirth, age, medicalRecords, xrayImageUrls,
+          hasDiabetes, hasHighBloodPressure, hasStrokeOrHeartAttackHistory, hasBleedingDisorders,
+          hasAllergy, allergySpecifics, hasAsthma, passwordHash, role, createdAt, updatedAt
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+      
+      await db.run(
+        insertUserStmt,
+        newUser.id, newUser.name, newUser.email, newUser.phone, newUser.dateOfBirth, newUser.age,
+        newUser.medicalRecords, JSON.stringify(newUser.xrayImageUrls), newUser.hasDiabetes,
+        newUser.hasHighBloodPressure, newUser.hasStrokeOrHeartAttackHistory, newUser.hasBleedingDisorders,
+        newUser.hasAllergy, newUser.allergySpecifics, newUser.hasAsthma, newUser.passwordHash,
+        newUser.role, newUser.createdAt, newUser.updatedAt
+      );
+
       const { passwordHash: _, ...newPatientResponse } = newUser;
       return NextResponse.json(newPatientResponse, { status: 201 });
     }

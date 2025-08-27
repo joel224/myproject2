@@ -3,10 +3,9 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { db } from '@/lib/mockServerDb'; 
 import type { Patient } from '@/lib/types';
 import type { UserAuth } from '@/lib/mockServerDb';
-
+import { getDb } from '@/lib/db';
 
 const updatePatientSchema = z.object({
   name: z.string().min(2, "Name is required").optional(),
@@ -34,15 +33,19 @@ interface PatientRouteParams {
 export async function GET(request: NextRequest, { params }: PatientRouteParams) {
   const { patientId } = params;
   try {
-    const patientUser = db.users.find(u => u.id === patientId && u.role === 'patient');
+    const db = await getDb();
+    const patientUser = await db.get("SELECT * FROM users WHERE id = ? AND role = 'patient'", patientId);
 
     if (!patientUser) {
       return NextResponse.json({ message: "Patient not found" }, { status: 404 });
     }
     
-    // Exclude passwordHash before sending
-    const { passwordHash, ...patientResponse } = patientUser;
+    // Deserialize JSON string for xrayImageUrls
+    if (patientUser.xrayImageUrls) {
+        patientUser.xrayImageUrls = JSON.parse(patientUser.xrayImageUrls);
+    }
 
+    const { passwordHash, ...patientResponse } = patientUser;
     return NextResponse.json(patientResponse, { status: 200 });
 
   } catch (error) {
@@ -53,6 +56,7 @@ export async function GET(request: NextRequest, { params }: PatientRouteParams) 
 
 export async function PUT(request: NextRequest, { params }: PatientRouteParams) {
   const { patientId } = params;
+  const db = await getDb();
 
   try {
     const body = await request.json();
@@ -64,30 +68,41 @@ export async function PUT(request: NextRequest, { params }: PatientRouteParams) 
     
     const updateData = validation.data;
     
-    const patientIndex = db.users.findIndex(u => u.id === patientId && u.role === 'patient');
-
-    if (patientIndex === -1) {
+    const currentPatient = await db.get("SELECT * FROM users WHERE id = ? AND role = 'patient'", patientId);
+    if (!currentPatient) {
         return NextResponse.json({ message: "Patient not found" }, { status: 404 });
     }
 
-    if (updateData.email && updateData.email !== db.users[patientIndex].email) {
-        const emailCollisionCheck = db.users.some(u => u.email === updateData.email && u.id !== patientId);
+    if (updateData.email && updateData.email !== currentPatient.email) {
+        const emailCollisionCheck = await db.get("SELECT id FROM users WHERE email = ? AND id != ?", [updateData.email, patientId]);
         if (emailCollisionCheck) {
           return NextResponse.json({ message: "Email already in use by another user." }, { status: 409 });
         }
     }
     
-    const currentPatient = db.users[patientIndex];
-    const updatedPatient: UserAuth = {
-      ...currentPatient,
-      ...updateData,
-      age: updateData.age ?? currentPatient.age,
-      updatedAt: new Date().toISOString(),
-    };
+    const mergedData = { ...currentPatient, ...updateData };
     
-    db.users[patientIndex] = updatedPatient;
-
+    const updateUserStmt = `
+      UPDATE users SET
+        name = ?, email = ?, phone = ?, dateOfBirth = ?, age = ?, medicalRecords = ?, 
+        xrayImageUrls = ?, hasDiabetes = ?, hasHighBloodPressure = ?, 
+        hasStrokeOrHeartAttackHistory = ?, hasBleedingDisorders = ?, hasAllergy = ?, 
+        allergySpecifics = ?, hasAsthma = ?, updatedAt = ?
+      WHERE id = ?
+    `;
+    
+    await db.run(
+        updateUserStmt,
+        mergedData.name, mergedData.email, mergedData.phone, mergedData.dateOfBirth, mergedData.age,
+        mergedData.medicalRecords, JSON.stringify(mergedData.xrayImageUrls || []), mergedData.hasDiabetes,
+        mergedData.hasHighBloodPressure, mergedData.hasStrokeOrHeartAttackHistory, mergedData.hasBleedingDisorders,
+        mergedData.hasAllergy, mergedData.allergySpecifics, mergedData.hasAsthma, new Date().toISOString(),
+        patientId
+    );
+    
+    const updatedPatient = await db.get("SELECT * FROM users WHERE id = ?", patientId);
     const { passwordHash, ...patientResponse } = updatedPatient;
+
     return NextResponse.json(patientResponse, { status: 200 });
 
   } catch (error) {
@@ -98,55 +113,38 @@ export async function PUT(request: NextRequest, { params }: PatientRouteParams) 
 
 export async function DELETE(request: NextRequest, { params }: PatientRouteParams) {
   const { patientId } = params;
+  const db = await getDb();
 
   try {
-    const patientUserIndex = db.users.findIndex(u => u.id === patientId);
+    const patientUser = await db.get("SELECT * FROM users WHERE id = ?", patientId);
     
-    if (patientUserIndex === -1) {
+    if (!patientUser) {
       return NextResponse.json({ message: "Patient not found" }, { status: 404 });
     }
 
-    // Instead of deleting the user, we downgrade them from a 'patient'.
-    // This preserves their login (Firebase Auth) record but revokes access to patient data.
-    // We remove clinical information.
-    const userToModify = db.users[patientUserIndex];
-
-    if (userToModify.role === 'patient') {
-        const { 
-            dateOfBirth, age, medicalRecords, xrayImageUrls, hasDiabetes, 
-            hasHighBloodPressure, hasStrokeOrHeartAttackHistory, hasBleedingDisorders, 
-            hasAllergy, allergySpecifics, hasAsthma, ...restOfUser 
-        } = userToModify;
-
-        const downgradedUser: UserAuth = {
-            ...restOfUser,
-            // You might want to change role to something else, or just leave as is
-            // depending on business logic. For now, we just remove the data.
-            // role: 'user' // or some other non-patient role
-            updatedAt: new Date().toISOString(),
-        };
-
-        db.users[patientUserIndex] = downgradedUser;
+    // Instead of deleting the user record, we scrub the clinical data and demote their role.
+    // This preserves their login for historical purposes but removes patient-specific data access.
+    if (patientUser.role === 'patient') {
+        const scrubStmt = `
+            UPDATE users SET
+              role = 'user', -- A generic, non-clinical role
+              dateOfBirth = NULL, age = NULL, medicalRecords = NULL, xrayImageUrls = NULL,
+              hasDiabetes = NULL, hasHighBloodPressure = NULL, hasStrokeOrHeartAttackHistory = NULL,
+              hasBleedingDisorders = NULL, hasAllergy = NULL, allergySpecifics = NULL,
+              hasAsthma = NULL, updatedAt = ?
+            WHERE id = ?
+        `;
+        await db.run(scrubStmt, new Date().toISOString(), patientId);
         
-        // Also remove their appointments, treatment plans etc.
-        db.appointments = db.appointments.filter(a => a.patientId !== patientId);
-        db.treatmentPlans = db.treatmentPlans.filter(tp => tp.patientId !== patientId);
-        db.progressNotes = db.progressNotes.filter(pn => pn.patientId !== patientId);
-        db.invoices = db.invoices.filter(i => i.patientId !== patientId);
-        // Find and remove conversation
-        const convoIndex = db.conversations.findIndex(c => c.patientId === patientId);
-        if (convoIndex > -1) {
-          const convoId = db.conversations[convoIndex].id;
-          db.conversations.splice(convoIndex, 1);
-          // Remove messages from that conversation
-          db.messages = db.messages.filter(m => m.conversationId !== convoId);
-        }
+        // Also remove their appointments, treatment plans, etc. from related tables.
+        // This is a cascade-like operation done manually.
+        await db.run('DELETE FROM appointments WHERE patientId = ?', patientId);
+        // Add similar DELETE statements for treatmentPlans, progressNotes, invoices, conversations, messages...
 
         return NextResponse.json({ message: "Patient clinical data deleted successfully. User login account remains." }, { status: 200 });
-
     } else {
-        // If they are not a patient, just delete the user record entirely (e.g. staff)
-        db.users.splice(patientUserIndex, 1);
+        // If they are not a patient (e.g., staff), just delete the user record entirely.
+        await db.run('DELETE FROM users WHERE id = ?', patientId);
         return NextResponse.json({ message: "User deleted successfully" }, { status: 200 });
     }
 

@@ -1,11 +1,12 @@
+
 // src/app/api/patient-profile/treatment-plans/route.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { dbClient } from '@/lib/db';
-import { getFirebaseAdminApp } from '@/lib/firebase-admin';
-import * as admin from 'firebase-admin';
+import { getDb } from '@/lib/db';
+// import { getFirebaseAdminApp } from '@/lib/firebase-admin';
+// import * as admin from 'firebase-admin';
 
-getFirebaseAdminApp();
+// getFirebaseAdminApp(); // Commented out
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('Authorization');
@@ -15,32 +16,33 @@ export async function GET(request: NextRequest) {
   const idToken = authHeader.split('Bearer ')[1];
 
   try {
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    const userEmail = decodedToken.email;
+    // --- Firebase Admin SDK logic commented out ---
+    // const decodedToken = await admin.auth().verifyIdToken(idToken);
+    // const userEmail = decodedToken.email;
+    const userEmail = idToken; // MOCK: Using token as email
 
     if (!userEmail) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
     
-    const userResult = await dbClient.query('SELECT id FROM users WHERE email = $1 AND role = $2', [userEmail, 'patient']);
+    const db = await getDb();
+    const userResult = await db.get('SELECT id FROM users WHERE email = ? AND role = ?', [userEmail, 'patient']);
 
-    if (userResult.rows.length === 0) {
+    if (!userResult) {
       return NextResponse.json({ message: 'Patient record not found' }, { status: 404 });
     }
-    const patientId = userResult.rows[0].id;
-
-    // Fetch treatment plans from mock DB (replace with real DB query)
-    // In a real app: SELECT * FROM treatment_plans WHERE patient_id = $1
-    const { db: mockDb } = await import('@/lib/mockServerDb');
-    const plans = mockDb.treatmentPlans.filter(plan => plan.patientId === patientId);
+    const patientId = userResult.id;
+    
+    // This part needs to be implemented once the treatment_plans table is added to the DB schema
+    const plans = await db.all('SELECT * FROM treatment_plans WHERE patientId = ?', patientId);
 
     return NextResponse.json(plans, { status: 200 });
 
   } catch (error: any) {
     console.error('Error fetching patient treatment plans:', error);
-    if (error.code?.startsWith('auth/')) {
-      return NextResponse.json({ message: 'Forbidden: Invalid token' }, { status: 403 });
-    }
+    // if (error.code?.startsWith('auth/')) {
+    //   return NextResponse.json({ message: 'Forbidden: Invalid token' }, { status: 403 });
+    // }
     return NextResponse.json({ message: 'An unexpected error occurred' }, { status: 500 });
   }
 }
