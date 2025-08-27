@@ -3,21 +3,23 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getDb } from '@/lib/db';
-import { getFirebaseAdminApp } from '@/lib/firebase-admin';
-import * as admin from 'firebase-admin';
+import { authorize } from '@/lib/mockServerDb';
 import { z } from 'zod';
 import { generateId } from '@/lib/mockServerDb';
 
-getFirebaseAdminApp();
-
 // Helper to find or create a conversation
-async function findOrCreateConversation(patientId: string, patientName?: string) {
+async function findOrCreateConversation(patientId: string, patientName?: string, userId?: string) {
   const db = await getDb();
+  // Find conversation by patientId OR userId (if they don't have a clinical record yet)
   let conversation = await db.get('SELECT * FROM conversations WHERE patientId = ?', patientId);
+  if (!conversation && userId) {
+      conversation = await db.get('SELECT * FROM conversations WHERE patientId = ?', userId);
+  }
+
   if (!conversation) {
     const newConversation = {
       id: generateId('convo_'),
-      patientId,
+      patientId: patientId, // Always use the clinical patientId
       patientName: patientName || 'New Patient',
       lastMessageText: "Conversation started.",
       lastMessageTimestamp: new Date().toISOString(),
@@ -34,38 +36,34 @@ async function findOrCreateConversation(patientId: string, patientName?: string)
 
 
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  const authResult = await authorize(request, 'patient');
+  if (!authResult.authorized || !authResult.user) {
+    return authResult.error || NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
-  const idToken = authHeader.split('Bearer ')[1];
+  
+  const userId = authResult.user.id;
+  const userName = authResult.user.name;
 
   try {
     const db = await getDb();
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    const userId = decodedToken.uid;
-    const userName = decodedToken.name;
-
-    if (!userId) return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     
     const patientResult = await db.get('SELECT id, name FROM patients WHERE userId = ?', userId);
     if (!patientResult) {
-        // No clinical record yet, but they have a login. Create a shell conversation.
-        const conversation = await findOrCreateConversation(userId, userName); // Use userId as patientId for now
+        // No clinical record yet, but they have a login. Create a shell conversation linked to their user ID.
+        const conversation = await findOrCreateConversation(userId, userName, userId);
         return NextResponse.json({ conversation, messages: [] }, { status: 200 });
     }
     
     const patientId = patientResult.id;
     const patientName = patientResult.name;
 
-    const conversation = await findOrCreateConversation(patientId, patientName);
+    const conversation = await findOrCreateConversation(patientId, patientName, userId);
     const messages = await db.all('SELECT * FROM messages WHERE conversationId = ? ORDER BY timestamp ASC', conversation.id);
 
     return NextResponse.json({ conversation, messages }, { status: 200 });
 
   } catch (error: any) {
     console.error('Error fetching patient messages:', error);
-    if (error.code?.startsWith('auth/')) return NextResponse.json({ message: 'Forbidden: Invalid token' }, { status: 403 });
     return NextResponse.json({ message: 'An unexpected error occurred' }, { status: 500 });
   }
 }
@@ -76,18 +74,15 @@ const messageSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  const authResult = await authorize(request, 'patient');
+  if (!authResult.authorized || !authResult.user) {
+    return authResult.error || NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
-  const idToken = authHeader.split('Bearer ')[1];
+  
+  const userId = authResult.user.id;
 
   try {
     const db = await getDb();
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    const userId = decodedToken.uid;
-
-    if (!userId) return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     
     const patientResult = await db.get('SELECT id FROM patients WHERE userId = ?', userId);
     const patientId = patientResult?.id || userId; // Use clinical ID if exists, otherwise fall back to user ID
@@ -124,7 +119,6 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Error sending message:', error);
-    if (error.code?.startsWith('auth/')) return NextResponse.json({ message: 'Forbidden: Invalid token' }, { status: 403 });
     return NextResponse.json({ message: 'An unexpected error occurred' }, { status: 500 });
   }
 }
