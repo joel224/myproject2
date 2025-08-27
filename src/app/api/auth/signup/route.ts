@@ -37,58 +37,91 @@ export async function POST(request: NextRequest) {
 
     const { name, email, password, firebaseUid, provider } = validation.data;
     
-    const existingUser = await db.get('SELECT * FROM users WHERE email = ?', email);
+    // Check if a user with this email already exists in our DB
+    const existingUserInDb = await db.get('SELECT * FROM users WHERE email = ?', email);
 
-    if (existingUser) {
-      // User already exists. This could be an existing staff or another patient.
-      // A more robust system might merge accounts, but for now, we'll prevent duplicates.
-      return NextResponse.json({ message: "An account with this email already exists." }, { status: 409 });
-    }
-
-    let createdUserId: string;
-
-    // Handle social signup vs. email/password
+    // This is the main logic change: handle existing users gracefully
     if (firebaseUid) {
-      // Social Signup: User already exists in Firebase Auth, we just need to create our DB record.
-      createdUserId = firebaseUid;
+        // This is a SOCIAL SIGNUP flow
+        if (existingUserInDb) {
+            // User exists in our DB, just ensure Firebase UID is linked if it's not already.
+            // This is a case of "Log in with Google" for an existing email.
+            // The Firebase UID should already match if they were created via our system.
+        } else {
+            // New social user. Create records in our DB.
+            const now = new Date().toISOString();
+            await db.run(
+                'INSERT INTO users (id, name, email, role, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
+                firebaseUid, name, email, 'patient', now, now
+            );
+            const newPatientId = generateId('pat_');
+            await db.run(
+                'INSERT INTO patients (id, userId, name, email, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
+                newPatientId, firebaseUid, name, email, now, now
+            );
+        }
+
     } else {
-      // Email/Password Signup
-      if (!password) {
-          return NextResponse.json({ message: "Password is required for email signup" }, { status: 400 });
-      }
+        // This is an EMAIL/PASSWORD SIGNUP flow
+        if (!password) {
+            return NextResponse.json({ message: "Password is required for email signup" }, { status: 400 });
+        }
 
-      // 1. Create user in Firebase Auth
-      const firebaseUserRecord = await admin.auth().createUser({
-          email: email,
-          password: password,
-          displayName: name,
-      });
-      createdUserId = firebaseUserRecord.uid;
+        if (existingUserInDb) {
+            // User already exists (e.g., created by staff). Update their Firebase account with the new password.
+            try {
+                await admin.auth().updateUser(existingUserInDb.id, {
+                    password: password,
+                    displayName: name,
+                });
+            } catch (error: any) {
+                 if (error.code === 'auth/user-not-found') {
+                    // This is a rare edge case where our DB has a user but Firebase doesn't.
+                    // We can try to recover by creating the Firebase user now.
+                    const firebaseUserRecord = await admin.auth().createUser({
+                        uid: existingUserInDb.id, // Re-use our existing ID
+                        email: email,
+                        password: password,
+                        displayName: name,
+                    });
+                 } else {
+                    // Re-throw other Firebase errors
+                    throw error;
+                 }
+            }
+        } else {
+            // This is a brand new user. Create them in Firebase Auth and our DB.
+            const firebaseUserRecord = await admin.auth().createUser({
+                email: email,
+                password: password,
+                displayName: name,
+            });
+            const createdUserId = firebaseUserRecord.uid;
+            
+            const now = new Date().toISOString();
+            await db.run(
+                'INSERT INTO users (id, name, email, role, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
+                createdUserId, name, email, 'patient', now, now
+            );
+            
+            const newPatientId = generateId('pat_');
+            await db.run(
+                'INSERT INTO patients (id, userId, name, email, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
+                newPatientId, createdUserId, name, email, now, now
+            );
+        }
     }
-
-    // 2. Create user in our SQLite DB users table
-    const now = new Date().toISOString();
-    await db.run(
-        'INSERT INTO users (id, name, email, role, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
-        createdUserId, name, email, 'patient', now, now
-    );
     
-    // Also create a corresponding patient record
-    const newPatientId = generateId('pat_');
-    await db.run(
-        'INSERT INTO patients (id, userId, name, email, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
-        newPatientId, createdUserId, name, email, now, now
-    );
+    // By this point, the user should exist and be set up. Return success.
+    // For email signups, we don't return the user object to enforce login.
+    return NextResponse.json({ message: "User account is ready." }, { status: 200 });
 
-    const userToReturn = await db.get('SELECT id, name, email, role FROM users WHERE id = ?', createdUserId);
-
-    return NextResponse.json({ message: "User registered successfully", user: userToReturn }, { status: 201 });
 
   } catch (error: any) {
     console.error('Signup API error:', error);
     if (error.code === 'auth/email-already-exists' || error.code === 'auth/email-already-in-use') {
-        return NextResponse.json({ message: "An account with this email address already exists." }, { status: 409 });
+        return NextResponse.json({ message: "An account with this email address already exists in our system. Please try logging in or resetting your password." }, { status: 409 });
     }
-    return NextResponse.json({ message: "An unexpected error occurred", details: error.message }, { status: 500 });
+    return NextResponse.json({ message: "An unexpected server error occurred.", details: error.message }, { status: 500 });
   }
 }
