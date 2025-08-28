@@ -2,7 +2,7 @@
 // src/app/api/patients/[patientId]/route.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { z } from 'zod';
+import { z, ZodError } from 'zod';
 import { getDb } from '@/lib/db';
 
 const updatePatientSchema = z.object({
@@ -67,6 +67,7 @@ export async function PUT(request: NextRequest, { params }: PatientRouteParams) 
     const validation = updatePatientSchema.safeParse(body);
 
     if (!validation.success) {
+      // This part now provides detailed Zod errors
       return NextResponse.json({ message: "Validation failed", errors: validation.error.flatten().fieldErrors }, { status: 400 });
     }
     
@@ -115,6 +116,12 @@ export async function PUT(request: NextRequest, { params }: PatientRouteParams) 
     return NextResponse.json(updatedPatient, { status: 200 });
 
   } catch (error) {
+    if (error instanceof ZodError) {
+      return NextResponse.json({
+        message: 'Validation failed',
+        errors: error.issues, // Zod's error issues provide great detail
+      }, { status: 400 });
+    }
     console.error(`Error updating patient ${patientId}:`, error);
     return NextResponse.json({ message: 'Error updating patient' }, { status: 500 });
   }

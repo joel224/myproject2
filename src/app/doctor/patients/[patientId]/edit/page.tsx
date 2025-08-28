@@ -162,27 +162,22 @@ export default function EditPatientPage() {
       }
     }
     
-    const { id, userId, ...patientDataToSubmit } = {
-        name: formData.name,
-        email: formData.email,
+    // Create a clean data object for submission, excluding extra fields
+    const { id, userId, ...updateData } = {
+        ...formData,
         phone: formData.phone?.trim() === '' ? null : formData.phone,
         dateOfBirth: formData.dateOfBirth?.trim() === '' ? null : formData.dateOfBirth,
         age: formData.age === '' || formData.age === null || formData.age === undefined ? null : parseInt(formData.age, 10),
         medicalRecords: formData.medicalRecords?.trim() === '' ? null : formData.medicalRecords,
-        hasDiabetes: formData.hasDiabetes,
-        hasHighBloodPressure: formData.hasHighBloodPressure,
-        hasStrokeOrHeartAttackHistory: formData.hasStrokeOrHeartAttackHistory,
-        hasBleedingDisorders: formData.hasBleedingDisorders,
-        hasAllergy: formData.hasAllergy,
         allergySpecifics: formData.hasAllergy ? (formData.allergySpecifics?.trim() === '' ? null : formData.allergySpecifics) : null,
-        hasAsthma: formData.hasAsthma,
+        xrayImageUrls: finalXrayImageUrls,
     };
     
     try {
       const response = await fetch(`/api/patients/${patientId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(patientDataToSubmit),
+        body: JSON.stringify(updateData),
       });
       const data = await response.json();
       if (!response.ok) {
