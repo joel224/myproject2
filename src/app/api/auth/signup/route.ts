@@ -29,40 +29,39 @@ export async function POST(request: NextRequest) {
     const existingUser = await db.get('SELECT id, passwordHash FROM users WHERE email = ?', email);
 
     if (existingUser) {
-      // User exists. Check if they have a password.
       if (existingUser.passwordHash) {
-        // User exists and has a password. They should log in.
         return NextResponse.json({ message: "An account with this email address already exists. Please log in." }, { status: 409 });
       } else {
-        // User exists but has no password (created by staff). Let's set their password.
         const hashedPassword = await bcrypt.hash(password, 10);
         await db.run(
           'UPDATE users SET name = ?, passwordHash = ?, updatedAt = ? WHERE id = ?',
           name, hashedPassword, now, existingUser.id
         );
         
-        // Also update the name in the corresponding patients table if it exists
+        // Also update the name in the corresponding patients table if it exists.
+        // This is important for consistency if the user was created by staff with a placeholder name.
         await db.run('UPDATE patients SET name = ? WHERE userId = ?', name, existingUser.id);
         
         return NextResponse.json({ message: "Account activated! Your password has been set. You can now log in." }, { status: 200 });
       }
     } else {
-      // User does not exist. Create a new user and a new patient record.
       const hashedPassword = await bcrypt.hash(password, 10);
       const newUserId = generateId('user_');
 
+      // Create the user record
       await db.run(
           'INSERT INTO users (id, name, email, role, passwordHash, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
           newUserId, name, email, 'patient', hashedPassword, now, now
       );
       
+      // Also create the corresponding patient clinical record
       const newPatientId = generateId('pat_');
       await db.run(
           'INSERT INTO patients (id, userId, name, email, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
           newPatientId, newUserId, name, email, now, now
       );
       
-      return NextResponse.json({ message: "User account created successfully." }, { status: 201 });
+      return NextResponse.json({ message: "User account and patient record created successfully." }, { status: 201 });
     }
 
   } catch (error: any) {

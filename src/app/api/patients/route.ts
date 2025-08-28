@@ -49,27 +49,24 @@ export async function POST(request: NextRequest) {
 
     const patientData = validation.data;
     
-    // Check if a patient with this email already has a clinical record
     const existingPatient = await db.get('SELECT id FROM patients WHERE email = ?', patientData.email);
     if (existingPatient) {
         return NextResponse.json({ message: "A patient with this email already has a clinical record." }, { status: 409 });
     }
     
-    // Check if a user login with this email already exists
     let user = await db.get('SELECT id FROM users WHERE email = ?', patientData.email);
     let userId: string;
     const now = new Date().toISOString();
 
     if (user) {
-        // User login exists, link the new clinical record to them
         userId = user.id;
-        // Optionally update the user's details if a password is provided by staff
+        // If an existing user is found and a password is provided in the form,
+        // it implies staff might be setting/updating credentials for them.
         if (patientData.password) {
             const hashedPassword = await bcrypt.hash(patientData.password, 10);
             await db.run('UPDATE users SET passwordHash = ? WHERE id = ?', hashedPassword, userId);
         }
     } else {
-        // No user login exists, create a new one
         userId = generateId('user_');
         const hashedPassword = patientData.password ? await bcrypt.hash(patientData.password, 10) : null;
         
@@ -79,7 +76,6 @@ export async function POST(request: NextRequest) {
         );
     }
     
-    // Create the patient clinical record, linked to the user ID
     const newPatientId = generateId('pat_');
     const insertPatientStmt = `
       INSERT INTO patients (
@@ -102,9 +98,8 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Error creating patient:', error);
-    // Handle potential UNIQUE constraint error for email in users table, though our logic should prevent it.
-    if (error.code === 'SQLITE_CONSTRAINT') {
-       return NextResponse.json({ message: "A user with this email already exists." }, { status: 409 });
+    if (error.code === 'SQLITE_CONSTRAINT' && error.message.includes('users.email')) {
+       return NextResponse.json({ message: "A user account with this email already exists." }, { status: 409 });
     }
     return NextResponse.json({ message: 'Error creating patient', details: error.message }, { status: 500 });
   }
