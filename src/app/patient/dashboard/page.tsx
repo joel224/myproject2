@@ -3,8 +3,6 @@
 'use client';
 
 import { useEffect, useState, useCallback, FormEvent, useRef } from 'react';
-import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth } from '@/lib/firebase';
 import type { Patient, Appointment, TreatmentPlan, Invoice, Message, Conversation } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -30,7 +28,6 @@ type DashboardData = {
 };
 
 export default function PatientDashboardPage() {
-  const [user, loadingAuth, authError] = useAuthState(auth);
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +41,7 @@ export default function PatientDashboardPage() {
     setIsLoading(true);
     setError(null);
     try {
+      // THIS IS THE CRUCIAL FIX: Ensure cookies are sent with every fetch request.
       const fetchOptions = { credentials: 'include' as RequestCredentials };
       
       const [profileRes, appointmentsRes, plansRes, invoicesRes, messagesRes] = await Promise.all([
@@ -83,18 +81,9 @@ export default function PatientDashboardPage() {
   }, []);
 
   useEffect(() => {
-    // This hook just checks for a Firebase auth state change on the client.
-    // The actual data fetching is triggered below and relies on the httpOnly cookie.
-    if (loadingAuth) return;
-    if (authError) {
-      setError("An authentication error occurred. Please try logging in again.");
-      setIsLoading(false);
-      return;
-    }
-    // We don't need to wait for a Firebase user if we are relying on the httpOnly cookie.
-    // The presence of the cookie is what matters for our backend API.
+    // The httpOnly cookie is the source of truth, so we fetch data immediately.
     fetchData();
-  }, [loadingAuth, authError, fetchData]);
+  }, [fetchData]);
 
 
   useEffect(() => {
@@ -104,7 +93,7 @@ export default function PatientDashboardPage() {
 
   const handleSendMessage = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!newMessageText.trim() || !user || !data?.conversation) return;
+    if (!newMessageText.trim() || !data?.conversation) return;
 
     setIsSendingMessage(true);
     try {
@@ -117,7 +106,7 @@ export default function PatientDashboardPage() {
                 conversationId: data.conversation.id,
                 text: newMessageText.trim(),
             }),
-            credentials: 'include',
+            credentials: 'include', // Ensure cookie is sent here too
         });
 
         const newMessage: Message = await response.json();
