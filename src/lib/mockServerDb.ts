@@ -40,26 +40,40 @@ export function generateId(prefix: string = 'id_') {
 export async function authorize(req: NextRequest, requiredRole?: UserAuth['role'] | UserAuth['role'][]) {
   const sessionToken = req.cookies.get('sessionToken')?.value;
 
+  // --- Start Enhanced Debug Logging ---
+  console.log('--- Authorize Function Called ---');
+  console.log('Request URL:', req.url);
+  // Log all cookies to see what the server is receiving
+  const allCookies = req.cookies.getAll();
+  if (allCookies.length > 0) {
+    console.log('All Cookies Received:', allCookies);
+  } else {
+    console.log('No cookies received by the server.');
+  }
+  console.log('Attempting to find "sessionToken":', sessionToken ? `FOUND (value: ${sessionToken.substring(0, 15)}...)` : 'NOT FOUND');
+  // --- End Enhanced Debug Logging ---
+
+
   if (!sessionToken) {
-    return { authorized: false, user: null, error: NextResponse.json({ message: 'Unauthorized: No session token' }, { status: 401 }) };
+    return { authorized: false, user: null, error: NextResponse.json({ message: 'Unauthorized: No session token provided in request.' }, { status: 401 }) };
   }
 
   const [userIdFromToken, userRoleFromToken] = sessionToken.split(':');
   if (!userIdFromToken || !userRoleFromToken) {
-      return { authorized: false, user: null, error: NextResponse.json({ message: 'Unauthorized: Invalid session token format' }, { status: 401 }) };
+      return { authorized: false, user: null, error: NextResponse.json({ message: 'Unauthorized: Invalid session token format.' }, { status: 401 }) };
   }
 
   const db = await getDb();
   const user = await db.get('SELECT * FROM users WHERE id = ?', userIdFromToken);
 
   if (!user) {
-    return { authorized: false, user: null, error: NextResponse.json({ message: 'Unauthorized: Invalid session' }, { status: 401 }) };
+    return { authorized: false, user: null, error: NextResponse.json({ message: 'Unauthorized: Session user not found in database.' }, { status: 401 }) };
   }
 
   const rolesToCheck = Array.isArray(requiredRole) ? requiredRole : (requiredRole ? [requiredRole] : []);
 
   if (rolesToCheck.length > 0 && !rolesToCheck.includes(user.role)) {
-    return { authorized: false, user: null, error: NextResponse.json({ message: 'Forbidden: Insufficient permissions' }, { status: 403 }) };
+    return { authorized: false, user: null, error: NextResponse.json({ message: `Forbidden: Your role ('${user.role}') does not have permission.` }, { status: 403 }) };
   }
 
   // Type assertion to match UserAuth interface

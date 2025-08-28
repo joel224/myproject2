@@ -53,7 +53,11 @@ export default function PatientDashboardPage() {
         fetch('/api/patient-profile/messages'),
       ]);
 
-      if (!profileRes.ok) throw new Error((await profileRes.json()).message || 'Failed to fetch profile.');
+      if (!profileRes.ok) {
+          const errorData = await profileRes.json();
+          // This will now capture the more detailed error from our updated authorize function
+          throw new Error(errorData.message || 'Failed to fetch profile.');
+      }
       
       const profileData: Patient = await profileRes.json();
       const appointmentsData = appointmentsRes.ok ? await appointmentsRes.json() : [];
@@ -71,6 +75,7 @@ export default function PatientDashboardPage() {
       });
 
     } catch (err: any) {
+      console.error("Error in fetchData:", err);
       setError(err.message);
     } finally {
       setIsLoading(false);
@@ -78,18 +83,11 @@ export default function PatientDashboardPage() {
   }, []);
 
   useEffect(() => {
-    // We can rely on the cookie for auth, but the firebase hook can still be used
-    // to gate the page or show a loading state while checking the user's browser session.
     if (loadingAuth) return;
     if (authError) {
       setError(authError.message);
       setIsLoading(false);
       return;
-    }
-    // A simple check on page load to ensure there's a user session.
-    if (!user) {
-       // The authorize function in the API will handle the actual unauthorized case.
-       // This can be a backup or a way to redirect early.
     }
     fetchData();
   }, [user, loadingAuth, authError, fetchData]);
@@ -109,7 +107,6 @@ export default function PatientDashboardPage() {
             method: 'POST',
             headers: { 
               'Content-Type': 'application/json',
-              // No 'Authorization' header needed, cookie is sent automatically
             },
             body: JSON.stringify({
                 conversationId: data.conversation.id,
