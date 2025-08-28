@@ -162,8 +162,7 @@ export default function EditPatientPage() {
       }
     }
     
-    // Create a clean data object for submission, excluding extra fields
-    const { id, userId, ...updateData } = {
+    const patientDataWithTypes = {
         ...formData,
         phone: formData.phone?.trim() === '' ? null : formData.phone,
         dateOfBirth: formData.dateOfBirth?.trim() === '' ? null : formData.dateOfBirth,
@@ -172,6 +171,9 @@ export default function EditPatientPage() {
         allergySpecifics: formData.hasAllergy ? (formData.allergySpecifics?.trim() === '' ? null : formData.allergySpecifics) : null,
         xrayImageUrls: finalXrayImageUrls,
     };
+
+    // Create a clean data object for submission, excluding extra fields
+    const { id, userId, ...updateData } = patientDataWithTypes;
     
     try {
       const response = await fetch(`/api/patients/${patientId}`, {
@@ -181,13 +183,13 @@ export default function EditPatientPage() {
       });
       const data = await response.json();
       if (!response.ok) {
-        console.error("RAW ERROR RESPONSE:", data); // Print raw error
         throw new Error(data.message || (data.errors ? JSON.stringify(data.errors, null, 2) : "Failed to update patient"));
       }
 
       toast({ title: "Patient Updated!", description: `${data.name}'s details have been successfully updated.` });
       router.push(`/doctor/patients/${patientId}`); 
     } catch (err: any) {
+      console.error("RAW ERROR RESPONSE:", err); // Log the full raw error
       toast({ variant: "destructive", title: "Error Updating Patient", description: err.message });
     } finally {
       setIsSubmitting(false);
