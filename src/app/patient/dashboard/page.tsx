@@ -44,18 +44,18 @@ export default function PatientDashboardPage() {
     setIsLoading(true);
     setError(null);
     try {
-      // The browser will automatically send the session cookie, so no explicit auth header is needed here.
+      const fetchOptions = { credentials: 'include' as RequestCredentials };
+      
       const [profileRes, appointmentsRes, plansRes, invoicesRes, messagesRes] = await Promise.all([
-        fetch('/api/patient-profile'),
-        fetch('/api/patient-profile/appointments'),
-        fetch('/api/patient-profile/treatment-plans'),
-        fetch('/api/patient-profile/invoices'),
-        fetch('/api/patient-profile/messages'),
+        fetch('/api/patient-profile', fetchOptions),
+        fetch('/api/patient-profile/appointments', fetchOptions),
+        fetch('/api/patient-profile/treatment-plans', fetchOptions),
+        fetch('/api/patient-profile/invoices', fetchOptions),
+        fetch('/api/patient-profile/messages', fetchOptions),
       ]);
 
       if (!profileRes.ok) {
           const errorData = await profileRes.json();
-          // This will now capture the more detailed error from our updated authorize function
           throw new Error(errorData.message || 'Failed to fetch profile.');
       }
       
@@ -83,14 +83,19 @@ export default function PatientDashboardPage() {
   }, []);
 
   useEffect(() => {
+    // This hook just checks for a Firebase auth state change on the client.
+    // The actual data fetching is triggered below and relies on the httpOnly cookie.
     if (loadingAuth) return;
     if (authError) {
-      setError(authError.message);
+      setError("An authentication error occurred. Please try logging in again.");
       setIsLoading(false);
       return;
     }
+    // We don't need to wait for a Firebase user if we are relying on the httpOnly cookie.
+    // The presence of the cookie is what matters for our backend API.
     fetchData();
-  }, [user, loadingAuth, authError, fetchData]);
+  }, [loadingAuth, authError, fetchData]);
+
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -112,6 +117,7 @@ export default function PatientDashboardPage() {
                 conversationId: data.conversation.id,
                 text: newMessageText.trim(),
             }),
+            credentials: 'include',
         });
 
         const newMessage: Message = await response.json();
