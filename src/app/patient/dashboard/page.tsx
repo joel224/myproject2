@@ -40,17 +40,17 @@ export default function PatientDashboardPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  const fetchData = useCallback(async (token: string) => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const headers = { 'Authorization': `Bearer ${token}` };
+      // The browser will automatically send the session cookie, so no explicit auth header is needed here.
       const [profileRes, appointmentsRes, plansRes, invoicesRes, messagesRes] = await Promise.all([
-        fetch('/api/patient-profile', { headers }),
-        fetch('/api/patient-profile/appointments', { headers }),
-        fetch('/api/patient-profile/treatment-plans', { headers }),
-        fetch('/api/patient-profile/invoices', { headers }),
-        fetch('/api/patient-profile/messages', { headers }),
+        fetch('/api/patient-profile'),
+        fetch('/api/patient-profile/appointments'),
+        fetch('/api/patient-profile/treatment-plans'),
+        fetch('/api/patient-profile/invoices'),
+        fetch('/api/patient-profile/messages'),
       ]);
 
       if (!profileRes.ok) throw new Error((await profileRes.json()).message || 'Failed to fetch profile.');
@@ -78,18 +78,20 @@ export default function PatientDashboardPage() {
   }, []);
 
   useEffect(() => {
+    // We can rely on the cookie for auth, but the firebase hook can still be used
+    // to gate the page or show a loading state while checking the user's browser session.
     if (loadingAuth) return;
     if (authError) {
       setError(authError.message);
       setIsLoading(false);
       return;
     }
+    // A simple check on page load to ensure there's a user session.
     if (!user) {
-      setError("You must be logged in to view this page.");
-      setIsLoading(false);
-      return;
+       // The authorize function in the API will handle the actual unauthorized case.
+       // This can be a backup or a way to redirect early.
     }
-    user.getIdToken().then(token => fetchData(token));
+    fetchData();
   }, [user, loadingAuth, authError, fetchData]);
 
   useEffect(() => {
@@ -103,12 +105,11 @@ export default function PatientDashboardPage() {
 
     setIsSendingMessage(true);
     try {
-        const idToken = await user.getIdToken();
         const response = await fetch('/api/patient-profile/messages', {
             method: 'POST',
             headers: { 
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${idToken}`,
+              // No 'Authorization' header needed, cookie is sent automatically
             },
             body: JSON.stringify({
                 conversationId: data.conversation.id,

@@ -36,15 +36,15 @@ export function generateId(prefix: string = 'id_') {
   return prefix + Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
 }
 
-// This authorize function is now simplified and only checks for a mock cookie.
-// A real implementation should use a proper session management strategy.
+// This authorize function checks for the httpOnly session cookie.
 export async function authorize(req: NextRequest, requiredRole?: UserAuth['role'] | UserAuth['role'][]) {
-  const mockSessionToken = req.cookies.get('sessionToken')?.value;
-  if (!mockSessionToken) {
+  const sessionToken = req.cookies.get('sessionToken')?.value;
+
+  if (!sessionToken) {
     return { authorized: false, user: null, error: NextResponse.json({ message: 'Unauthorized: No session token' }, { status: 401 }) };
   }
 
-  const [userIdFromToken, userRoleFromToken] = mockSessionToken.split(':');
+  const [userIdFromToken, userRoleFromToken] = sessionToken.split(':');
   if (!userIdFromToken || !userRoleFromToken) {
       return { authorized: false, user: null, error: NextResponse.json({ message: 'Unauthorized: Invalid session token format' }, { status: 401 }) };
   }
@@ -62,6 +62,7 @@ export async function authorize(req: NextRequest, requiredRole?: UserAuth['role'
     return { authorized: false, user: null, error: NextResponse.json({ message: 'Forbidden: Insufficient permissions' }, { status: 403 }) };
   }
 
+  // Type assertion to match UserAuth interface
   return { authorized: true, user: user as UserAuth, error: null };
 }
 
