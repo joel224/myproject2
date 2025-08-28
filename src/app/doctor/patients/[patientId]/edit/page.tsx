@@ -165,24 +165,31 @@ export default function EditPatientPage() {
     
     const updatedFields: Record<string, any> = {};
 
-    if (formData.name !== undefined) updatedFields.name = formData.name;
-    if (formData.email !== undefined) updatedFields.email = formData.email;
-    if (formData.phone !== undefined) updatedFields.phone = formData.phone;
-    if (formData.dateOfBirth !== undefined) updatedFields.dateOfBirth = formData.dateOfBirth;
+    if (formData.name?.trim()) updatedFields.name = formData.name;
+    if (formData.email?.trim()) updatedFields.email = formData.email;
+    if (formData.phone?.trim()) updatedFields.phone = formData.phone;
+    if (formData.dateOfBirth?.trim()) updatedFields.dateOfBirth = formData.dateOfBirth;
 
-    if (formData.age !== undefined && formData.age !== '' && !isNaN(parseInt(formData.age, 10))) {
-        updatedFields.age = parseInt(formData.age, 10);
+    if (formData.age && formData.age.trim() !== '') {
+      const ageNum = parseInt(formData.age, 10);
+      if (!isNaN(ageNum)) {
+        updatedFields.age = ageNum;
+      }
     }
-    if (formData.medicalRecords !== undefined) updatedFields.medicalRecords = formData.medicalRecords;
-    if (formData.allergySpecifics !== undefined) updatedFields.allergySpecifics = formData.allergySpecifics;
 
-    updatedFields.hasDiabetes = formData.hasDiabetes;
-    updatedFields.hasHighBloodPressure = formData.hasHighBloodPressure;
-    updatedFields.hasStrokeOrHeartAttackHistory = formData.hasStrokeOrHeartAttackHistory;
-    updatedFields.hasBleedingDisorders = formData.hasBleedingDisorders;
-    updatedFields.hasAllergy = formData.hasAllergy;
-    updatedFields.hasAsthma = formData.hasAsthma;
-    
+    if (formData.medicalRecords?.trim()) updatedFields.medicalRecords = formData.medicalRecords;
+    if (formData.hasAllergy && formData.allergySpecifics?.trim()) {
+      updatedFields.allergySpecifics = formData.allergySpecifics;
+    }
+
+    // Sanitize boolean values
+    updatedFields.hasDiabetes = !!formData.hasDiabetes;
+    updatedFields.hasHighBloodPressure = !!formData.hasHighBloodPressure;
+    updatedFields.hasStrokeOrHeartAttackHistory = !!formData.hasStrokeOrHeartAttackHistory;
+    updatedFields.hasBleedingDisorders = !!formData.hasBleedingDisorders;
+    updatedFields.hasAllergy = !!formData.hasAllergy;
+    updatedFields.hasAsthma = !!formData.hasAsthma;
+
     if (finalXrayImageUrls && finalXrayImageUrls.length > 0) {
       updatedFields.xrayImageUrls = finalXrayImageUrls;
     }
@@ -213,6 +220,7 @@ export default function EditPatientPage() {
       router.push(`/doctor/patients/${patientId}`); 
     } catch (err: any) {
       toast({ variant: "destructive", title: "Error Updating Patient", description: err.message });
+      console.error('Full Error:', err);
     } finally {
       setIsSubmitting(false);
     }
