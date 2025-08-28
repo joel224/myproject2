@@ -20,7 +20,8 @@ const updatePatientSchema = z.object({
   hasAllergy: z.boolean().optional(),
   allergySpecifics: z.string().optional().nullable(),
   hasAsthma: z.boolean().optional(),
-});
+}).partial();
+
 
 interface PatientRouteParams {
   params: {
@@ -61,31 +62,35 @@ export async function GET(request: NextRequest, { params }: PatientRouteParams) 
 export async function PUT(request: NextRequest, { params }: PatientRouteParams) {
   const { patientId } = params;
   const db = await getDb();
+  let body: any;
 
   try {
-    const body = await request.json();
-    const validation = updatePatientSchema.safeParse(body);
+    body = await request.json();
+  } catch (e) {
+    console.error('Failed to parse JSON body', e);
+    return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
+  }
 
-    if (!validation.success) {
-      // This part now provides detailed Zod errors
-      return NextResponse.json({ message: "Validation failed", errors: validation.error.flatten().fieldErrors }, { status: 400 });
-    }
-    
-    const updateData = validation.data;
+  console.log('PUT /api/patients/%s body:', patientId, JSON.stringify(body, null, 2));
+
+
+  try {
+    const validatedData = updatePatientSchema.parse(body);
     
     const currentPatient = await db.get("SELECT * FROM patients WHERE id = ?", patientId);
     if (!currentPatient) {
         return NextResponse.json({ message: "Patient not found" }, { status: 404 });
     }
 
-    if (updateData.email && updateData.email !== currentPatient.email) {
-        const emailCollisionCheck = await db.get("SELECT id FROM patients WHERE email = ? AND id != ?", [updateData.email, patientId]);
+    if (validatedData.email && validatedData.email !== currentPatient.email) {
+        const emailCollisionCheck = await db.get("SELECT id FROM patients WHERE email = ? AND id != ?", [validatedData.email, patientId]);
         if (emailCollisionCheck) {
           return NextResponse.json({ message: "Email already in use by another patient." }, { status: 409 });
         }
     }
     
-    const mergedData = { ...currentPatient, ...updateData };
+    // Merge validated data with current data to handle partial updates
+    const mergedData = { ...currentPatient, ...validatedData };
     
     const updatePatientStmt = `
       UPDATE patients SET
@@ -99,7 +104,9 @@ export async function PUT(request: NextRequest, { params }: PatientRouteParams) 
     await db.run(
         updatePatientStmt,
         mergedData.name, mergedData.email, mergedData.phone, mergedData.dateOfBirth, mergedData.age,
-        mergedData.medicalRecords, JSON.stringify(mergedData.xrayImageUrls || []), mergedData.hasDiabetes,
+        mergedData.medicalRecords, 
+        JSON.stringify(mergedData.xrayImageUrls || []), // Ensure xrayImageUrls is always an array
+        mergedData.hasDiabetes,
         mergedData.hasHighBloodPressure, mergedData.hasStrokeOrHeartAttackHistory, mergedData.hasBleedingDisorders,
         mergedData.hasAllergy, mergedData.allergySpecifics, mergedData.hasAsthma, new Date().toISOString(),
         patientId
@@ -108,7 +115,7 @@ export async function PUT(request: NextRequest, { params }: PatientRouteParams) 
     const updatedPatient = await db.get("SELECT * FROM patients WHERE id = ?", patientId);
     
     // Also update the linked user's name and email if they changed
-    if (updatedPatient.userId && (updateData.name || updateData.email)) {
+    if (updatedPatient.userId && (validatedData.name || validatedData.email)) {
         const updateUserStmt = `UPDATE users SET name = ?, email = ? WHERE id = ?`;
         await db.run(updateUserStmt, updatedPatient.name, updatedPatient.email, updatedPatient.userId);
     }
@@ -117,12 +124,10 @@ export async function PUT(request: NextRequest, { params }: PatientRouteParams) 
 
   } catch (error) {
     if (error instanceof ZodError) {
-      return NextResponse.json({
-        message: 'Validation failed',
-        errors: error.issues, // Zod's error issues provide great detail
-      }, { status: 400 });
+      console.error('Zod validation errors:', JSON.stringify(error.errors, null, 2));
+      return NextResponse.json({ message: "Validation failed", errors: error.errors }, { status: 400 });
     }
-    console.error(`Error updating patient ${patientId}:`, error);
+    console.error(`Unexpected error updating patient ${patientId}:`, error);
     return NextResponse.json({ message: 'Error updating patient' }, { status: 500 });
   }
 }

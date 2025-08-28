@@ -165,25 +165,27 @@ export default function EditPatientPage() {
     
     const updatedFields: Record<string, any> = {};
 
-    if (formData.name?.trim()) updatedFields.name = formData.name;
-    if (formData.email?.trim()) updatedFields.email = formData.email;
-    if (formData.phone?.trim()) updatedFields.phone = formData.phone;
-    if (formData.dateOfBirth?.trim()) updatedFields.dateOfBirth = formData.dateOfBirth;
-    if (formData.age && formData.age !== '' && !isNaN(parseInt(formData.age, 10))) {
+    if (formData.name !== undefined) updatedFields.name = formData.name;
+    if (formData.email !== undefined) updatedFields.email = formData.email;
+    if (formData.phone !== undefined) updatedFields.phone = formData.phone;
+    if (formData.dateOfBirth !== undefined) updatedFields.dateOfBirth = formData.dateOfBirth;
+
+    if (formData.age !== undefined && formData.age !== '' && !isNaN(parseInt(formData.age, 10))) {
         updatedFields.age = parseInt(formData.age, 10);
     }
-    if (formData.medicalRecords?.trim()) updatedFields.medicalRecords = formData.medicalRecords;
-    if (formData.hasAllergy && formData.allergySpecifics?.trim()) {
-        updatedFields.allergySpecifics = formData.allergySpecifics;
-    }
-    
+    if (formData.medicalRecords !== undefined) updatedFields.medicalRecords = formData.medicalRecords;
+    if (formData.allergySpecifics !== undefined) updatedFields.allergySpecifics = formData.allergySpecifics;
+
     updatedFields.hasDiabetes = formData.hasDiabetes;
     updatedFields.hasHighBloodPressure = formData.hasHighBloodPressure;
     updatedFields.hasStrokeOrHeartAttackHistory = formData.hasStrokeOrHeartAttackHistory;
     updatedFields.hasBleedingDisorders = formData.hasBleedingDisorders;
     updatedFields.hasAllergy = formData.hasAllergy;
     updatedFields.hasAsthma = formData.hasAsthma;
-    updatedFields.xrayImageUrls = finalXrayImageUrls;
+    
+    if (finalXrayImageUrls && finalXrayImageUrls.length > 0) {
+      updatedFields.xrayImageUrls = finalXrayImageUrls;
+    }
     
     try {
       const response = await fetch(`/api/patients/${patientId}`, {
@@ -191,15 +193,25 @@ export default function EditPatientPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedFields),
       });
-      const data = await response.json();
+
+      const rawText = await response.text();
+      let data;
+      try {
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch (e) {
+        console.error('Non-JSON response from server:', rawText);
+        throw new Error(rawText || 'Server returned an unexpected response');
+      }
+
       if (!response.ok) {
-        throw new Error(data.message || (data.errors ? JSON.stringify(data.errors, null, 2) : "Failed to update patient"));
+        console.error('Server responded with non-OK:', response.status, data);
+        const errorMessage = data.message || (data.errors ? `Validation failed: ${data.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ')}` : 'Failed to update patient');
+        throw new Error(errorMessage);
       }
 
       toast({ title: "Patient Updated!", description: `${data.name}'s details have been successfully updated.` });
       router.push(`/doctor/patients/${patientId}`); 
     } catch (err: any) {
-      console.error("RAW ERROR RESPONSE:", err);
       toast({ variant: "destructive", title: "Error Updating Patient", description: err.message });
     } finally {
       setIsSubmitting(false);
