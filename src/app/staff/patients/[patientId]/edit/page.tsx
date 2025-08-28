@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, FileText, ShieldAlert, HeartPulse, Droplets, Info, Wind, Save, Plus, X, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import type { Patient } from '@/lib/types';
+import { ZodError } from 'zod';
 
 interface FormData extends Omit<Patient, 'id' | 'age'> { 
   age: string; 
@@ -162,24 +163,33 @@ export default function EditPatientPageStaff() {
       }
     }
     
-    // Create a clean data object for submission
-    const patientDataWithTypes = {
-      ...formData,
-      phone: formData.phone?.trim() === '' ? null : formData.phone,
-      dateOfBirth: formData.dateOfBirth?.trim() === '' ? null : formData.dateOfBirth,
-      age: formData.age === '' || formData.age === null || formData.age === undefined ? null : parseInt(formData.age, 10),
-      medicalRecords: formData.medicalRecords?.trim() === '' ? null : formData.medicalRecords,
-      allergySpecifics: formData.hasAllergy ? (formData.allergySpecifics?.trim() === '' ? null : formData.allergySpecifics) : null,
-      xrayImageUrls: finalXrayImageUrls,
-    };
+    const updatedFields: Record<string, any> = {};
+
+    if (formData.name?.trim()) updatedFields.name = formData.name;
+    if (formData.email?.trim()) updatedFields.email = formData.email;
+    if (formData.phone?.trim()) updatedFields.phone = formData.phone;
+    if (formData.dateOfBirth?.trim()) updatedFields.dateOfBirth = formData.dateOfBirth;
+    if (formData.age && formData.age !== '' && !isNaN(parseInt(formData.age, 10))) {
+        updatedFields.age = parseInt(formData.age, 10);
+    }
+    if (formData.medicalRecords?.trim()) updatedFields.medicalRecords = formData.medicalRecords;
+    if (formData.hasAllergy && formData.allergySpecifics?.trim()) {
+        updatedFields.allergySpecifics = formData.allergySpecifics;
+    }
     
-    const { id, userId, ...updateData } = patientDataWithTypes;
+    updatedFields.hasDiabetes = formData.hasDiabetes;
+    updatedFields.hasHighBloodPressure = formData.hasHighBloodPressure;
+    updatedFields.hasStrokeOrHeartAttackHistory = formData.hasStrokeOrHeartAttackHistory;
+    updatedFields.hasBleedingDisorders = formData.hasBleedingDisorders;
+    updatedFields.hasAllergy = formData.hasAllergy;
+    updatedFields.hasAsthma = formData.hasAsthma;
+    updatedFields.xrayImageUrls = finalXrayImageUrls;
 
     try {
       const response = await fetch(`/api/patients/${patientId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updateData),
+        body: JSON.stringify(updatedFields),
       });
       const data = await response.json();
       if (!response.ok) {
