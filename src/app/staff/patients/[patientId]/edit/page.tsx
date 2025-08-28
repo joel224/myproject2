@@ -161,24 +161,22 @@ export default function EditPatientPageStaff() {
         return;
       }
     }
-
-    const dataToSubmit = { ...formData };
     
-    const patientDataToSubmit = {
-        name: dataToSubmit.name,
-        email: dataToSubmit.email,
-        phone: dataToSubmit.phone?.trim() === '' ? null : dataToSubmit.phone,
-        dateOfBirth: dataToSubmit.dateOfBirth?.trim() === '' ? null : dataToSubmit.dateOfBirth,
-        age: dataToSubmit.age === '' || dataToSubmit.age === null ? null : parseInt(dataToSubmit.age, 10),
-        medicalRecords: dataToSubmit.medicalRecords?.trim() === '' ? null : dataToSubmit.medicalRecords,
-        xrayImageUrls: finalXrayImageUrls,
-        hasDiabetes: dataToSubmit.hasDiabetes,
-        hasHighBloodPressure: dataToSubmit.hasHighBloodPressure,
-        hasStrokeOrHeartAttackHistory: dataToSubmit.hasStrokeOrHeartAttackHistory,
-        hasBleedingDisorders: dataToSubmit.hasBleedingDisorders,
-        hasAllergy: dataToSubmit.hasAllergy,
-        allergySpecifics: dataToSubmit.hasAllergy ? (dataToSubmit.allergySpecifics?.trim() === '' ? null : dataToSubmit.allergySpecifics) : null,
-        hasAsthma: dataToSubmit.hasAsthma,
+    const { id, userId, ...patientDataToSubmit } = {
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone?.trim() === '' ? null : formData.phone,
+      dateOfBirth: formData.dateOfBirth?.trim() === '' ? null : formData.dateOfBirth,
+      age: formData.age === '' || formData.age === null || formData.age === undefined ? null : parseInt(formData.age, 10),
+      medicalRecords: formData.medicalRecords?.trim() === '' ? null : formData.medicalRecords,
+      xrayImageUrls: finalXrayImageUrls,
+      hasDiabetes: formData.hasDiabetes,
+      hasHighBloodPressure: formData.hasHighBloodPressure,
+      hasStrokeOrHeartAttackHistory: formData.hasStrokeOrHeartAttackHistory,
+      hasBleedingDisorders: formData.hasBleedingDisorders,
+      hasAllergy: formData.hasAllergy,
+      allergySpecifics: formData.hasAllergy ? (formData.allergySpecifics?.trim() === '' ? null : formData.allergySpecifics) : null,
+      hasAsthma: formData.hasAsthma,
     };
 
     try {
