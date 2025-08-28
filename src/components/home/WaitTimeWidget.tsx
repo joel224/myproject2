@@ -43,22 +43,22 @@ export function WaitTimeWidget() {
 
   return (
     <div
-      className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-30 shadow-2xl rounded-lg"
+      className="fixed bottom-4 right-4 z-30 shadow-2xl rounded-lg"
     >
-      <Card className="bg-primary text-primary-foreground w-full max-w-[280px] sm:max-w-xs lg:max-w-sm">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-4 lg:pt-4 lg:pb-2 lg:px-5">
-          <CardTitle className="text-sm sm:text-base lg:text-lg font-semibold">Live Wait Time</CardTitle>
-          <Clock className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-primary-foreground/80" />
+      <Card className="bg-primary text-primary-foreground w-full max-w-[240px] sm:max-w-xs">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-4">
+          <CardTitle className="text-sm font-semibold">Live Wait Time</CardTitle>
+          <Clock className="h-4 w-4 text-primary-foreground/80" />
         </CardHeader>
-        <CardContent className="pt-1 pb-3 px-4 lg:pt-2 lg:pb-4 lg:px-5">
+        <CardContent className="pt-1 pb-3 px-4">
           {isLoading ? (
-            <div className="flex items-center justify-center h-8 lg:h-10">
-              <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 animate-spin text-primary-foreground/70" />
+            <div className="flex items-center justify-center h-8">
+              <Loader2 className="h-5 w-5 animate-spin text-primary-foreground/70" />
             </div>
           ) : error ? (
             <div className="flex flex-col items-center text-center text-primary-foreground/80 py-1">
-              <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 mb-0.5" />
-              <p className="text-[11px] sm:text-xs lg:text-sm">
+              <AlertTriangle className="h-5 w-5 mb-0.5" />
+              <p className="text-xs">
                 {error}
               </p>
             </div>
@@ -66,13 +66,13 @@ export function WaitTimeWidget() {
             <>
               {waitTime && waitTime.text ? (
                 <>
-                  <div className="text-xl sm:text-2xl lg:text-3xl font-bold">{waitTime.text.replace('<', 'Less than ')}</div>
-                  <p className="text-[10px] sm:text-xs lg:text-sm text-primary-foreground/70 mt-0.5">
+                  <div className="text-xl sm:text-2xl font-bold">{waitTime.text.replace('<', 'Less than ')}</div>
+                  <p className="text-[10px] sm:text-xs text-primary-foreground/70 mt-0.5">
                     Last updated: {waitTime.updatedAt ? new Date(waitTime.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
                   </p>
                 </>
               ) : (
-                <div className="text-xl sm:text-2xl lg:text-3xl font-bold">-</div>
+                <div className="text-xl sm:text-2xl font-bold">-</div>
               )}
             </>
           )}

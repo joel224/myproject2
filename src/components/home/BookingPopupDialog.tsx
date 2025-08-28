@@ -60,25 +60,24 @@ export function BookingPopupDialog({ isOpen, onClose, onOpenChange }: BookingPop
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl lg:max-w-3xl p-0 overflow-hidden">
-        <div className="flex flex-col md:flex-row min-h-[300px] md:min-h-[400px]">
-          {/* Left side: Image */}
-          <div className="hidden md:block md:w-1/4 lg:w-1/3 relative">
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden">
+        <div className="flex flex-col">
+          {/* Top: Image (Visible on all screen sizes) */}
+          <div className="relative w-full h-48">
             <Image
               src="https://drive.google.com/uc?export=download&id=10HnjuMf4QBKmklhRdTvGKfcN5yrxo1G9"
               alt="Smiling patient receiving dental care"
               layout="fill"
-              objectFit="cover" // Keep objectFit="cover"
-              objectPosition="left" // Add objectPosition="left"
-              className="rounded-l-lg" // Keep rounded-l-lg
+              objectFit="cover"
+              className="rounded-t-lg"
               data-ai-hint="dental patient smile"
               priority 
             />
           </div>
 
-          {/* Right side: Form Content */}
-          <div className="w-full md:w-3/4 lg:w-2/3 p-6 sm:p-8 flex flex-col justify-center space-y-4"> {/* Adjusted width */}
-            <DialogHeader className="text-center md:text-left">
+          {/* Bottom: Form Content */}
+          <div className="p-6 flex flex-col justify-center space-y-4">
+            <DialogHeader className="text-center">
               <DialogTitle className="text-2xl text-primary">Bring out your smile!</DialogTitle>
               <DialogDescription className="pt-2">
                 Ready for a consultation? Enter your details below or call us directly.
@@ -118,7 +117,7 @@ export function BookingPopupDialog({ isOpen, onClose, onOpenChange }: BookingPop
               </div>
             </div>
 
-            <DialogFooter className="flex-col sm:flex-col gap-3 pt-2">
+            <DialogFooter className="flex-col gap-3 pt-2">
               <Button type="button" onClick={handleSubmit} className="w-full">
                 Request Callback
               </Button>
@@ -141,5 +140,3 @@ export function BookingPopupDialog({ isOpen, onClose, onOpenChange }: BookingPop
     </Dialog>
   );
 }
-
-    
