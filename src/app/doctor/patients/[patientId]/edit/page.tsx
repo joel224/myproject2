@@ -169,7 +169,6 @@ export default function EditPatientPage() {
         dateOfBirth: formData.dateOfBirth?.trim() === '' ? null : formData.dateOfBirth,
         age: formData.age === '' || formData.age === null || formData.age === undefined ? null : parseInt(formData.age, 10),
         medicalRecords: formData.medicalRecords?.trim() === '' ? null : formData.medicalRecords,
-        xrayImageUrls: finalXrayImageUrls,
         hasDiabetes: formData.hasDiabetes,
         hasHighBloodPressure: formData.hasHighBloodPressure,
         hasStrokeOrHeartAttackHistory: formData.hasStrokeOrHeartAttackHistory,
@@ -186,7 +185,10 @@ export default function EditPatientPage() {
         body: JSON.stringify(patientDataToSubmit),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || data.errors?.email?.[0] || "Failed to update patient");
+      if (!response.ok) {
+        console.error("RAW ERROR RESPONSE:", data); // Print raw error
+        throw new Error(data.message || (data.errors ? JSON.stringify(data.errors, null, 2) : "Failed to update patient"));
+      }
 
       toast({ title: "Patient Updated!", description: `${data.name}'s details have been successfully updated.` });
       router.push(`/doctor/patients/${patientId}`); 
