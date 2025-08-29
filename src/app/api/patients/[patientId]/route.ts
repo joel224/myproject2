@@ -2,10 +2,8 @@
 // src/app/api/patients/[patientId]/route.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { z } from 'zod';
-import { db } from '@/lib/mockServerDb'; // Use mock DB
-import type { Patient } from '@/lib/types';
-import type { UserAuth } from '@/lib/mockServerDb';
+import { z, ZodError } from 'zod';
+import { getDb } from '@/lib/db';
 
 const updatePatientSchema = z.object({
   name: z.string().min(2, "Name is required").optional(),
@@ -22,7 +20,8 @@ const updatePatientSchema = z.object({
   hasAllergy: z.boolean().optional(),
   allergySpecifics: z.string().optional().nullable(),
   hasAsthma: z.boolean().optional(),
-});
+}).partial();
+
 
 interface PatientRouteParams {
   params: {
@@ -33,133 +32,135 @@ interface PatientRouteParams {
 export async function GET(request: NextRequest, { params }: PatientRouteParams) {
   const { patientId } = params;
   try {
-    const user = db.users.find(u => u.id === patientId);
+    const db = await getDb();
+    const patient = await db.get("SELECT * FROM patients WHERE id = ?", patientId);
 
-    if (!user || user.role !== 'patient') {
+    if (!patient) {
       return NextResponse.json({ message: "Patient not found" }, { status: 404 });
     }
+    
+    // Deserialize JSON string for xrayImageUrls
+    if (patient.xrayImageUrls) {
+        try {
+            patient.xrayImageUrls = JSON.parse(patient.xrayImageUrls);
+        } catch (e) {
+            console.error(`Invalid JSON in xrayImageUrls for patient ${patientId}:`, patient.xrayImageUrls);
+            patient.xrayImageUrls = []; // Default to empty array on parse error
+        }
+    } else {
+        patient.xrayImageUrls = [];
+    }
 
-    const patientResponse: Patient = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      dateOfBirth: user.dateOfBirth,
-      age: user.age,
-      medicalRecords: user.medicalRecords,
-      xrayImageUrls: user.xrayImageUrls || [],
-      hasDiabetes: user.hasDiabetes,
-      hasHighBloodPressure: user.hasHighBloodPressure,
-      hasStrokeOrHeartAttackHistory: user.hasStrokeOrHeartAttackHistory,
-      hasBleedingDisorders: user.hasBleedingDisorders,
-      hasAllergy: user.hasAllergy,
-      allergySpecifics: user.allergySpecifics,
-      hasAsthma: user.hasAsthma,
-    };
-    return NextResponse.json(patientResponse, { status: 200 });
+    return NextResponse.json(patient, { status: 200 });
 
   } catch (error) {
-    console.error(`Error fetching patient ${patientId} from mock DB:`, error);
+    console.error(`Error fetching patient ${patientId}:`, error);
     return NextResponse.json({ message: 'Error fetching patient details' }, { status: 500 });
   }
 }
 
 export async function PUT(request: NextRequest, { params }: PatientRouteParams) {
   const { patientId } = params;
+  const db = await getDb();
+  let body: any;
 
   try {
-    const body = await request.json();
-    const validation = updatePatientSchema.safeParse(body);
+    body = await request.json();
+  } catch (e) {
+    console.error('Failed to parse JSON body', e);
+    return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
+  }
 
-    if (!validation.success) {
-      return NextResponse.json({ message: "Validation failed", errors: validation.error.flatten().fieldErrors }, { status: 400 });
+  console.log('PUT /api/patients/%s body:', patientId, JSON.stringify(body, null, 2));
+
+
+  try {
+    const validatedData = updatePatientSchema.parse(body);
+    
+    const currentPatient = await db.get("SELECT * FROM patients WHERE id = ?", patientId);
+    if (!currentPatient) {
+        return NextResponse.json({ message: "Patient not found" }, { status: 404 });
     }
-    
-    const updateData = validation.data;
-    
-    const patientIndex = db.users.findIndex(u => u.id === patientId && u.role === 'patient');
 
-    if (patientIndex === -1) {
-      return NextResponse.json({ message: "Patient not found" }, { status: 404 });
-    }
-
-    const currentPatient = db.users[patientIndex];
-    
-    // Check for email collision if email is being updated
-    if (updateData.email && updateData.email !== currentPatient.email) {
-        if (db.users.some(u => u.email === updateData.email && u.id !== patientId)) {
-            return NextResponse.json({ message: "Email already in use by another user." }, { status: 409 });
+    if (validatedData.email && validatedData.email !== currentPatient.email) {
+        const emailCollisionCheck = await db.get("SELECT id FROM patients WHERE email = ? AND id != ?", [validatedData.email, patientId]);
+        if (emailCollisionCheck) {
+          return NextResponse.json({ message: "Email already in use by another patient." }, { status: 409 });
         }
     }
-
-    const updatedPatient: UserAuth = {
-      ...currentPatient,
-      ...updateData, // Spread validated data
-      // Ensure nullable fields are handled correctly (set to undefined if null)
-      phone: updateData.phone === null ? undefined : updateData.phone || currentPatient.phone,
-      dateOfBirth: updateData.dateOfBirth === null ? undefined : updateData.dateOfBirth || currentPatient.dateOfBirth,
-      age: updateData.age === null ? undefined : updateData.age || currentPatient.age,
-      medicalRecords: updateData.medicalRecords === null ? undefined : updateData.medicalRecords || currentPatient.medicalRecords,
-      allergySpecifics: updateData.hasAllergy === false ? undefined : (updateData.allergySpecifics === null ? undefined : updateData.allergySpecifics || currentPatient.allergySpecifics),
-      updatedAt: new Date().toISOString(),
-    };
     
-    // Ensure allergySpecifics is cleared if hasAllergy is set to false
-    if (updateData.hasAllergy === false) {
-        updatedPatient.allergySpecifics = undefined;
+    // Merge validated data with current data to handle partial updates
+    const mergedData = { ...currentPatient, ...validatedData };
+    
+    const updatePatientStmt = `
+      UPDATE patients SET
+        name = ?, email = ?, phone = ?, dateOfBirth = ?, age = ?, medicalRecords = ?, 
+        xrayImageUrls = ?, hasDiabetes = ?, hasHighBloodPressure = ?, 
+        hasStrokeOrHeartAttackHistory = ?, hasBleedingDisorders = ?, hasAllergy = ?, 
+        allergySpecifics = ?, hasAsthma = ?, updatedAt = ?
+      WHERE id = ?
+    `;
+    
+    await db.run(
+        updatePatientStmt,
+        mergedData.name, mergedData.email, mergedData.phone, mergedData.dateOfBirth, mergedData.age,
+        mergedData.medicalRecords, 
+        JSON.stringify(mergedData.xrayImageUrls || []), // Ensure xrayImageUrls is always an array
+        mergedData.hasDiabetes,
+        mergedData.hasHighBloodPressure, mergedData.hasStrokeOrHeartAttackHistory, mergedData.hasBleedingDisorders,
+        mergedData.hasAllergy, mergedData.allergySpecifics, mergedData.hasAsthma, new Date().toISOString(),
+        patientId
+    );
+    
+    const updatedPatient = await db.get("SELECT * FROM patients WHERE id = ?", patientId);
+    
+    // Also update the linked user's name and email if they changed
+    if (updatedPatient.userId && (validatedData.name || validatedData.email)) {
+        const updateUserStmt = `UPDATE users SET name = ?, email = ? WHERE id = ?`;
+        await db.run(updateUserStmt, updatedPatient.name, updatedPatient.email, updatedPatient.userId);
     }
-
-
-    db.users[patientIndex] = updatedPatient;
     
-    const patientResponse: Patient = {
-      id: updatedPatient.id,
-      name: updatedPatient.name,
-      email: updatedPatient.email,
-      phone: updatedPatient.phone,
-      dateOfBirth: updatedPatient.dateOfBirth,
-      age: updatedPatient.age,
-      medicalRecords: updatedPatient.medicalRecords,
-      xrayImageUrls: updatedPatient.xrayImageUrls || [],
-      hasDiabetes: updatedPatient.hasDiabetes,
-      hasHighBloodPressure: updatedPatient.hasHighBloodPressure,
-      hasStrokeOrHeartAttackHistory: updatedPatient.hasStrokeOrHeartAttackHistory,
-      hasBleedingDisorders: updatedPatient.hasBleedingDisorders,
-      hasAllergy: updatedPatient.hasAllergy,
-      allergySpecifics: updatedPatient.allergySpecifics,
-      hasAsthma: updatedPatient.hasAsthma,
-    };
-
-    return NextResponse.json(patientResponse, { status: 200 });
+    return NextResponse.json(updatedPatient, { status: 200 });
 
   } catch (error) {
-    console.error(`Error updating patient ${patientId} in mock DB:`, error);
+    if (error instanceof ZodError) {
+      console.error('Zod validation errors:', JSON.stringify(error.errors, null, 2));
+      return NextResponse.json({ message: "Validation failed", errors: error.errors }, { status: 400 });
+    }
+    console.error(`Unexpected error updating patient ${patientId}:`, error);
     return NextResponse.json({ message: 'Error updating patient' }, { status: 500 });
   }
 }
 
 export async function DELETE(request: NextRequest, { params }: PatientRouteParams) {
   const { patientId } = params;
+  const db = await getDb();
 
   try {
-    const patientIndex = db.users.findIndex(u => u.id === patientId && u.role === 'patient');
-
-    if (patientIndex === -1) {
+    const patientToDelete = await db.get("SELECT * FROM patients WHERE id = ?", patientId);
+    
+    if (!patientToDelete) {
       return NextResponse.json({ message: "Patient not found" }, { status: 404 });
     }
 
-    db.users.splice(patientIndex, 1);
+    // This is a hard delete of the clinical record.
+    // The associated user login account is NOT deleted.
+    await db.run('DELETE FROM appointments WHERE patientId = ?', patientId);
+    // Add similar DELETE statements for treatmentPlans, progressNotes, invoices, etc.
+    // await db.run('DELETE FROM treatment_plans WHERE patientId = ?', patientId);
+    // await db.run('DELETE FROM invoices WHERE patientId = ?', patientId);
+    // const conversation = await db.get('SELECT id FROM conversations WHERE patientId = ?', patientId);
+    // if (conversation) {
+    //     await db.run('DELETE FROM messages WHERE conversationId = ?', conversation.id);
+    //     await db.run('DELETE FROM conversations WHERE id = ?', conversation.id);
+    // }
     
-    // Consider what to do with related mock data (appointments, invoices, etc.)
-    // For now, just deleting the patient user record.
-    // db.appointments = db.appointments.filter(apt => apt.patientId !== patientId);
-    // db.invoices = db.invoices.filter(inv => inv.patientId !== patientId);
-    // etc.
+    await db.run('DELETE FROM patients WHERE id = ?', patientId);
 
-    return NextResponse.json({ message: "Patient deleted successfully" }, { status: 200 });
+    return NextResponse.json({ message: "Patient clinical record deleted successfully. User login account remains." }, { status: 200 });
 
   } catch (error) {
-    console.error(`Error deleting patient ${patientId} from mock DB:`, error);
+    console.error(`Error deleting patient ${patientId}:`, error);
     return NextResponse.json({ message: 'Error deleting patient' }, { status: 500 });
   }
 }

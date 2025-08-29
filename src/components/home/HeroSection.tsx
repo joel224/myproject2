@@ -1,4 +1,3 @@
-
 // src/components/home/HeroSection.tsx
 'use client';
 
@@ -12,6 +11,7 @@ import { BookingPopupDialog } from './BookingPopupDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import Image from 'next/image';
 import { WaitTimeWidget } from './WaitTimeWidget';
+import { X, ArrowRight } from 'lucide-react';
 
 const MuxPlayer = dynamic<MuxPlayerProps>(
   () => import('@mux/mux-player-react').then((mod) => mod.default),
@@ -27,7 +27,6 @@ export function HeroSection() {
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
-  const promoImageContainerRef = useRef<HTMLDivElement>(null);
   const hidePromoTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const [textVisible, setTextVisible] = useState(false);
@@ -36,7 +35,7 @@ export function HeroSection() {
 
   const [showBookingPopup, setShowBookingPopup] = useState(false);
   const [showPromoPopup, setShowPromoPopup] = useState(false);
-  
+
   const currentPlaybackId = isMobile ? HERO_VIDEO_PLAYBACK_ID_MOBILE : HERO_VIDEO_PLAYBACK_ID_DESKTOP;
 
   const handleScroll = useCallback(() => {
@@ -54,12 +53,12 @@ export function HeroSection() {
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll, { passive: true });
-    const timer = setTimeout(() => handleScroll(), 100); 
+    const timer = setTimeout(() => handleScroll(), 100);
     return () => {
       window.removeEventListener('scroll', handleScroll);
       clearTimeout(timer);
     };
-  }, [handleScroll, isPlayerReady]); 
+  }, [handleScroll, isPlayerReady]);
 
   useEffect(() => {
     const observerOptions = { threshold: 0.1 };
@@ -81,7 +80,7 @@ export function HeroSection() {
   }, []);
 
   useEffect(() => {
-    const popupDelay = isMobile ? 17000 : 10000; // 20s for mobile, 10s for desktop
+    const popupDelay = isMobile ? 17000 : 10000;
     console.log(`HeroSection: Timer for booking pop-up is being set (${popupDelay / 1000} seconds). Mobile: ${isMobile}`);
     const timer = setTimeout(() => {
       console.log(`HeroSection: ${popupDelay / 1000}-second timer fired. Setting showBookingPopup to true.`);
@@ -104,7 +103,7 @@ export function HeroSection() {
   const handlePromoTriggerMouseLeave = () => {
     hidePromoTimerRef.current = setTimeout(() => {
       setShowPromoPopup(false);
-    }, 200); 
+    }, 200);
   };
 
   const handlePromoPopupMouseEnter = () => {
@@ -112,13 +111,13 @@ export function HeroSection() {
       clearTimeout(hidePromoTimerRef.current);
       hidePromoTimerRef.current = null;
     }
-    setShowPromoPopup(true); 
+    setShowPromoPopup(true);
   };
-  
+
   const handlePromoPopupMouseLeave = () => {
      hidePromoTimerRef.current = setTimeout(() => {
-        setShowPromoPopup(false); 
-    }, 100); 
+        setShowPromoPopup(false);
+    }, 100);
   };
 
 
@@ -130,7 +129,7 @@ export function HeroSection() {
       >
         <div
           ref={playerContainerRef}
-          className="absolute top-0 left-0 w-full h-[165%] z-[1] bg-black"
+          className="absolute top-0 left-0 w-full h-[152%] z-[1] bg-black"
           style={{ transition: 'transform 0.1s linear' }}
         >
           <MuxPlayer
@@ -140,10 +139,12 @@ export function HeroSection() {
             loop
             muted
             playsInline
+            playsinline // Added for better cross-browser compatibility
             noControls
-            className="absolute inset-0 w-full h-full object-cover min-w-full min-h-full transform -translate-y-6"
+            className="absolute inset-0 w-full h-full object-cover min-w-full min-h-full"
             onLoadedMetadata={() => { setIsPlayerReady(true); handleScroll(); }}
             onPlayerReady={() => { setIsPlayerReady(true); handleScroll(); }}
+            onError={(evt: any) => { console.error("Hero MuxPlayer Error:", evt?.data); }}
           />
         </div>
 
@@ -157,25 +158,25 @@ export function HeroSection() {
                 "space-y-6",
                 "initial-fade-in-up",
                 textVisible && "is-visible",
-                "text-neutral-100", 
+                "text-neutral-100",
                 "max-w-2xl"
               )}
             >
               <div className="relative inline-block">
-                 <h1 className="font-manrope text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
+                <h1 className="font-sans text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
                   Your <span className="inline-block transition-transform duration-300 ease-in-out hover:scale-105 [text-shadow:0_0_8px_hsl(var(--primary)/0.7)]">Smile</span>, Our Passion!
                 </h1>
                 <svg
-                  className="absolute bottom-0 left-0 w-full h-[10px]"
+                  className="absolute bottom-0 left-0 w-full"
                   viewBox="0 0 300 10"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
-                  aria-hidden="true"
+                  preserveAspectRatio="none"
                 >
                   <path
                     d="M5 5 C 75 15, 225 15, 295 5"
-                    stroke="#86EFAC" 
-                    strokeWidth="4"
+                    stroke="#22C55E"
+                    strokeWidth="2"
                     strokeLinecap="round"
                   />
                 </svg>
@@ -185,11 +186,11 @@ export function HeroSection() {
               </p>
               <div className="flex flex-col gap-2 min-[400px]:flex-row justify-center">
                 <div
-                  className="relative" 
+                  className="relative p-2 sm:p-4"
                   onMouseEnter={handlePromoTriggerMouseEnter}
                   onMouseLeave={handlePromoTriggerMouseLeave}
                 >
-                  <Link href="/#appointment">
+                  <Link href="/#appointment" className="pointer-events-none" tabIndex={-1}>
                     <Button
                       size="lg"
                       className="px-8 py-6 text-lg shadow-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-shadow"
@@ -203,12 +204,10 @@ export function HeroSection() {
           </div>
         </div>
 
-        {/* Promotional Image Pop-up */}
-        {showPromoPopup && (
-         <div
-          ref={promoImageContainerRef}
+       {showPromoPopup && (
+        <div
           className={cn(
-            "fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-8 md:p-12 lg:p-16",
+            "fixed inset-0 z-40 flex items-center justify-center p-4",
             "bg-black/75 backdrop-blur-md",
             "transition-opacity duration-300 ease-out",
             showPromoPopup ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
@@ -216,23 +215,49 @@ export function HeroSection() {
           onMouseEnter={handlePromoPopupMouseEnter}
           onMouseLeave={handlePromoPopupMouseLeave}
         >
-         <div
-            className={cn(
-              "relative w-[80vw] max-w-4xl aspect-video transition-all duration-300 ease-out",
-              showPromoPopup ? "scale-100 opacity-100" : "scale-95 opacity-0"
-            )}
-          >
-            <Image
-              src={PROMO_IMAGE_URL}
-              alt="Promotional Offer: Happy Patient"
-              layout="fill"
-              objectFit="contain"
-              className="rounded-lg shadow-2xl"
-              data-ai-hint="dental promotion happy patient"
-            />
+          <div className="flex items-center justify-center w-full h-full">
+            <div className="w-1/6 h-full flex-shrink-0" onMouseEnter={() => setShowPromoPopup(false)}></div>
+            
+            <div
+              className={cn(
+                "relative w-full max-w-2xl lg:max-w-4xl transition-all duration-300 ease-out flex flex-col items-center",
+                showPromoPopup ? "scale-100 opacity-100" : "scale-95 opacity-0"
+              )}
+            >
+              <div className="relative w-full aspect-video">
+                  <div className="w-full h-full rounded-lg shadow-2xl overflow-hidden">
+                     <Image
+                      src={PROMO_IMAGE_URL}
+                      alt="Promotional Offer: Happy Patient"
+                      fill
+                      className="object-cover"
+                      data-ai-hint="dental promotion happy patient"
+                    />
+                  </div>
+                  <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => setShowPromoPopup(false)}
+                      className="absolute top-2 right-2 z-10 h-8 w-8 text-white bg-black/30 hover:bg-black/50 hover:text-white rounded-full"
+                      aria-label="Close promotional pop-up"
+                  >
+                      <X className="h-5 w-5" />
+                  </Button>
+              </div>
+             
+              <div className="mt-4 z-10">
+                  <Link href="/#appointment">
+                      <Button size="lg" className="bg-white text-black hover:bg-white/90 shadow-xl">
+                          Take Me There <ArrowRight className="ml-2 h-4 w-4"/>
+                      </Button>
+                  </Link>
+              </div>
+            </div>
+
+            <div className="w-1/6 h-full flex-shrink-0" onMouseEnter={() => setShowPromoPopup(false)}></div>
           </div>
         </div>
-        )}
+       )}
         <WaitTimeWidget />
       </section>
 

@@ -3,7 +3,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { db, generateId, authorize } from '@/lib/mockServerDb';
+import { generateId } from '@/lib/mockServerDb';
+import { db, authorize } from '@/lib/mockServerDb';
 import type { PaymentTransaction } from '@/lib/types';
 
 const recordPaymentSchema = z.object({
@@ -64,7 +65,7 @@ export async function POST(request: NextRequest, { params }: RecordPaymentParams
     } else if (invoice.amountPaid > 0) {
       invoice.status = 'Partial';
     }
-    // Overdue logic would require checking dueDate against current date, typically done on GET or a cron job
+    // Overdue logic would require checking dueDate against current date, typically done on a cron job
 
     console.log(`Payment of ${amountPaidNow} recorded for invoice ${invoiceId}. New amount paid: ${invoice.amountPaid}, Status: ${invoice.status}. Notes: ${notes}`);
 

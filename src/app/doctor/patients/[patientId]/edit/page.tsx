@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, FileText, ShieldAlert, HeartPulse, Droplets, Info, Wind, Save, Plus, X, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import type { Patient } from '@/lib/types';
+import { ZodError } from 'zod';
 
 interface FormData extends Omit<Patient, 'id' | 'age'> { 
   age: string; 
@@ -26,7 +27,7 @@ export default function EditPatientPage() {
   const { toast } = useToast();
   const xrayInputRef = useRef<HTMLInputElement>(null);
 
-  const [formData, setFormData] = useState<Partial<FormData>>({
+  const [formData, setFormData] = useState<Partial<FormData & { id: string; userId: string }>>({
     name: '',
     email: '',
     phone: '',
@@ -161,29 +162,65 @@ export default function EditPatientPage() {
         return;
       }
     }
+    
+    const updatedFields: Record<string, any> = {};
 
-    const patientDataToSubmit = {
-      ...formData,
-      age: formData.age ? parseInt(formData.age, 10) : undefined,
-      allergySpecifics: formData.hasAllergy ? formData.allergySpecifics : undefined,
-      xrayImageUrls: finalXrayImageUrls,
-    };
-    if (patientDataToSubmit.dateOfBirth === '') delete patientDataToSubmit.dateOfBirth;
+    if (formData.name?.trim()) updatedFields.name = formData.name;
+    if (formData.email?.trim()) updatedFields.email = formData.email;
+    if (formData.phone?.trim()) updatedFields.phone = formData.phone;
+    if (formData.dateOfBirth?.trim()) updatedFields.dateOfBirth = formData.dateOfBirth;
 
+    if (formData.age && formData.age.trim() !== '') {
+      const ageNum = parseInt(formData.age, 10);
+      if (!isNaN(ageNum)) {
+        updatedFields.age = ageNum;
+      }
+    }
 
+    if (formData.medicalRecords?.trim()) updatedFields.medicalRecords = formData.medicalRecords;
+    if (formData.hasAllergy && formData.allergySpecifics?.trim()) {
+      updatedFields.allergySpecifics = formData.allergySpecifics;
+    }
+
+    // Sanitize boolean values
+    updatedFields.hasDiabetes = !!formData.hasDiabetes;
+    updatedFields.hasHighBloodPressure = !!formData.hasHighBloodPressure;
+    updatedFields.hasStrokeOrHeartAttackHistory = !!formData.hasStrokeOrHeartAttackHistory;
+    updatedFields.hasBleedingDisorders = !!formData.hasBleedingDisorders;
+    updatedFields.hasAllergy = !!formData.hasAllergy;
+    updatedFields.hasAsthma = !!formData.hasAsthma;
+
+    if (finalXrayImageUrls && finalXrayImageUrls.length > 0) {
+      updatedFields.xrayImageUrls = finalXrayImageUrls;
+    }
+    
     try {
       const response = await fetch(`/api/patients/${patientId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(patientDataToSubmit),
+        body: JSON.stringify(updatedFields),
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || data.errors?.email?.[0] || "Failed to update patient");
+
+      const rawText = await response.text();
+      let data;
+      try {
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch (e) {
+        console.error('Non-JSON response from server:', rawText);
+        throw new Error(rawText || 'Server returned an unexpected response');
+      }
+
+      if (!response.ok) {
+        console.error('Server responded with non-OK:', response.status, data);
+        const errorMessage = data.message || (data.errors ? `Validation failed: ${data.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ')}` : 'Failed to update patient');
+        throw new Error(errorMessage);
+      }
 
       toast({ title: "Patient Updated!", description: `${data.name}'s details have been successfully updated.` });
       router.push(`/doctor/patients/${patientId}`); 
     } catch (err: any) {
       toast({ variant: "destructive", title: "Error Updating Patient", description: err.message });
+      console.error('Full Error:', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -239,7 +276,7 @@ export default function EditPatientPage() {
             {/* Medical Records */}
             <div className="space-y-2">
               <Label htmlFor="medicalRecords">Simple Medical Records / Notes</Label>
-              <Textarea id="medicalRecords" name="medicalRecords" value={formData.medicalRecords || ''} onChange={handleChange} rows={3} />
+              <Textarea id="medicalRecords" name="medicalRecords" value={formData.medicalRecords || ''} onChange={handleChange} rows={4} placeholder="Enter relevant medical history, current medications, or general notes..." />
             </div>
 
             {/* Medical Conditions */}
@@ -258,7 +295,7 @@ export default function EditPatientPage() {
                     <Checkbox 
                       id={condition.id} 
                       name={condition.id}
-                      checked={!!formData[condition.id as keyof FormData]} 
+                      checked={!!(formData as any)[condition.id]} 
                       onCheckedChange={(checked) => {
                         const isChecked = typeof checked === 'boolean' ? checked : false;
                         setFormData(prev => ({ ...prev, [condition.id]: isChecked }));
@@ -371,4 +408,3 @@ export default function EditPatientPage() {
     </div>
   );
 }
-    

@@ -6,15 +6,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { FormEvent } from 'react';
 
-// Firebase imports
-import { auth, db } from '@/lib/firebase'; // Ensure this path is correct
-import { 
-  signInWithEmailAndPassword, 
-  GoogleAuthProvider, 
-  signInWithPopup,
-  type User
-} from 'firebase/auth';
-import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+// Firebase imports (commented out)
+// import { auth } from '@/lib/firebase'; 
+// import { 
+//   signInWithEmailAndPassword, 
+//   GoogleAuthProvider, 
+//   signInWithPopup,
+// } from 'firebase/auth';
 
 
 // UI Components
@@ -47,73 +45,53 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSocialLoading, setIsSocialLoading] = useState<false | 'google'>(false);
 
-  // Helper to save/update user data in Firestore
-  const saveUserToFirestore = async (user: User) => {
-    const userRef = doc(db, "users", user.uid);
-    const userSnap = await getDoc(userRef);
-
-    const finalName = user.displayName || 'New User'; // Use display name from social provider or fallback
-
-    if (!userSnap.exists()) { 
-      const userData = {
-        uid: user.uid,
-        email: user.email,
-        fullName: finalName,
-        role: 'patient', // Default role for new social sign-ins
-        createdAt: serverTimestamp(),
-        provider: user.providerData?.[0]?.providerId || 'social', // Get actual provider ID
-      };
-      await setDoc(userRef, userData);
-      console.log("New user profile for social sign-in saved to Firestore:", user.uid);
-    } else {
-      // User exists, update their profile with latest info from social provider if needed
-      // For example, update provider or name if it changed.
-      console.log("User already exists in Firestore, merging data for social sign-in:", user.uid);
-      await setDoc(userRef, {
-        fullName: finalName, // Update name in case it changed in social profile
-        email: user.email, // Ensure email is up-to-date
-        provider: user.providerData?.[0]?.providerId || userSnap.data()?.provider, // Update provider
-      }, { merge: true }); // Merge to avoid overwriting existing fields like 'role' or 'createdAt'
-    }
-  };
-
   const handleSocialLogin = async (providerName: 'google') => {
-    setIsSocialLoading(providerName);
-    setError(null);
-    let provider;
+    setError("Social login is temporarily disabled.");
+    // setIsSocialLoading(providerName);
+    // setError(null);
+    // let provider;
 
-    if (providerName === 'google') {
-      provider = new GoogleAuthProvider();
-    } else {
-      setError("Invalid social provider.");
-      setIsSocialLoading(false);
-      return;
-    }
+    // if (providerName === 'google') {
+    //   provider = new GoogleAuthProvider();
+    // } else {
+    //   setError("Invalid social provider.");
+    //   setIsSocialLoading(false);
+    //   return;
+    // }
 
-    try {
-      const userCredential = await signInWithPopup(auth, provider);
-      const user = userCredential.user;
-      console.log(`User signed in with ${providerName}:`, user);
-
-      await saveUserToFirestore(user);
-
-      toast({
-        title: "Login Successful!",
-        description: `Welcome back via ${providerName}!`,
-      });
-      router.push('/'); 
-    } catch (socialError: any) {
-      console.error(`Error signing in with ${providerName}:`, socialError);
-      if (socialError.code === 'auth/account-exists-with-different-credential') {
-        setError('An account already exists with the same email address using a different sign-in method.');
-      } else if (socialError.code === 'auth/popup-closed-by-user') {
-        setError('Sign-in popup closed before completion.');
-      } else {
-        setError(`Failed to sign in with ${providerName}. Please try again. ` + socialError.message);
-      }
-    } finally {
-      setIsSocialLoading(false);
-    }
+    // try {
+    //   const userCredential = await signInWithPopup(auth, provider);
+    //   const user = userCredential.user;
+      
+    //   // Also ensure user exists in our backend
+    //   await fetch('/api/auth/signup', {
+    //     method: 'POST',
+    //     headers: { 'Content-Type': 'application/json' },
+    //     body: JSON.stringify({
+    //       name: user.displayName || 'Social User',
+    //       email: user.email,
+    //       firebaseUid: user.uid,
+    //       provider: providerName,
+    //     }),
+    //   });
+      
+    //   toast({
+    //     title: "Login Successful!",
+    //     description: `Welcome back via ${providerName}!`,
+    //   });
+    //   router.push('/patient/dashboard'); 
+    // } catch (socialError: any) {
+    //   console.error(`Error signing in with ${providerName}:`, socialError);
+    //   if (socialError.code === 'auth/account-exists-with-different-credential') {
+    //     setError('An account already exists with the same email address using a different sign-in method.');
+    //   } else if (socialError.code === 'auth/popup-closed-by-user') {
+    //     setError('Sign-in popup closed before completion.');
+    //   } else {
+    //     setError(`Failed to sign in with ${providerName}. Please try again. ` + socialError.message);
+    //   }
+    // } finally {
+    //   setIsSocialLoading(false);
+    // }
   };
 
 
@@ -123,26 +101,35 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      console.log("User signed in successfully with email/password:", user);
+      const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+      });
       
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to login');
+      }
+
       toast({
         title: "Login Successful!",
         description: "Welcome back!",
       });
       
-      router.push('/'); 
-
-    } catch (firebaseError: any) {
-      console.error("Error signing in with email/password:", firebaseError);
-      if (firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/invalid-credential') {
-        setError('Invalid email or password.');
-      } else if (firebaseError.code === 'auth/invalid-email') {
-        setError('Please enter a valid email address.');
+      // Based on user role, redirect accordingly
+      if (data.user?.role === 'doctor') {
+        router.push('/doctor/dashboard');
+      } else if (data.user?.role === 'staff' || data.user?.role === 'admin') {
+        router.push('/staff/dashboard');
       } else {
-        setError('Failed to sign in. Please try again. ' + firebaseError.message);
+        router.push('/patient/dashboard'); 
       }
+
+    } catch (err: any) {
+      console.error("Error signing in:", err);
+      setError(err.message || 'An unexpected error occurred.');
     } finally {
       setIsLoading(false);
     }
@@ -236,4 +223,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
