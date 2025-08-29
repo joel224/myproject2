@@ -1,4 +1,3 @@
-
 // src/components/home/BookingPopupDialog.tsx
 'use client';
 
