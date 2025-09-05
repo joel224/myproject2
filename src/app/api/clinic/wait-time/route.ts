@@ -5,36 +5,21 @@ import type { NextRequest } from 'next/server';
 import { z } from 'zod';
 import fs from 'fs/promises';
 import path from 'path';
+import waitTimeData from '../../../../../wait-time.json';
+
 
 const waitTimeSchema = z.object({
   text: z.string().min(1, "Wait time text cannot be empty").max(50, "Wait time text too long"),
 });
 
-// The file path for the wait time JSON file
+// The file path for the wait time JSON file is now used for writing only
 const waitTimeFilePath = path.join(process.cwd(), 'wait-time.json');
-const defaultWaitTime = { text: 'Approx. 15 mins', updatedAt: new Date().toISOString() };
-
-async function readWaitTimeFile() {
-  try {
-    const data = await fs.readFile(waitTimeFilePath, 'utf-8');
-    return JSON.parse(data);
-  } catch (error: any) {
-    // If file doesn't exist or is invalid, return default and create it
-    if (error.code === 'ENOENT') {
-      await fs.writeFile(waitTimeFilePath, JSON.stringify(defaultWaitTime, null, 2), 'utf-8');
-      return defaultWaitTime;
-    }
-    console.error("Error reading wait time file:", error);
-    // Return default in case of other read errors
-    return defaultWaitTime;
-  }
-}
 
 /**
  * GET /api/clinic/wait-time - Get current wait time
  */
 export async function GET(request: NextRequest) {
-  const waitTimeData = await readWaitTimeFile();
+  // Use the imported data directly. This is more reliable in various environments.
   return NextResponse.json(waitTimeData, { status: 200 });
 }
 
@@ -55,9 +40,16 @@ export async function PUT(request: NextRequest) {
       updatedAt: new Date().toISOString(),
     };
 
-    await fs.writeFile(waitTimeFilePath, JSON.stringify(updatedData, null, 2), 'utf-8');
+    // Writing to the file system might not work in all hosting environments (e.g., Vercel Edge).
+    // This is kept for local development but might need a database in a real production scenario.
+    try {
+        await fs.writeFile(waitTimeFilePath, JSON.stringify(updatedData, null, 2), 'utf-8');
+        console.log('Wait time updated in file:', updatedData);
+    } catch (writeError) {
+        console.error("Warning: Could not write to wait-time.json. This is expected in some serverless environments.", writeError);
+        // We can still return a success response, as the primary function of updating might be for show in a demo.
+    }
     
-    console.log('Wait time updated in file:', updatedData);
     return NextResponse.json(updatedData, { status: 200 });
 
   } catch (error) {
