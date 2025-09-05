@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Phone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 interface BookingPopupDialogProps {
   isOpen: boolean;
@@ -59,24 +60,21 @@ export function BookingPopupDialog({ isOpen, onClose, onOpenChange }: BookingPop
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md p-0 overflow-hidden">
-        <div className="flex flex-col">
-          {/* Top: Image (Visible on all screen sizes) */}
-          <div className="relative w-full h-48">
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden sm:max-w-3xl">
+        <div className="flex flex-col sm:flex-row">
+           <div className="relative w-full sm:w-1/2 h-48 sm:h-auto">
             <Image
               src="https://drive.google.com/uc?export=download&id=10HnjuMf4QBKmklhRdTvGKfcN5yrxo1G9"
               alt="Smiling patient receiving dental care"
-              layout="fill"
-              objectFit="cover"
-              className="rounded-t-lg"
+              fill
+              className="object-cover rounded-t-lg sm:rounded-l-lg sm:rounded-t-none"
               data-ai-hint="dental patient smile"
               priority 
             />
           </div>
 
-          {/* Bottom: Form Content */}
-          <div className="p-6 flex flex-col justify-center space-y-4">
-            <DialogHeader className="text-center">
+          <div className="p-6 flex flex-col justify-center space-y-4 sm:w-1/2">
+            <DialogHeader className="text-center sm:text-left">
               <DialogTitle className="text-2xl text-primary">Bring out your smile!</DialogTitle>
               <DialogDescription className="pt-2">
                 Ready for a consultation? Enter your details below or call us directly.
@@ -116,7 +114,7 @@ export function BookingPopupDialog({ isOpen, onClose, onOpenChange }: BookingPop
               </div>
             </div>
 
-            <DialogFooter className="flex-col gap-3 pt-2">
+            <DialogFooter className="flex-col sm:flex-row sm:justify-between items-center gap-3 pt-2">
               <Button type="button" onClick={handleSubmit} className="w-full">
                 Request Callback
               </Button>
@@ -126,13 +124,13 @@ export function BookingPopupDialog({ isOpen, onClose, onOpenChange }: BookingPop
                   className="w-full border-accent text-accent hover:bg-accent/10"
                   type="button"
                 >
-                  <Phone className="mr-2 h-4 w-4" /> Call Us Now
+                  <Phone className="mr-2 h-4 w-4" /> Call Us
                 </Button>
               </a>
-              <Button variant="ghost" onClick={onClose} className="w-full">
-                Maybe Later
-              </Button>
             </DialogFooter>
+             <Button variant="ghost" onClick={onClose} className="w-full">
+                Maybe Later
+            </Button>
           </div>
         </div>
       </DialogContent>
