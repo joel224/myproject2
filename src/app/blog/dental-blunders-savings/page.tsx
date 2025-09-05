@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { UserCheck, AlertCircle } from 'lucide-react';
 import type { Metadata } from 'next';
+import { DentistSpotlightCard } from '@/components/home/DentistSpotlightCard';
+import { Card, CardDescription, CardTitle } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title: "Unlock Savings: Dodging Costly Dental Blunders | Dr. Loji's Dental Hub",

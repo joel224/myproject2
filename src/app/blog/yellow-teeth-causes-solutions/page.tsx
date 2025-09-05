@@ -7,6 +7,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { CheckCircle, AlertTriangle, Smile, CalendarCheck, Users, HelpCircle, Tag } from 'lucide-react';
 import type { Metadata } from 'next';
+import { DentistSpotlightCard } from '@/components/home/DentistSpotlightCard';
+import { Card, CardDescription, CardTitle } from '@/components/ui/card';
+
 
 export const metadata: Metadata = {
   title: "Why Do Teeth Turn Yellow? Causes & Solutions from Dr. Loji’s Dental Clinic",

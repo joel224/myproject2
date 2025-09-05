@@ -7,6 +7,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { CheckCircle, ShieldCheck, MessageSquare, CalendarCheck, Smile, Users } from 'lucide-react';
 import type { Metadata } from 'next';
+import { DentistSpotlightCard } from '@/components/home/DentistSpotlightCard';
+import { Card, CardDescription, CardTitle } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title: "Ditch the Wires: Clear Aligners in Ernakulam at Dr. Loji's!",

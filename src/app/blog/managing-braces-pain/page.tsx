@@ -7,6 +7,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { CheckCircle, AlertTriangle, Phone, Users, Smile, CalendarCheck, HelpCircle } from 'lucide-react';
 import type { Metadata } from 'next';
+import { DentistSpotlightCard } from '@/components/home/DentistSpotlightCard';
+import { Card, CardTitle } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title: "Managing Braces Pain: Easy Tips & Real Stories from Dr. Loji’s Dental Clinic",

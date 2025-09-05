@@ -7,6 +7,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { CheckCircle, AlertTriangle, Phone, Users, Smile, CalendarCheck } from 'lucide-react';
 import type { Metadata } from 'next';
+import { DentistSpotlightCard } from '@/components/home/DentistSpotlightCard';
+import { Card, CardDescription, CardTitle } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title: "Tooth Extraction in Ernakulam: Your Easy Guide to a Comfortable Experience",

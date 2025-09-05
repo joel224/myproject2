@@ -1,8 +1,7 @@
-
 // src/app/staff/manage-staff/new/page.tsx
 'use client';
 
-import { useState, type FormEvent, useEffect } from 'react';
+import { useState, type FormEvent, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,11 +10,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import type { StaffMember } from '@/lib/types';
-import Link from 'next/link';
 
 const staffRoles: StaffMember['role'][] = ['Dentist', 'Hygienist', 'Assistant', 'Receptionist', 'Admin'];
 
-export default function AddNewStaffPage() {
+
+function AddNewStaffForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -94,7 +93,6 @@ export default function AddNewStaffPage() {
   };
 
   return (
-    <div className="space-y-6">
       <Card className="w-full max-w-lg mx-auto shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl">Add New Staff Member</CardTitle>
@@ -141,7 +139,16 @@ export default function AddNewStaffPage() {
           </CardFooter>
         </form>
       </Card>
-    </div>
   );
 }
 
+
+export default function AddNewStaffPage() {
+  return (
+    <div className="space-y-6">
+      <Suspense fallback={<div>Loading...</div>}>
+        <AddNewStaffForm />
+      </Suspense>
+    </div>
+  )
+}
