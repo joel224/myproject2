@@ -76,6 +76,7 @@ const blunders = [
     }
   ];
 
+export default function DentalBlundersSavingsPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <MainNavbar />
@@ -155,5 +156,3 @@ const blunders = [
     </div>
   );
 }
-
-    
