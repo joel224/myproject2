@@ -47,10 +47,10 @@ export function SmileGallerySection() {
         isVisible && "is-visible"
       )}
     >
-      <div className="container px-4 md:px-6">
+      <div className="container mx-auto">
         <div
           className={cn(
-            "text-center mb-10 md:mb-12",
+            "text-center mb-10 md:mb-12 px-4 md:px-6",
             "initial-fade-in-up",
             isVisible && "is-visible"
           )}
@@ -66,7 +66,7 @@ export function SmileGallerySection() {
         
         <div 
           className={cn(
-            "relative w-full h-[500px] md:h-[600px] rounded-lg overflow-hidden border shadow-2xl",
+            "relative w-full max-w-7xl mx-auto h-[500px] md:h-[600px] lg:h-[700px] rounded-lg overflow-hidden border shadow-2xl",
             "initial-fade-in-up",
             isVisible && "is-visible"
           )}
@@ -81,7 +81,7 @@ export function SmileGallerySection() {
 
         <div 
           className={cn(
-            "mt-12 text-center",
+            "mt-12 text-center px-4 md:px-6",
             "initial-fade-in-up",
             isVisible && "is-visible"
           )}
