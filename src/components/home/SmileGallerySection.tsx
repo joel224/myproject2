@@ -1,3 +1,4 @@
+
 // src/components/home/SmileGallerySection.tsx
 'use client';
 
@@ -7,10 +8,13 @@ import { useEffect, useRef, useState, Suspense } from 'react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import Spline from '@splinetool/react-spline';
+import Image from 'next/image';
+import { MousePointerClick } from 'lucide-react';
 
 export function SmileGallerySection() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [showSpline, setShowSpline] = useState(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -66,17 +70,44 @@ export function SmileGallerySection() {
         
         <div 
           className={cn(
-            "relative w-full max-w-7xl mx-auto h-[500px] md:h-[600px] lg:h-[700px] rounded-lg overflow-hidden border shadow-2xl",
+            "relative w-full max-w-7xl mx-auto h-[500px] md:h-[600px] lg:h-[700px] rounded-lg overflow-hidden border shadow-2xl bg-muted",
             "initial-fade-in-up",
             isVisible && "is-visible"
           )}
           style={{ transitionDelay: '200ms' }}
         >
-          <Suspense fallback={<Skeleton className="w-full h-full" />}>
-             <Spline
-                scene="https://prod.spline.design/oFWtsc1gZoGGwDxB/scene.splinecode" 
+          {showSpline ? (
+            <Suspense fallback={<Skeleton className="w-full h-full" />}>
+               <Spline
+                  scene="https://prod.spline.design/oFWtsc1gZoGGwDxB/scene.splinecode" 
+                />
+            </Suspense>
+          ) : (
+            <div className="relative w-full h-full flex items-center justify-center">
+              <Image
+                src="https://storage.googleapis.com/proud-api-324912.appspot.com/dr-lojis-dental-hub/assets/spline-placeholder.jpg"
+                alt="3D Smile Gallery Preview"
+                fill
+                className="object-cover object-center"
+                data-ai-hint="dental 3d models"
+                priority
               />
-          </Suspense>
+              <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-center p-4">
+                 <Button
+                    onClick={() => setShowSpline(true)}
+                    size="lg"
+                    className="bg-white/80 text-black hover:bg-white backdrop-blur-sm shadow-2xl h-14 px-8 text-base"
+                    aria-label="Load interactive 3D scene"
+                 >
+                    <MousePointerClick className="mr-3 h-5 w-5" />
+                    Load Interactive 3D Scene
+                 </Button>
+                 <p className="mt-3 text-xs text-white/70">
+                    This may require additional system resources.
+                 </p>
+              </div>
+            </div>
+          )}
         </div>
 
         <div 
